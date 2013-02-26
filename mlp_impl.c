@@ -1,6 +1,7 @@
 // UjoImro, 2013
 // Experimental code for the CARP Project
 // Copyright (c) RealEyes, 2013
+// This is a c-implementation of the PCA->MLP response map calculation
 
 #include <stdlib.h>
 #include <stdint.h>

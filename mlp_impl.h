@@ -1,7 +1,7 @@
 // UjoImro, 2013
 // Experimental code for the CARP Project
 // Copyright (c) RealEyes, 2013
-
+// This is the response-map header exported for testing
 
 typedef struct {
     int rows;
@@ -23,7 +23,6 @@ typedef struct {
 } Point2i;
 
 typedef enum { none, maxAbs, meanStd } NormalizationMethod;
-
 
 MatFloat
 generateResponseMap( 
