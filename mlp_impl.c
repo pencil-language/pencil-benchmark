@@ -5,31 +5,11 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#include "mlp_impl.h"
+
 const int MAX_INT = 1 << sizeof(int) - 1;
 const int false = (1!=1);
 // const int NULL=0;
-
-typedef struct {
-    int rows;
-    int cols;
-    int step;
-    float * data;
-} MatFloat; // struct MatFloat
-
-typedef struct {
-    int rows;
-    int cols;
-    int step;
-    uint8_t * data;    
-} MatChar; // struct MatChar
-
-typedef struct {
-    int x;
-    int y;
-} Point2i;
-
-typedef enum { none, maxAbs, meanStd } NormalizationMethod;
-
 
 MatFloat transposeFloat( MatFloat input )
 {
