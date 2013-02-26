@@ -1,5 +1,5 @@
 // UjoImro, 2013
-// Experimental code of the CARP Project
+// Experimental code for the CARP Project
 // Copyright (c) RealEyes, 2013
 
 #include <stdlib.h>
