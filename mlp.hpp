@@ -37,36 +37,6 @@ class MLP
 public:
     typedef T0 pixel_type;
 
-    /*!
-      \brief Constructor
-
-    */
-    MLP();
-
-    /*!
-      \brief Copy Constructor
-
-      Creates a deep copy of the object.
-
-      \param other
-    */
-    MLP(const MLP & other);
-
-    /*!  \brief Gets radius like patch size, the true size of the
-      patch is [(2*patchSize+1) x (2*patchSize+1)]
-    */
-    int patchSize() const;
-
-    /*!
-      \brief Generates response map around a given coordinate
-
-      \param image Image, [n x m], uint8
-      \param center Center coordinates of the response map, [2 x 1], integer
-      \param mapSize Radius like size of the response map, integer
-      \return Response of the classifier, [(2*mapSize+1) x (2*mapSize+1)] double
-    */
-    cv::Mat_<pixel_type> generateResponseMap(const cv::Mat_<uint8_t>& image, const cv::Point2i& center, int mapSize ) const;
-
     template <class MT0>
     void
     serialize( MT0 & archiver, unsigned int ) {
@@ -81,39 +51,6 @@ public:
     
 private:
 
-    /*!
-       This function updates the mutable variables which are used
-       for the response map generation. This function has to be
-       called when a new potential mapSize comes in the function,
-       but it recalculates the matrices only if the mapSize of the
-       requested response map changes.
-
-       IMPORTANT: This function is NOT thread safe. The
-       responseMaps are generated separately for each control
-       point. This function however can be made thread safe for
-       the cost of the synchronization overhead.
-
-       \param new_mapSize
-     */
-    void update(int newMapSize ) const;
-
-    /**
-     * Generates a matrix with normalized patches.
-     *
-     * @param sample
-     * @param patch_size
-     *
-     * @return
-     */
-    cv::Mat_<pixel_type> generatePatch(const cv::Mat_<uint8_t>& sample,int patch_size) const;
-
-    /*!
-      \brief Evaluate normalized samples
-      
-      \return The values
-    */
-    cv::Mat_<pixel_type> evaluateSamples() const;
-
     int m_patchSize;      /*!< \brief Radius like patch size, the true size of the patch is [(2*patchSize+1) x (2*patchSize+1)] */
     cv::Mat_<pixel_type> m_wIn; /*!< \brief */
     cv::Mat_<pixel_type> m_wOut; /*!< \brief  */
@@ -121,8 +58,8 @@ private:
     int hidden_num;
     double rho2;
 
-public:    
     enum NormalizationMethod { none, maxAbs, meanStd };
+
 private:
     NormalizationMethod preSVDNormalizationMethod;
     NormalizationMethod postSVDNormalizationMethod;
@@ -142,7 +79,5 @@ private:
 };
 
 }  
-
-#include "mlp_impl.h"
 
 #endif /* CLM_MLP_H */
