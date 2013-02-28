@@ -29,6 +29,21 @@ CreateMatFloat( int rows, int cols )
     return result;
 }
 
+MatChar
+CreateMatChar( int rows, int cols )
+{
+    MatChar result; 
+    
+    result.data  = (uint8_t*)malloc( sizeof(uint8_t) * rows * cols );
+    result.rows  = rows;
+    result.cols  = cols;
+    result.step  = cols;
+    result.start = 0;
+
+    return result;
+}
+
+
 void
 copyTo( MatFloat input, MatFloat * output )
 {
@@ -204,6 +219,28 @@ generatePatch( MatChar sample, int patch_size, MatFloat * result )
 
     return;
 }
+
+void
+freeMatFloat( MatFloat * mat )
+{
+    free(mat->data);
+    mat = NULL;
+    mat->rows=0;
+    mat->cols=0;
+    mat->step=0;
+    mat->start=0;
+} // freeMatFloat
+
+void 
+freeMatChar( MatChar * mat )
+{
+    free(mat->data);
+    mat = NULL;
+    mat->rows=0;
+    mat->cols=0;
+    mat->step=0;
+    mat->start=0;    
+} // freeMatChar
 
 
 // returns alpha*A*B + beta * C
@@ -485,7 +522,7 @@ generateResponseMap(
 int 
 cvRound( float value )
 {
-
+    return (int)(value + (value >= 0 ? 0.5 : -0.5));
 }
 
 void

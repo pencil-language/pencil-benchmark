@@ -12,6 +12,7 @@
 
 #include "cast.h"
 #include "mlp.hpp"
+#include "mlp_impl.h"
 
 
 namespace {
@@ -55,14 +56,45 @@ namespace {
 } // unnamed namespace 
 
 
+MatChar convertCVToMatChar ( const cv::Mat_<uint8_t> & input )
+{
+    MatChar result = CreateMatChar( input.rows, input.cols );
+
+    for ( int q=0; q<input.rows; q++)
+        for ( int w=0; w<input.cols; w++ )
+            result.data[ q * result.step + w + result.start ] = input(q,w);
+    
+    return result;    
+} // convertCVToMatChar
+
+MatFloat convertCVToMatFloat (  const cv::Mat_<double> & input )
+{
+    MatFloat result = CreateMatFloat( input.rows, input.cols );
+    
+    for ( int q=0; q<input.rows; q++)
+        for ( int w=0; w<input.cols; w++ )
+            result.data[ q * result.step + w + result.start ] = input(q,w);
+    
+    return result;    
+} // convertCVToMatFloat
+
+
+
 int main()
 {
     static conductor_t conductor;
 
-    conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id);
-    PRINT(conductor.id);
+    for ( conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id);
+          conductor.id != -1;
+          conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id)
+        )
+    {
+        PRINT(conductor.id);
+        conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.hack);
+    }
+        
     
-    conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.hack);
+    //conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.hack);
     
     return EXIT_SUCCESS;    
 }

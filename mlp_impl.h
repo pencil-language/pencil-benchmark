@@ -3,6 +3,13 @@
 // Copyright (c) RealEyes, 2013
 // This is the response-map header exported for testing
 
+#ifndef __MLP_IMPL__H__
+#define __MLP_IMPL__H__
+
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
 typedef struct {
     int rows;
     int cols;
@@ -35,7 +42,31 @@ typedef struct {
     double rho2;
     NormalizationMethod preSVDNormalizationMethod /*= none*/;
     NormalizationMethod postSVDNormalizationMethod;
-
 } mlp; // struct 
 
+MatFloat CreateMatFloat( int rows, int cols );
+
+MatChar CreateMatChar( int rows, int cols );
+
+void freeMatFloat( MatFloat * mat );
+
+void freeMatChar( MatChar * mat );
+
+
+
+void
+calculateMaps( 
+    int m_visibleLandmarks_size, 
+    int m_mapSize, 
+    MatChar alignedImage, 
+    MatFloat shape, 
+    mlp m_classifiers[], 
+    MatFloat responseMaps[] );
+
+
+#endif /* __MLP_IMPL__H__ */
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
 // LuM end of file
