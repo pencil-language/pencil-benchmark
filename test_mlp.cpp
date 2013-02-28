@@ -3,6 +3,12 @@
 // Copyright (c) RealEyes, 2013
 // This version tests the responseMap calculation with input dumps
 
+#include <stdlib.h>
+#include <opencv2/core/core.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+
+
+#include "mlp.hpp"
 
 namespace {
      
@@ -31,23 +37,24 @@ namespace {
     public:
         int id;
         hack_t hack;
-        std::ofstream dumpStream;
-        boost::archive::binary_oarchive exporter;
+        std::ifstream dumpStream;
+        boost::archive::binary_iarchive importer;
 
     public:
         
-        conductor_t() : id(0), dumpStream("response_dumps.bin", std::ios::out ),  exporter(dumpStream) {
+        conductor_t() : id(0), dumpStream("response_dumps.bin", std::ios::out ), importer(dumpStream) {
             
         }; // conductor_t
-    
-        ~conductor_t()  {
-            id = -1;
-            exporter << BOOST_SERIALIZATION_NVP(id);
-        } // ~conductor_t
-    
+        
     }; // conductor_t
 
 } // unnamed namespace 
+
+
+int main()
+{
+    return EXIT_SUCCESS;    
+}
 
 
 
