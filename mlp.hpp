@@ -19,8 +19,153 @@
 #include <fstream>
 #include <iostream>
 #include <stdint.h>
-
 #include <opencv2/core/core.hpp>
+#include <boost/preprocessor.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+
+#include "cast.h"
+
+const int gel_xml_export_version = 1;
+
+class exception : public std::exception {
+private:
+    std::string m_message;
+    
+public:
+    
+    exception( const std::string & message ) throw() : m_message(message) { }
+
+    const char* what() const throw() {return m_message.c_str(); }
+
+    ~exception() throw() {}; 
+}; // exception
+
+namespace boost
+{
+    namespace serialization
+    {
+
+        /**
+        \brief Instantiated explicit export of the cv::Mat_ class. 
+        This function handles the export of the cv::Mat_ class into the XML library.
+        
+        \param archiver The serializator object (created by boost)
+        \param matrix The cv::Mat_ object to serialize
+        \param int unused
+        */        
+        template<class T0, class T1>
+        void save( T0 & archiver, const cv::Mat_<T1> & matrix, unsigned int );
+
+        /**
+           \brief Instantiated explicit export of the cv::Mat_ class. 
+           This function handles the export of the cv::Mat_ class into the XML library.
+        
+           \param archiver The serializator object (created by boost)
+           \param matrix The cv::Mat_ object to serialize
+           \param int unused
+        */        
+        template<class T0, class T1>
+        void load( T0 & archiver, cv::Mat_<T1> & matrix, unsigned int );        
+
+        // splitting the serialization into two functions
+        template<class T0, class T1> inline
+        void serialize( T0 & archiver, cv::Mat_<T1> & matrix, const unsigned int version );
+                
+        template<class T0>
+        void
+        serialize( T0 & archiver, struct tm & tm, const unsigned int );        
+
+    } /* namespace serialization */
+} /* namespace boost */
+
+template<class T0, class T1>
+void boost::serialization::save( T0 & archiver, const cv::Mat_<T1> & matrix, unsigned int )
+{
+    // this file has been prepared for version 1
+    archiver << BOOST_SERIALIZATION_NVP(gel_xml_export_version);
+
+    int rows = matrix.rows;            
+    int cols = matrix.cols;
+    int type = matrix.type();
+            
+    archiver << BOOST_SERIALIZATION_NVP(rows);
+    archiver << BOOST_SERIALIZATION_NVP(cols);
+    archiver << BOOST_SERIALIZATION_NVP(type);
+            
+    const T1 * tmp;
+    for ( int row = 0; row < matrix.rows; row++ )
+    {
+        archiver << BOOST_SERIALIZATION_NVP(row);
+                 
+        tmp = reinterpret_cast<const T1*>(matrix.ptr(row));
+        archiver << boost::serialization::make_array( const_cast<T1*>(tmp), matrix.cols );
+    }
+    return;            
+
+} /* save */
+
+template<class T0, class T1>
+void boost::serialization::load( T0 & archiver, cv::Mat_<T1> & matrix, unsigned int )
+{
+    // this file has been prepared for version 1
+
+    int gel_xml_export_version;
+    archiver >> BOOST_SERIALIZATION_NVP(gel_xml_export_version);
+
+    // here we list all the known versions
+    switch (gel_xml_export_version)
+    {
+    case 1:
+        // this is the version 1 file reading
+
+        int rows;
+        int cols;
+        int type;
+            
+        archiver >> BOOST_SERIALIZATION_NVP(rows);
+        archiver >> BOOST_SERIALIZATION_NVP(cols);
+        archiver >> BOOST_SERIALIZATION_NVP(type);
+
+        if (matrix.type()!=type)                    
+            throw ::exception( std::string("serialization error: the matrix data type (") + gel::gel_cast<std::string>(matrix.type()) + ") in the file is different from the class type (" + gel::gel_cast<std::string>(type) + ")" );
+
+        matrix.create(rows, cols);
+                
+        int row;
+        for ( int q = 0; q < matrix.rows; q++ )
+        {
+            archiver >> BOOST_SERIALIZATION_NVP(row);                
+                    
+            archiver >> boost::serialization::make_array( reinterpret_cast<T1*>(matrix.ptr(q)), matrix.cols );
+        }
+        break;
+                
+    default:
+        throw ::exception ( std::string("serialization error: file version (") + gel::gel_cast<std::string>(gel_xml_export_version) + ") not recognized " );
+    } /* switch */
+
+    return;            
+} /* load */
+
+// splitting the serialization into two functions
+template<class T0, class T1> inline void boost::serialization::serialize( T0 & archiver, cv::Mat_<T1> & matrix, const unsigned int version )
+{
+    boost::serialization::split_free( archiver, matrix, version );
+}
+
+#define PRINT(x) std::cout << "_debug: " << #x << " = " << x << "\n"
+    
+#define GEL_EXPORT_VAR( archiver, var )                                 \
+    try                                                                 \
+    {                                                                   \
+        archiver & boost::serialization::make_nvp( BOOST_PP_STRINGIZE(var), var); \
+    }                                                                   \
+    catch (boost::archive::archive_exception exception)                 \
+    {                                                                   \
+        throw ::exception( std::string("error: importing serialization; at member variable '") + BOOST_PP_STRINGIZE(var) + "' (message: " + exception.what() + ")" ); \
+    }
+
 
 namespace gel
 {
