@@ -7,6 +7,7 @@ typedef struct {
     int rows;
     int cols;
     int step;
+    int start;    
     float * data;
 } MatFloat; // struct MatFloat
 
@@ -14,6 +15,7 @@ typedef struct {
     int rows;
     int cols;
     int step;
+    int start;    
     uint8_t * data;    
 } MatChar; // struct MatChar
 
@@ -24,19 +26,16 @@ typedef struct {
 
 typedef enum { none, maxAbs, meanStd } NormalizationMethod;
 
-MatFloat
-generateResponseMap( 
-    const MatChar image,
-    const Point2i center,
-    int mapSize, 
-    int m_patchSize,
-    int m_patch_line_size,
-    int m_number_of_patches_per_line,
-    NormalizationMethod postSVDNormalizationMethod,
-    MatFloat m_wIn,
-    MatFloat m_U,
-    MatFloat m_wOut
-    );
+typedef struct {
+    int m_patchSize;      /*!< \brief Radius like patch size, the true size of the patch is [(2*patchSize+1) x (2*patchSize+1)] */
+    MatFloat m_wIn; /*!< \brief */
+    MatFloat m_wOut; /*!< \brief  */
+    MatFloat m_U; /*!< \brief */
+    int hidden_num;
+    double rho2;
+    NormalizationMethod preSVDNormalizationMethod /*= none*/;
+    NormalizationMethod postSVDNormalizationMethod;
 
+} mlp; // struct 
 
 // LuM end of file
