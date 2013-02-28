@@ -2,7 +2,7 @@
 CXXFLAGS= -O0 -g -I/home/ujoimro/Inst/opencv/build/OpenCV-2.4.2/optimized/install/include
 CFLAGS=$(CXXFLAGS) -Wimplicit -Werror=implicit-function-declaration
 
-LDFLAGS=-lboost_serialization -L/home/ujoimro/Inst/opencv/build/optimized/install/lib -lopencv_core
+LDFLAGS=-lboost_serialization -L/home/ujoimro/Inst/opencv/build/OpenCV-2.4.2/optimized/install/lib -lopencv_core
 
 all: test_mlp
 
