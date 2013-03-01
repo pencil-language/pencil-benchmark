@@ -220,7 +220,7 @@ generatePatch( MatChar sample, int patch_size, MatFloat * result )
 	convertFromCharToFloat( patch_image, 1.0/sample_max, -(1.0/sample_max)*sample_mean, &normalized_patch );
 	
         MatFloat patch_line = reshapeFloat( normalized_patch ,normalized_patch.rows * normalized_patch.cols);
-        MatFloat target = GetBlockFloat( *result, 0, result->rows, col, col + 1 );
+        MatFloat target = GetBlockFloat( *result, -MAX_INT, MAX_INT, col, col + 1 );
 	
         copyTo(patch_line, &target);  //patch_line.copyTo( target );
     }
@@ -427,7 +427,7 @@ update(
     /* } // postSVDNormalizationMethod */
 
     MatFloat littleIn;
-    littleIn = GetBlockFloat( m_wIn, 0, m_wIn.rows, 0, m_wIn.cols - 1 );
+    littleIn = GetBlockFloat( m_wIn, -MAX_INT, MAX_INT, 0, m_wIn.cols - 1 );
     MatFloat transpU;
     transposeFloat(m_U, &transpU);
     gemmFloat( littleIn, transpU, 1., *m_wIn_gemm, 0., m_wIn_gemm );
