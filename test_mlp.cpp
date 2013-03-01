@@ -108,7 +108,7 @@ MatChar convertCVToMatChar ( const cv::Mat_<uint8_t> & input )
 
     for ( int q=0; q<input.rows; q++)
         for ( int w=0; w<input.cols; w++ )
-            result.data[ q * result.step + w + result.start ] = input(q,w);
+            (*result.data)[ q * result.step + w + result.start ] = input(q,w);
     
     return result;    
 } // convertCVToMatChar
@@ -119,7 +119,7 @@ MatFloat convertCVToMatFloat (  const cv::Mat_<double> & input )
     
     for ( int q=0; q<input.rows; q++)
         for ( int w=0; w<input.cols; w++ )
-            result.data[ q * result.step + w + result.start ] = input(q,w);
+            (*result.data)[ q * result.step + w + result.start ] = input(q,w);
     
     return result;    
 } // convertCVToMatFloat
@@ -131,7 +131,7 @@ cv::Mat_<double> convertMatFloatToCV( MatFloat input )
     
     for ( int q=0; q<input.rows; q++)
         for ( int w=0; w<input.cols; w++ )
-             result(q,w) = input.data[ q * input.step + w + input.start ];
+            result(q,w) = (*input.data)[ q * input.step + w + input.start ];
     
     return result;
 } // convertMatFloatToCV

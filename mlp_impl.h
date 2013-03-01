@@ -15,7 +15,7 @@ extern "C" {
         int cols;
         int step;
         int start;    
-        float * data;
+        float ** data;
     } MatFloat; // struct MatFloat
 
     typedef struct {
@@ -23,7 +23,7 @@ extern "C" {
         int cols;
         int step;
         int start;    
-        uint8_t * data;    
+        uint8_t ** data;    
     } MatChar; // struct MatChar
 
     typedef struct {
