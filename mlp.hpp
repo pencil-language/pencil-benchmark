@@ -192,7 +192,7 @@ namespace gel
         } // serialize
 
     
-    private:
+    public:
 
         int m_patchSize;      /*!< \brief Radius like patch size, the true size of the patch is [(2*patchSize+1) x (2*patchSize+1)] */
         cv::Mat_<pixel_type> m_wIn; /*!< \brief */

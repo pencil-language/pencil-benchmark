@@ -4,16 +4,23 @@
 // This is a c-implementation of the PCA->MLP response map calculation
 
 #include <math.h>
+#include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <stdint.h>
 
 #include "mlp_impl.h"
 
-const int MAX_INT = 1 << sizeof(int) - 1;
+const int MAX_INT = ~(1 << (8*sizeof(int) - 1));
 const int false = (1!=1);
 // const int NULL=0;
 
+void freeMLP( mlp * classifier )
+{
+    freeMatFloat(&classifier->m_wIn);
+    freeMatFloat(&classifier->m_wOut);
+    freeMatFloat(&classifier->m_U);
+} // freeMLP
 
 MatFloat
 CreateMatFloat( int rows, int cols )
@@ -135,7 +142,8 @@ GetBlockChar( MatChar self, int row_from, int row_to, int col_from, int col_to )
 
 MatFloat
 GetBlockFloat( MatFloat self, int row_from, int row_to, int col_from, int col_to )
-{   
+{  
+    printf( "MAX_INT=%d\n", MAX_INT );
     assert(row_from>=0);
     assert(col_from>=0);
     assert(row_from<row_to);
@@ -212,7 +220,7 @@ generatePatch( MatChar sample, int patch_size, MatFloat * result )
 	convertFromCharToFloat( patch_image, 1.0/sample_max, -(1.0/sample_max)*sample_mean, &normalized_patch );
 	
         MatFloat patch_line = reshapeFloat( normalized_patch ,normalized_patch.rows * normalized_patch.cols);
-        MatFloat target = GetBlockFloat( *result, -MAX_INT, MAX_INT, col, col + 1 );
+        MatFloat target = GetBlockFloat( *result, 0, result->rows, col, col + 1 );
 	
         copyTo(patch_line, &target);  //patch_line.copyTo( target );
     }
@@ -376,7 +384,6 @@ SetValueFloat( MatFloat self, int row, int col, float value )
 void
 update( 
     int mapSize, 
-    NormalizationMethod postSVDNormalizationMethod, 
     MatFloat m_wIn,
     MatFloat m_U,
     MatFloat m_wOut,
@@ -420,7 +427,7 @@ update(
     /* } // postSVDNormalizationMethod */
 
     MatFloat littleIn;
-    littleIn = GetBlockFloat( m_wIn, -MAX_INT, MAX_INT, 0, m_wIn.cols - 1 );
+    littleIn = GetBlockFloat( m_wIn, 0, m_wIn.rows, 0, m_wIn.cols - 1 );
     MatFloat transpU;
     transposeFloat(m_U, &transpU);
     gemmFloat( littleIn, transpU, 1., *m_wIn_gemm, 0., m_wIn_gemm );
@@ -481,7 +488,6 @@ generateResponseMap(
     update(
 	// parameters
 	mapSize,
-	classifier.postSVDNormalizationMethod,
 	classifier.m_wIn,
 	classifier.m_U,
 	classifier.m_wOut,
@@ -532,7 +538,8 @@ calculateMaps(
     MatChar alignedImage, 
     MatFloat shape, 
     mlp m_classifiers[], 
-    MatFloat responseMaps[] )
+    // results
+    MatFloat * responseMaps[] )
 {
     int q;
     for (q=0; q<m_visibleLandmarks_size; q++ )
