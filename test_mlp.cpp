@@ -173,6 +173,7 @@ void freeResponseMaps( MatFloat * responseMaps[], int size )
 int main()
 {
     static conductor_t conductor;
+    int fail = 0;    
 
     for ( conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id);
           ((conductor.id != -1) and (conductor.id != 10));
@@ -222,14 +223,10 @@ int main()
             // testing the output
             for (int q=0; q<conductor.hack.m_visibleLandmarks_size; q++)
             {
-                std::cout << "cv::norm( conductor.hack.responseMaps[" << q << "] ) = "
-                          << cv::norm( conductor.hack.responseMaps[q] ) << std::endl; 
-                
-                std::cout << "cv::norm( calculatedResults[" << q << "] ) = "
-                          << cv::norm( calculatedResults[q] ) << std::endl; 
-
                 std::cout << "cv::norm( conductor.hack.responseMaps[" << q << "] - calculatedResults[" << q << "] ) = "
-                          << cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) << std::endl; 
+                          << cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) << std::endl;
+                if (cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) > 1.0 ) fail++;
+                assert(fail < 10);                
             }
             
             // releasing the outputs
