@@ -14,6 +14,13 @@
 #include "mlp.hpp"
 #include "mlp_impl.h"
 
+extern int EF_ALIGNMENT = 0;
+extern int EF_PROTECT_BELOW = 0;
+extern int EF_PROTECT_FREE = 1;
+extern int EF_ALLOW_MALLOC_0 = 1;
+extern int EF_FILL = 192;
+
+
 namespace { struct hack_t; }
 MatChar  convertCVToMatChar ( const cv::Mat_<uint8_t> & input );
 mlp *    convertHackToMlp ( const hack_t & hack );
@@ -137,6 +144,27 @@ cv::Mat_<double> convertMatFloatToCV( MatFloat input )
 } // convertMatFloatToCV
 
 
+void allocateResponseMaps( int mapSize, int size, MatFloat * responseMaps[] )
+{
+    *responseMaps = (MatFloat*)malloc( sizeof(MatFloat) * size );
+
+    for ( int q=0; q<size; q++ )
+        (*responseMaps)[q] = CreateMatFloat( 2 * mapSize + 1, 2 * mapSize + 1 );
+    
+    return;
+}
+
+void freeResponseMaps( MatFloat * responseMaps[], int size )
+{
+    assert(responseMaps);
+    for ( int q=0; q<size; q++ )
+        freeMatFloat((&(*responseMaps)[q]));
+
+    free(*responseMaps);
+    *responseMaps=NULL;
+    return;    
+}
+
 
 int main()
 {
@@ -157,8 +185,8 @@ int main()
             MatFloat shape = convertCVToMatFloat(conductor.hack.shape);
             mlp * m_classifiers = convertHackToMlp(conductor.hack);
             MatFloat * responseMaps;
-            
-            
+            allocateResponseMaps( conductor.hack.m_mapSize, conductor.hack.m_visibleLandmarks_size, &responseMaps );
+                        
             calculateMaps(
                 conductor.hack.m_visibleLandmarks_size,
                 conductor.hack.m_mapSize,
@@ -169,27 +197,28 @@ int main()
                 );
 
             // releasing the inputs
+            std::cout << "cpp 01" << std::endl;
             freeMatChar(&alignedImage);
+            std::cout << "cpp 02" << std::endl;
             freeMatFloat(&shape);
-            freeClassifiers(&m_classifiers, conductor.hack.m_classifiers.size());
-            
-            
+            std::cout << "cpp 03" << std::endl;
+            // !!! freeClassifiers(&m_classifiers, conductor.hack.m_classifiers.size());
+            std::cout << "CHECK ME !!! cpp 04" << std::endl;
+            freeResponseMaps(&responseMaps, conductor.hack.m_visibleLandmarks_size );
+            assert(false);
             
             // converting the outputs
 
             // testing the output
-                
         }
-        
-
         // here comes the test
         // PRINT(cv::norm( ));
     }
-        
+    
     
     //conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.hack);
     
-    return EXIT_SUCCESS;    
+    return EXIT_SUCCESS;
 }
 
 

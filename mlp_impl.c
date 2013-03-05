@@ -1,3 +1,4 @@
+// -*- c++ -*-
 // UjoImro, 2013
 // Experimental code for the CARP Project
 // Copyright (c) RealEyes, 2013
@@ -54,13 +55,17 @@ MatFloat
 CreateMatFloat( int rows, int cols )
 {
     MatFloat result; 
-    
+    assert(rows>0);
+    assert(cols>0);
+
+    result.data = NULL;
     result.data = (float**) malloc( sizeof(float*) );
-    (*result.data)  = NULL;
-    (*result.data)  = (float*)malloc( sizeof(float) * rows * cols );
+    assert(result.data);
+    (*result.data) = NULL;
+    (*result.data) = (float*)malloc( sizeof(float) * rows * cols );
     assert(*result.data);
     result.rows  = rows;
-    result.cols  = cols;
+    result.cols  = cols;    
     result.step  = cols;
     result.start = 0;
 
@@ -71,10 +76,14 @@ MatChar
 CreateMatChar( int rows, int cols )
 {
     MatChar result; 
+    assert(rows>0);
+    assert(cols>0);
 
+    result.data = NULL;
     result.data = (uint8_t**) malloc( sizeof(uint8_t*) );
-    (*result.data)  = NULL;
-    (*result.data)  = (uint8_t*)malloc( sizeof(uint8_t) * rows * cols );
+    assert(result.data);
+    (*result.data) = NULL;
+    (*result.data) = (uint8_t*)malloc( sizeof(uint8_t) * rows * cols );
     assert(*result.data);
     result.rows  = rows;
     result.cols  = cols;
@@ -91,11 +100,11 @@ copyToFloat( MatFloat input, MatFloat * output )
     assert(input.rows == output->rows);
     assert(input.cols == output->cols);
     
-    int q, w;
-    for ( q=0; q<input.rows; q++ )
-	for ( w=0; w<=input.cols; w++ )
-	    (*output->data)[ q * output->cols + w + output->step ] =
-		(*input.data)[ q * input.cols + w + input.step ];
+    // int q, w;
+    // for ( q=0; q<input.rows; q++ )
+    //     for ( w=0; w<input.cols; w++ )
+    //         (*output->data)[ q * output->step + w + output->start ] =
+    //     	(*input.data)[ q * input.step + w + input.start ];
     
     return;
 } // copyTo
@@ -106,10 +115,10 @@ transposeFloat( MatFloat input, MatFloat * output )
     int q,w;
     assert(output->rows == input.cols);
     assert(output->cols == input.rows);
-    for (q=0; q<input.rows; q++)
-	for (w=0; w<input.cols; w++)
-	    output->data[ w * output->step + q + output->start ] 
-		= input.data[ q * input.step + w + input.start ];
+    // for (q=0; q<input.rows; q++)
+    //     for (w=0; w<input.cols; w++)
+    //         (*output->data)[ w * output->step + q + output->start ] 
+    //     	= (*input.data)[ q * input.step + w + input.start ];
 
     return;
 } // transposeFloat
@@ -120,9 +129,9 @@ meanChar( MatChar input )
     int q,w;
     float sum=0;
 
-    for ( q=0; q<input.rows; q++ )
-	for ( w=0; w<input.cols; w++ )
-	    sum += (*input.data)[ q * input.step + w + input.start ];
+    // for ( q=0; q<input.rows; q++ )
+    //     for ( w=0; w<input.cols; w++ )
+    //         sum += (*input.data)[ q * input.step + w + input.start ];
     
     return sum / ( input.rows * input.cols );
 } // meanFloat
@@ -133,9 +142,9 @@ minChar( MatChar input )
     int q,w;
     uint8_t minvalue = 255;
 
-    for ( q=0; q<input.rows; q++ )
-	for ( w=0; w<input.cols; w++ )
-	    minvalue = fmin( minvalue, (*input.data)[ q * input.step + w + input.start ] );
+    // for ( q=0; q<input.rows; q++ )
+    //     for ( w=0; w<input.cols; w++ )
+    //         minvalue = fmin( minvalue, (*input.data)[ q * input.step + w + input.start ] );
     
     return minvalue;
 } // minFloat
@@ -146,9 +155,9 @@ maxChar( MatChar input )
     int q,w;
     uint8_t maxvalue = 0;
 
-    for ( q=0; q<input.rows; q++ )
-	for ( w=0; w<input.cols; w++ )
-	    maxvalue = fmax( maxvalue, (*input.data)[ q * input.step + w + input.start ] );
+    // for ( q=0; q<input.rows; q++ )
+    //     for ( w=0; w<input.cols; w++ )
+    //         maxvalue = fmax( maxvalue, (*input.data)[ q * input.step + w + input.start ] );
     
     return maxvalue;
 } // maxFloat
@@ -163,6 +172,8 @@ GetBlockChar( MatChar self, int row_from, int row_to, int col_from, int col_to )
     assert(col_from<col_to);
     assert(row_to<=self.rows);
     assert(col_to<=self.cols);
+    assert(self.data);
+    assert(*self.data);
     
     MatChar result;
     result.rows  = row_to - row_from;
@@ -183,6 +194,8 @@ GetBlockFloat( MatFloat self, int row_from, int row_to, int col_from, int col_to
     assert(col_from<col_to);
     assert(row_to<=self.rows);
     assert(col_to<=self.cols);
+    assert(self.data);
+    assert(*self.data);
 
     MatFloat result;
     result.rows  = row_to - row_from;
@@ -200,11 +213,11 @@ convertFromCharToFloat( MatChar from, float quotient, float shift, MatFloat * to
     assert(from.rows == to->rows);
     assert(from.cols == to->cols);
     
-    int q, w;
-    for ( q=0; q<from.rows; q++ )
-	for ( w=0; w<from.cols; w++ )
-	    (*to->data)[ q * to->step + w + to->start ] = 
-		quotient * (*from.data)[ q * from.step + w + from.start ] + shift;
+    // int q, w;
+    // for ( q=0; q<from.rows; q++ )
+    //     for ( w=0; w<from.cols; w++ )
+    //         (*to->data)[ q * to->step + w + to->start ] = 
+    //     	quotient * (*from.data)[ q * from.step + w + from.start ] + shift;
     return;
 }
 
@@ -228,6 +241,7 @@ reshapeFloat( MatFloat self, int new_rows )
 void
 generatePatch( MatChar sample, int patch_size, MatFloat * result )
 {   
+    printf("generatePatch::00\n");
     // cv::Mat_<pixel_type> result( sample.rows * patch_size, sample.cols - patch_size );
     assert(result->rows == sample.rows * patch_size);
     assert(result->cols == sample.cols - patch_size);
@@ -236,33 +250,44 @@ generatePatch( MatChar sample, int patch_size, MatFloat * result )
     // we are now processing line by line
     int q, col;
     for ( q = patch_size, col = 0;
-        q < sample.cols;
-        q++, col++ )
+	  q < sample.cols;
+	  q++, col++ )
     {
+	printf("generatePatch::01\n");
         MatChar patch_image = GetBlockChar( sample, 0, sample.rows, col, col + patch_size );
-
+	printf("generatePatch::02\n");
         float sample_mean = meanChar(patch_image);
+	printf("generatePatch::03\n");
         float sample_max  = maxChar(patch_image) - sample_mean;
+	printf("generatePatch::04\n");
         float sample_min  = minChar(patch_image) - sample_mean;
+	printf("generatePatch::05\n");
 	
         sample_max = fmax( abs( sample_max ), abs( sample_min ) );
+	printf("generatePatch::06\n");
         if (sample_max==0) sample_max = 1;
 	
 	{
 	    MatFloat normalized_patch = CreateMatFloat( patch_image.rows, patch_image.cols );
+	    printf("generatePatch::07\n");
 	
 	    convertFromCharToFloat( patch_image, 1.0/sample_max, -(1.0/sample_max)*sample_mean, &normalized_patch );
 	
+	    printf("generatePatch::08\n");
 	    MatFloat patch_line = reshapeFloat( normalized_patch ,normalized_patch.rows * normalized_patch.cols);
+	    printf("generatePatch::09\n");
 	    MatFloat target = GetBlockFloat( *result, 0, result->rows, col, col + 1 );
-	
+	    printf("generatePatch::10\n");
 	    copyToFloat(patch_line, &target);  //patch_line.copyTo( target );
+	    printf("generatePatch::11\n");
 	    freeMatFloat(&normalized_patch);
+	    printf("generatePatch::12\n");
 	}
-    }
+
+    } // for q in patch_size..sample.cols
 
     return;
-}
+} // generatePatch
 
 void
 freeMatFloat( MatFloat * mat )
@@ -286,7 +311,6 @@ freeMatChar( MatChar * mat )
 {
     assert(*mat->data);
     assert(mat->start==0);
-    assert(mat->start==0);
     free(*mat->data);
     (*mat->data)  = NULL;
     free(mat->data);
@@ -294,7 +318,7 @@ freeMatChar( MatChar * mat )
     mat->rows  = 0;
     mat->cols  = 0;
     mat->step  = 0;
-    mat->start = 0;    
+    mat->start = 0;
     return;
 } // freeMatChar
 
@@ -309,16 +333,17 @@ gemmFloat( MatFloat A, MatFloat B, float alpha, MatFloat C, float beta, MatFloat
     assert(C.rows == result->rows);
     assert(C.cols == result->cols);
 
-    int q, w, e;
-    float sum=0;
-    for ( q=0; q<C.rows; q++ )
-	for ( w=0; w<C.cols; w++ )
-	{
-	    sum = 0;
-	    for ( e=0; e<A.cols; e++ )
-		sum += alpha * (*A.data)[ q * A.step + e + A.start ] * (*B.data)[ e * B.step + w + B.start ] + beta * (*C.data)[ q * C.step + w + C.start ];
-	    (*result->data)[ q * result->step + w + result->start ] = sum;
-	}
+    // int q, w, e;
+    // float sum=0;
+    // for ( q=0; q<C.rows; q++ )
+    //     for ( w=0; w<C.cols; w++ )
+    //     {	    
+    //         sum = 0;
+    //         for ( e=0; e<A.cols; e++ ) 
+    //     	sum += alpha * (*A.data)[ q * A.step + e + A.start ] * (*B.data)[ e * B.step + w + B.start ];
+
+    //         (*result->data)[ q * result->step + w + result->start ] = sum  + beta * (*C.data)[ q * C.step + w + C.start ];
+    //     }
 
     return;
 }
@@ -329,11 +354,11 @@ expFloat( MatFloat input, MatFloat * output )
     assert(input.rows == output->rows);
     assert(input.cols == output->cols);
 
-    int q, w;
-    for ( q=0; q<input.rows; q++ )
-	for ( w=0; w<input.cols; w++ )
-	    (*output->data)[ q * output->step + w + output->start ] = 
-		exp((*input.data)[ q * input.step + w + input.start ]);
+    // int q, w;
+    // for ( q=0; q<input.rows; q++ )
+    //     for ( w=0; w<input.cols; w++ )
+    //         (*output->data)[ q * output->step + w + output->start ] = 
+    //     	exp((*input.data)[ q * input.step + w + input.start ]);
 
     return;
 }
@@ -344,11 +369,11 @@ addFloat( MatFloat input, float val, MatFloat * output )
     assert(input.rows == output->rows);
     assert(input.cols == output->cols);
 
-    int q, w;
-    for ( q=0; q<input.rows; q++ )
-	for ( w=0; w<input.cols; w++ )
-	    (*output->data)[ q * output->step + w + output->start ] = 
-		val + (*input.data)[ q * input.step + w + input.start ];
+    // int q, w;
+    // for ( q=0; q<input.rows; q++ )
+    //     for ( w=0; w<input.cols; w++ )
+    //         (*output->data)[ q * output->step + w + output->start ] = 
+    //     	val + (*input.data)[ q * input.step + w + input.start ];
 
     return;
 }
@@ -359,11 +384,11 @@ divideFloat( float val, MatFloat input, MatFloat * output )
     assert(input.rows == output->rows);
     assert(input.cols == output->cols);
 
-    int q, w;
-    for ( q=0; q<input.rows; q++ )
-	for ( w=0; w<input.cols; w++ )
-	    (*output->data)[ q * output->step + w + output->start ] = 
-		val / (*input.data)[ q * input.step + w + input.start ];
+    // int q, w;
+    // for ( q=0; q<input.rows; q++ )
+    //     for ( w=0; w<input.cols; w++ )
+    //         (*output->data)[ q * output->step + w + output->start ] = 
+    //     	val / (*input.data)[ q * input.step + w + input.start ];
 
     return;
 }
@@ -374,11 +399,11 @@ subtractFloat( MatFloat input, float val, MatFloat * output )
     assert(input.rows == output->rows);
     assert(input.cols == output->cols);
 
-    int q, w;
-    for ( q=0; q<input.rows; q++ )
-	for ( w=0; w<input.cols; w++ )
-	    (*output->data)[ q * output->step + w + output->start ] = 
-		(*input.data)[ q * input.step + w + input.start ] - val;
+    // int q, w;
+    // for ( q=0; q<input.rows; q++ )
+    //     for ( w=0; w<input.cols; w++ )
+    //         (*output->data)[ q * output->step + w + output->start ] = 
+    //     	(*input.data)[ q * input.step + w + input.start ] - val;
     
     return;
 }
@@ -415,9 +440,13 @@ evaluateSamples(
     addFloat( *result, 1.0, &dot ); // addFloat
     divideFloat( 1.0, dot, result );
 
-    freeMatFloat(&xOut);
-    freeMatFloat(&e);
+    printf("evaluateSamples::01\n");    
     freeMatFloat(&dot);
+    printf("evaluateSamples::02\n");
+    freeMatFloat(&e);
+    printf("evaluateSamples::03\n");
+    freeMatFloat(&xOut);
+    printf("evaluateSamples::04\n");
 
     return;
 } // evaluateSamples
@@ -426,12 +455,13 @@ float
 GetValueFloat( MatFloat self, int row, int col )
 {
     return (*self.data)[ row * self.step + col + self.start ];
+    // return -1231.;
 }
 
 void
 SetValueFloat( MatFloat self, int row, int col, float value )
 {
-    (*self.data)[ row * self.step + col + self.start ] = value;
+//    (*self.data)[ row * self.step + col + self.start ] = value;
 }
 
 
@@ -463,24 +493,22 @@ update(
 	MatFloat transpU = CreateMatFloat( m_U.cols, m_U.rows );
 	MatFloat tmpMap  = CreateMatFloat( littleIn.rows, transpU.cols );
 	transposeFloat(m_U, &transpU);
+        
+        gemmFloat( littleIn, transpU, 1., tmpMap, 0., m_wIn_gemm );
 
-	gemmFloat( littleIn, transpU, 1., tmpMap, 0., m_wIn_gemm );
 	freeMatFloat(&transpU);
 	freeMatFloat(&tmpMap);
     }
     // MatFloat bIn = m_wIn.col( m_wIn.cols - 1 );
     MatFloat bIn = GetBlockFloat( m_wIn, 0, m_wIn.rows, m_wIn.cols - 1, m_wIn.cols);
-
+     
     *m_wOut_gemm = GetBlockFloat( m_wOut, 0, m_wOut.rows, 0, m_wOut.cols - 1 ); ///!!!!!!!!!! NO MORE TRANSPOSE .t();
-
     float bOut = GetValueFloat( m_wOut, 0, m_wOut.cols - 1 );
-
     *m_number_of_patches_per_line = 2 * m_currentMapSize + 1;
     // here we assume that the patches are always square-like
     int number_of_all_patches  = (*m_number_of_patches_per_line) * (*m_number_of_patches_per_line);
     *m_patch_line_size = 2 * m_patchSize + 1;
     int patch_size = (*m_patch_line_size) * (*m_patch_line_size);
-
     assert( m_all_bIns->rows == bIn.rows );
     assert( m_all_bIns->cols == number_of_all_patches );
     assert( m_all_bOuts->rows == 1 );
@@ -488,17 +516,14 @@ update(
     assert( m_all_patches->rows == m_wIn_gemm->cols );
     assert( m_all_patches->cols == number_of_all_patches );
     
-    /* *m_all_bIns = CreateMatFloat( bIn.rows, number_of_all_patches ); */
-    /* *m_all_bOuts = CreateMatFloat( 1, number_of_all_patches ); */
-    /* *m_all_patches = CreateMatFloat( m_wIn_gemm->cols, number_of_all_patches ); */
-
     int q;
     for ( q=0; q < number_of_all_patches; q++)
     {
-	target = GetBlockFloat( *m_all_bIns, 0, m_all_bIns->rows, q, q+1 );
-	copyToFloat(bIn, &target); // bIn.copyTo(target);
-	SetValueFloat( *m_all_bOuts, 0, q, bOut);
+        target = GetBlockFloat( *m_all_bIns, 0, m_all_bIns->rows, q, q+1 );
+        copyToFloat(bIn, &target); // bIn.copyTo(target);
+        SetValueFloat( *m_all_bOuts, 0, q, bOut);
     }    
+    return;
 } // update
 
 void
@@ -511,84 +536,110 @@ generateResponseMap(
     )
 {
 
+    printf("ici05a\n");
+    printf("classifier.m_wIn.rows = %d\n", classifier.m_wIn.rows );
+    printf("classifier.m_U.rows = %d\n", classifier.m_U.rows );
     MatFloat m_wIn_gemm = CreateMatFloat( classifier.m_wIn.rows, classifier.m_U.rows );
+    printf("ici05b\n");
     MatFloat m_all_bIns = CreateMatFloat( classifier.m_wIn.rows, (2 * mapSize + 1) * (2 * mapSize + 1) );
+    printf("ici05c\n");
     MatFloat m_all_bOuts = CreateMatFloat( 1, (2 * mapSize + 1) * (2 * mapSize + 1) );
+    printf("ici05d\n");
     MatFloat m_all_patches = CreateMatFloat( m_wIn_gemm.cols, (2 * mapSize + 1) * (2 * mapSize + 1) );
+    printf("ici05e\n");
     MatFloat m_wOut_gemm;
     int m_patch_line_size;
     int m_number_of_patches_per_line;
     
-    printf("ici05a\n");
+    printf("ici05f\n");
     // make sure that we have the necessary matrices
     // calculated (this is a method; it is NOT thread safe!), but it is called for each classifier once
     update(
-	// parameters
-	mapSize,
-	classifier.m_wIn,
-	classifier.m_U,
-	classifier.m_wOut,
-	classifier.m_patchSize,
-	// results
-	&m_patch_line_size,
-	&m_number_of_patches_per_line,
-	&m_wIn_gemm,
-	&m_all_bIns,
-	&m_all_bOuts,
-	&m_all_patches,
-	&m_wOut_gemm
-	);
+    	// parameters
+    	mapSize,
+    	classifier.m_wIn,
+    	classifier.m_U,
+    	classifier.m_wOut,
+    	classifier.m_patchSize,
+    	// results
+    	&m_patch_line_size,
+    	&m_number_of_patches_per_line,
+    	&m_wIn_gemm,
+    	&m_all_bIns,
+    	&m_all_bOuts,
+    	&m_all_patches,
+    	&m_wOut_gemm
+    	);
 
-    printf("ici05b\n");
+    printf("ici05g\n");
     int ncy, cy;
     for ( ncy = 0, cy = center.y - mapSize; cy < center.y + mapSize + 1; ++ncy, ++cy ) {
-	MatChar  sample = GetBlockChar( image, cy - classifier.m_patchSize, cy + classifier.m_patchSize + 1 , center.x - mapSize - classifier.m_patchSize, center.x + mapSize + classifier.m_patchSize + 2 );
-	
-	{
-	    MatFloat pack_patches = CreateMatFloat( sample.rows * m_patch_line_size, sample.cols - m_patch_line_size );
-	    generatePatch( sample, m_patch_line_size, &pack_patches );
+        printf("mapSize = %d\n", mapSize);
+        printf("classifier.m_patchSize =%d\n", classifier.m_patchSize );
+        printf("center.y = %d\n", center.y );        
+        printf("cy - classifier.m_patchSize = %d\n", cy - classifier.m_patchSize);
+        
+    	MatChar  sample = GetBlockChar( image, cy - classifier.m_patchSize, cy + classifier.m_patchSize + 1 , center.x - mapSize - classifier.m_patchSize, center.x + mapSize + classifier.m_patchSize + 2 );	
+    	{
+    	    printf("ici05g0\n");
+    	    MatFloat pack_patches = CreateMatFloat( sample.rows * m_patch_line_size, sample.cols - m_patch_line_size );
+    	    printf("ici05g1\n");
+    	    generatePatch( sample, m_patch_line_size, &pack_patches );
+    	    printf("ici05g2\n");
+	    
+    	    MatFloat target = GetBlockFloat( m_all_patches, 0, m_all_patches.rows, ncy * m_number_of_patches_per_line, (ncy + 1) * m_number_of_patches_per_line );
+    	    printf("ici05g3\n");
+    	    copyToFloat( pack_patches, &target );
+    	    printf("ici05g4\n");
+    	    freeMatFloat(&pack_patches);
+    	    printf("ici05g5\n");
+    	} // unnamed block
+    } // for
 
-	    MatFloat target = GetBlockFloat( m_all_patches, 0, m_all_patches.rows, ncy * m_number_of_patches_per_line, (ncy + 1) * m_number_of_patches_per_line );
-	    copyToFloat( pack_patches, &target );
-	    freeMatFloat(&pack_patches);
-	}
-    }
-
-    printf("ici05c\n");
+    /* printf("ici05h\n"); */
     MatFloat evaluated = CreateMatFloat( m_wOut_gemm.rows, m_all_patches.cols );
 
-    printf("ici05d\n");
-    evaluateSamples(
-	m_wIn_gemm, 
-	m_all_patches,
-	m_all_bIns,
-	m_wOut_gemm,
-	m_all_bOuts,
-	// results
-	&evaluated
-	);
-
-    printf("ici05e\n");
-    *result = reshapeFloat( evaluated, m_number_of_patches_per_line );
-
-    printf("ici05f\n");
-    
-    freeMatFloat(&m_wIn_gemm);
-    printf("ici05g\n");
-    freeMatFloat(&m_all_bIns);
-    printf("ici05h\n");
-    freeMatFloat(&m_all_bOuts);
     printf("ici05i\n");
-    freeMatFloat(&m_all_patches);
+    evaluateSamples(
+    	m_wIn_gemm,
+    	m_all_patches,
+    	m_all_bIns,
+    	m_wOut_gemm,
+    	m_all_bOuts,
+    	// results
+    	&evaluated
+    	);
+
     printf("ici05j\n");
-    return;    
+    MatFloat toreturn = reshapeFloat( evaluated, m_number_of_patches_per_line );
+    printf( "toreturn.rows = %d\n", toreturn.rows );
+    printf( "toreturn.cols = %d\n", toreturn.cols );
+    assert( toreturn.rows == result->rows );
+    assert( toreturn.cols == result->cols );
+
+    printf("result->cols = %d\n", result->cols );
+    printf("result->rows = %d\n", result->rows );
+    copyToFloat(toreturn, result);
+
+    printf("ici05k\n");
+    freeMatFloat(&m_wIn_gemm);
+    printf("ici05l\n");  
+    freeMatFloat(&m_all_bIns);
+    printf("ici05m\n");
+    freeMatFloat(&m_all_bOuts);
+    printf("ici05n\n");
+    freeMatFloat(&m_all_patches);
+    printf("ici05o\n");
+    freeMatFloat(&evaluated);
+    printf("ici05p\n");
+    return;
 } // generateResponseMap
 
 int 
 cvRound( float value )
 {
     return (int)(value + (value >= 0 ? 0.5 : -0.5));
-}
+} // cvRound
 
 void
 calculateMaps( 
@@ -624,7 +675,7 @@ calculateMaps(
 	printf("ici05\n");
         
 	// responseMaps[q] = m_classifiers[idx].generateResponseMap( alignedImage, center, m_mapSize );
-	generateResponseMap( alignedImage, center, m_mapSize, m_classifiers[idx], responseMaps[q] );
+	generateResponseMap( alignedImage, center, m_mapSize, m_classifiers[idx], (&(*responseMaps)[q]) );
 	printf("ici06\n");
     }
 
