@@ -16,9 +16,9 @@
 
 extern int EF_ALIGNMENT = 0;
 extern int EF_PROTECT_BELOW = 0;
-extern int EF_PROTECT_FREE = 1;
+extern int EF_PROTECT_FREE = 0;
 extern int EF_ALLOW_MALLOC_0 = 1;
-extern int EF_FILL = 192;
+extern int EF_FILL = 1922;
 
 
 namespace { struct hack_t; }
@@ -99,8 +99,9 @@ convertHackToMlp ( const hack_t & hack )
 void
 freeClassifiers( mlp * classifiers[], int size )
 {
+    mlp * result = *classifiers;    
     for (int q=0; q<size; q++ )
-        freeMLP( classifiers[q] );
+        freeMLP( &(result[q]) );
 
     free(*classifiers);
     *classifiers=NULL;
@@ -115,7 +116,7 @@ MatChar convertCVToMatChar ( const cv::Mat_<uint8_t> & input )
 
     for ( int q=0; q<input.rows; q++)
         for ( int w=0; w<input.cols; w++ )
-            (*result.data)[ q * result.step + w + result.start ] = input(q,w);
+            result.data[ q * result.step + w + result.start ] = input(q,w);
     
     return result;    
 } // convertCVToMatChar
@@ -126,7 +127,7 @@ MatFloat convertCVToMatFloat (  const cv::Mat_<double> & input )
     
     for ( int q=0; q<input.rows; q++)
         for ( int w=0; w<input.cols; w++ )
-            (*result.data)[ q * result.step + w + result.start ] = input(q,w);
+            result.data[ q * result.step + w + result.start ] = input(q,w);
     
     return result;    
 } // convertCVToMatFloat
@@ -138,7 +139,7 @@ cv::Mat_<double> convertMatFloatToCV( MatFloat input )
     
     for ( int q=0; q<input.rows; q++)
         for ( int w=0; w<input.cols; w++ )
-            result(q,w) = (*input.data)[ q * input.step + w + input.start ];
+            result(q,w) = input.data[ q * input.step + w + input.start ];
     
     return result;
 } // convertMatFloatToCV
@@ -147,20 +148,23 @@ cv::Mat_<double> convertMatFloatToCV( MatFloat input )
 void allocateResponseMaps( int mapSize, int size, MatFloat * responseMaps[] )
 {
     *responseMaps = (MatFloat*)malloc( sizeof(MatFloat) * size );
+    assert(*responseMaps);    
+    MatFloat * result = *responseMaps;    
 
     for ( int q=0; q<size; q++ )
-        (*responseMaps)[q] = CreateMatFloat( 2 * mapSize + 1, 2 * mapSize + 1 );
+        result[q] = CreateMatFloat( 2 * mapSize + 1, 2 * mapSize + 1 );
     
     return;
 }
 
 void freeResponseMaps( MatFloat * responseMaps[], int size )
 {
-    assert(responseMaps);
+    MatFloat * result = *responseMaps;    
+    assert(result);
     for ( int q=0; q<size; q++ )
-        freeMatFloat((&(*responseMaps)[q]));
+        freeMatFloat(&(result[q]));
 
-    free(*responseMaps);
+    free(result);
     *responseMaps=NULL;
     return;    
 }
@@ -171,7 +175,8 @@ int main()
     static conductor_t conductor;
 
     for ( conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id);
-          conductor.id != -1;
+          ((conductor.id != -1) and (conductor.id != 10));
+          // conductor.id != -1;
           conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id)
         )
     {
@@ -202,14 +207,35 @@ int main()
             std::cout << "cpp 02" << std::endl;
             freeMatFloat(&shape);
             std::cout << "cpp 03" << std::endl;
-            // !!! freeClassifiers(&m_classifiers, conductor.hack.m_classifiers.size());
+            freeClassifiers(&m_classifiers, conductor.hack.m_classifiers.size());
             std::cout << "CHECK ME !!! cpp 04" << std::endl;
-            freeResponseMaps(&responseMaps, conductor.hack.m_visibleLandmarks_size );
-            assert(false);
             
             // converting the outputs
-
+            std::vector< cv::Mat_<double> > calculatedResults;
+            for (int q=0; q<conductor.hack.m_visibleLandmarks_size; q++)
+            {
+                cv::Mat_<double> nextResult;
+                nextResult = convertMatFloatToCV( responseMaps[q] );
+                calculatedResults.push_back(nextResult);                
+            }
+            
             // testing the output
+            for (int q=0; q<conductor.hack.m_visibleLandmarks_size; q++)
+            {
+                std::cout << "cv::norm( conductor.hack.responseMaps[" << q << "] ) = "
+                          << cv::norm( conductor.hack.responseMaps[q] ) << std::endl; 
+                
+                std::cout << "cv::norm( calculatedResults[" << q << "] ) = "
+                          << cv::norm( calculatedResults[q] ) << std::endl; 
+
+                std::cout << "cv::norm( conductor.hack.responseMaps[" << q << "] - calculatedResults[" << q << "] ) = "
+                          << cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) << std::endl; 
+            }
+            
+            // releasing the outputs
+            freeResponseMaps( &responseMaps, conductor.hack.m_visibleLandmarks_size );
+            std::cout << "cpp 05" << std::endl;
+
         }
         // here comes the test
         // PRINT(cv::norm( ));
