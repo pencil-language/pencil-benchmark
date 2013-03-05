@@ -28,7 +28,8 @@ void     freeClassifiers( mlp * classifiers[], int size );
 MatChar  convertCVToMatChar ( const cv::Mat_<uint8_t> & input );
 MatFloat convertCVToMatFloat (  const cv::Mat_<double> & input );
 cv::Mat_<double> convertMatFloatToCV( MatFloat input );
-
+void     allocateResponseMaps( int mapSize, int size, MatFloat * responseMaps[] );
+void     freeResponseMaps( MatFloat * responseMaps[], int size );
 
 
 namespace {
