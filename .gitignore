@@ -1,2 +1,5 @@
 *~
 *.o
+tobias_credentials
+response_dumps
+test_mlp
