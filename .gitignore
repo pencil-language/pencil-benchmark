@@ -1,5 +1,5 @@
 *~
 *.o
 tobias_credentials
-response_dumps
+response_dumps.bin
 test_mlp
