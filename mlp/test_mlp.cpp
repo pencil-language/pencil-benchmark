@@ -173,7 +173,7 @@ void freeResponseMaps( MatFloat * responseMaps[], int size )
 
 int main()
 {
-    static conductor_t conductor;
+    conductor_t conductor;
     int fail = 0;    
 
     for ( conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id);
