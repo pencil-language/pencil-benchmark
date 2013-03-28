@@ -41,7 +41,7 @@ void     SetValueFloat( MatFloat self, int row, int col, float value );
 void     update( int mapSize, MatFloat m_wIn, MatFloat m_U, MatFloat m_wOut, int m_patchSize,  /* results */ int * m_patch_line_size, int * m_number_of_patches_per_line, MatFloat * m_wIn_gemm, MatFloat * m_all_bIns, MatFloat * m_all_bOuts, MatFloat * m_all_patches, MatFloat * m_wOut_gemm  );
 void     generateResponseMap( const MatChar image, const Point2i center, int mapSize, mlp classifier, MatFloat * result  );
 int      cvRound( float value );
-MatFloat evaluateSamples( MatFloat m_wIn_gemm, MatFloat m_all_patches, MatFloat m_all_bIns, MatFloat m_wOut_gemm, MatFloat m_all_bOuts, /* result */ MatFloat * result );
+void evaluateSamples( MatFloat m_wIn_gemm, MatFloat m_all_patches, MatFloat m_all_bIns, MatFloat m_wOut_gemm, MatFloat m_all_bOuts, /* result */ MatFloat * result );
 
 
 void freeMLP( mlp * classifier )
@@ -395,7 +395,7 @@ subtractFloat( MatFloat input, float val, MatFloat * output )
     return;
 }
 
-MatFloat
+void
 evaluateSamples( 
     MatFloat m_wIn_gemm, 
     MatFloat m_all_patches,
