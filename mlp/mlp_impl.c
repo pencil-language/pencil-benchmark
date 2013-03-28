@@ -41,8 +41,9 @@ void     SetValueFloat( MatFloat self, int row, int col, float value );
 void     update( int mapSize, MatFloat m_wIn, MatFloat m_U, MatFloat m_wOut, int m_patchSize,  /* results */ int * m_patch_line_size, int * m_number_of_patches_per_line, MatFloat * m_wIn_gemm, MatFloat * m_all_bIns, MatFloat * m_all_bOuts, MatFloat * m_all_patches, MatFloat * m_wOut_gemm  );
 void     generateResponseMap( const MatChar image, const Point2i center, int mapSize, mlp classifier, MatFloat * result  );
 int      cvRound( float value );
-void evaluateSamples( MatFloat m_wIn_gemm, MatFloat m_all_patches, MatFloat m_all_bIns, MatFloat m_wOut_gemm, MatFloat m_all_bOuts, /* result */ MatFloat * result );
-
+void  evaluateSamples( MatFloat m_wIn_gemm, MatFloat m_all_patches, MatFloat m_all_bIns, MatFloat m_wOut_gemm, MatFloat m_all_bOuts, /* result */ MatFloat * result );
+float dotProduct( MatFloat A, MatFloat B);
+void normalizeSample( MatChar image, MatFloat * result );
 
 void freeMLP( mlp * classifier )
 {
@@ -122,10 +123,16 @@ meanChar( MatChar input )
 {
     int q,w;
     float sum=0;
-
+    float c = 0; // kahan summation
+    
     for ( q=0; q<input.rows; q++ )
-        for ( w=0; w<input.cols; w++ )
-            sum += input.data[ q * input.step + w + input.start ];
+      for ( w=0; w<input.cols; w++ )
+      {
+        float y = input.data[ q * input.step + w + input.start ] - c;
+        float t = sum + y;
+        c = (t - sum) - y;        
+        sum = t;        
+      }
     
     return sum / ( input.rows * input.cols );
 } // meanFloat
@@ -257,7 +264,7 @@ generatePatch( MatChar sample, int patch_size, MatFloat * result )
 	
         sample_max = fmax( abs( sample_max ), abs( sample_min ) );
 	// printf("generatePatch::06\n");
-        if (sample_max==0) sample_max = 1;
+        if (sample_max==0.) sample_max = 1;
 	
 	{
 	    MatFloat normalized_patch = CreateMatFloat( patch_image.rows, patch_image.cols );
@@ -322,14 +329,21 @@ gemmFloat( MatFloat A, MatFloat B, float alpha, MatFloat C, float beta, MatFloat
 
     int q, w, e;
     float sum=0;
+    float c;
+    
     for ( q=0; q<C.rows; q++ )
         for ( w=0; w<C.cols; w++ )
         {	    
             sum = 0;
-            for ( e=0; e<A.cols; e++ ) 
-        	sum += alpha * A.data[ q * A.step + e + A.start ] * B.data[ e * B.step + w + B.start ];
-
-            result->data[ q * result->step + w + result->start ] = sum  + beta * C.data[ q * C.step + w + C.start ];
+            for ( e=0; e<A.cols; e++ )
+            {              
+              float y = A.data[ q * A.step + e + A.start ] * B.data[ e * B.step + w + B.start ] - c;
+              float t = sum + y;
+              c = (t - sum) - y;
+              sum = t;              
+            }
+            
+            result->data[ q * result->step + w + result->start ] = alpha * sum  + beta * C.data[ q * C.step + w + C.start ];
         }
 
     return;
@@ -513,6 +527,46 @@ update(
     return;
 } // update
 
+float dotProduct( MatFloat A, MatFloat B)
+{
+  assert( A.cols == 1 );
+  assert( B.cols == 1 );
+  assert( A.rows == B.rows );
+
+  float result = 0.;
+
+  int q;
+  for (q=0; q<A.rows; q++)
+    result += A.data[ q * A.step + A.start ] *
+      B.data[ q * B.step + B.start ];
+
+  return result;
+}
+
+void normalizeSample( MatChar image, MatFloat * result )
+{
+  assert(result->cols == image.cols);
+  assert(result->rows == image.rows);
+    
+  float sampleMean = meanChar(image);
+  float sampleMin  = minChar(image);
+  float sampleMax  = maxChar(image);
+
+  sampleMax -= sampleMean;
+  sampleMin -= sampleMean;
+
+  sampleMax = fmax(fabs(sampleMin), fabs(sampleMax));
+
+  if (sampleMax == 0.0) sampleMax = 1.0;
+
+  convertFromCharToFloat( image, 1.0/sampleMax, -(1.0/sampleMax)*sampleMean, result );
+
+  *result = reshapeFloat( *result, image.rows * image.cols );
+ 
+  return;
+} // normalizeSample
+
+
 void
 generateResponseMap(
     const MatChar image,
@@ -523,102 +577,163 @@ generateResponseMap(
     )
 {
 
-    // printf("ici05a\n");
-    // printf("classifier.m_wIn.rows = %d\n", classifier.m_wIn.rows );
-    // printf("classifier.m_U.rows = %d\n", classifier.m_U.rows );
-    MatFloat m_wIn_gemm = CreateMatFloat( classifier.m_wIn.rows, classifier.m_U.rows );
-    // printf("ici05b\n");
-    MatFloat m_all_bIns = CreateMatFloat( classifier.m_wIn.rows, (2 * mapSize + 1) * (2 * mapSize + 1) );
-    // printf("ici05c\n");
-    MatFloat m_all_bOuts = CreateMatFloat( 1, (2 * mapSize + 1) * (2 * mapSize + 1) );
-    // printf("ici05d\n");
-    MatFloat m_all_patches = CreateMatFloat( m_wIn_gemm.cols, (2 * mapSize + 1) * (2 * mapSize + 1) );
-    // printf("ici05e\n");
-    MatFloat m_wOut_gemm;
-    int m_patch_line_size;
-    int m_number_of_patches_per_line;
+  assert(result->rows == 2 * mapSize + 1);
+  assert(result->cols == 2 * mapSize + 1);
+  
+  // MatFloat resMap( 2 * mapSize + 1, 2 * mapSize + 1 );
+  MatFloat m_U_transpose = CreateMatFloat( classifier.m_U.cols, classifier.m_U.rows );
+  transposeFloat( classifier.m_U, &m_U_transpose );
+  
+  MatFloat wIn_A = GetBlockFloat( classifier.m_wIn, 0, classifier.m_wIn.rows, 0, classifier.m_wIn.cols - 1 );
+  MatFloat wIn = CreateMatFloat( wIn_A.rows, m_U_transpose.cols );
+  gemmFloat( wIn_A, m_U_transpose, 1.0, wIn, 0.0, &wIn );
+
+  MatFloat bIn = GetBlockFloat( classifier.m_wIn, 0, classifier.m_wIn.rows, classifier.m_wIn.cols - 1, classifier.m_wIn.cols );
+
+  MatFloat wOut_tmp = GetBlockFloat( classifier.m_wOut, 0, classifier.m_wOut.rows, 0, classifier.m_wOut.cols - 1 );
+  MatFloat wOut = CreateMatFloat( wOut_tmp.cols, wOut_tmp.rows );
+  transposeFloat( wOut_tmp, &wOut );
+  float bOut = GetValueFloat( classifier.m_wOut, 0, classifier.m_wOut.cols - 1);
+
+  MatFloat xOut;
+  MatFloat e;
+
+  int ncy=0;
+  int cy=0;
+  int ncx=0;
+  int cx=0;
+  
+  for ( ncy = 0, cy = center.y - mapSize; cy <= center.y + mapSize; ++ncy, ++cy ) {
+    for (ncx = 0, cx = center.x - mapSize; cx <= center.x + mapSize; ++ncx, ++cx ) {
+
+      MatChar  imagePatch = GetBlockChar( image, cy - classifier.m_patchSize, cy + classifier.m_patchSize + 1, cx - classifier.m_patchSize, cx + classifier.m_patchSize + 1 );
+      MatFloat patch = CreateMatFloat( imagePatch.rows, imagePatch.cols );
+
+      normalizeSample(imagePatch, &patch);
+
+      MatFloat xOut = CreateMatFloat( bIn.rows, bIn.cols );
+
+      gemmFloat( wIn, patch, -1, bIn, -1, &xOut );
+
+      MatFloat e = CreateMatFloat(xOut.rows, xOut.cols);
+      
+      expFloat( xOut, &e );
+
+      addFloat( e, 1.0, &xOut );
+      divideFloat( 2.0, xOut, &e);
+      addFloat( e, -1.0, &xOut);
+
+      SetValueFloat( *result, ncy, ncx, 1./( 1 + exp(- dotProduct(wOut, xOut) ) - bOut) );
+      
+      freeMatFloat(&e);      
+      freeMatFloat(&xOut);
+      freeMatFloat(&patch);
+    } // for ncx
+  } // for ncy
+
+  freeMatFloat(&m_U_transpose);
+  freeMatFloat(&wIn);
+  freeMatFloat(&wOut_tmp);
+
+  
+  // end of classic impl
+  
+    // // printf("ici05a\n");
+    // // printf("classifier.m_wIn.rows = %d\n", classifier.m_wIn.rows );
+    // // printf("classifier.m_U.rows = %d\n", classifier.m_U.rows );
+    // MatFloat m_wIn_gemm = CreateMatFloat( classifier.m_wIn.rows, classifier.m_U.rows );
+    // // printf("ici05b\n");
+    // MatFloat m_all_bIns = CreateMatFloat( classifier.m_wIn.rows, (2 * mapSize + 1) * (2 * mapSize + 1) );
+    // // printf("ici05c\n");
+    // MatFloat m_all_bOuts = CreateMatFloat( 1, (2 * mapSize + 1) * (2 * mapSize + 1) );
+    // // printf("ici05d\n");
+    // MatFloat m_all_patches = CreateMatFloat( m_wIn_gemm.cols, (2 * mapSize + 1) * (2 * mapSize + 1) );
+    // // printf("ici05e\n");
+    // MatFloat m_wOut_gemm;
+    // int m_patch_line_size;
+    // int m_number_of_patches_per_line;
     
-    // printf("ici05f\n");
-    // make sure that we have the necessary matrices
-    // calculated (this is a method; it is NOT thread safe!), but it is called for each classifier once
-    update(
-    	// parameters
-    	mapSize,
-    	classifier.m_wIn,
-    	classifier.m_U,
-    	classifier.m_wOut,
-    	classifier.m_patchSize,
-    	// results
-    	&m_patch_line_size,
-    	&m_number_of_patches_per_line,
-    	&m_wIn_gemm,
-    	&m_all_bIns,
-    	&m_all_bOuts,
-    	&m_all_patches,
-    	&m_wOut_gemm
-    	);
+    // // printf("ici05f\n");
+    // // make sure that we have the necessary matrices
+    // // calculated (this is a method; it is NOT thread safe!), but it is called for each classifier once
+    // update(
+    // 	// parameters
+    // 	mapSize,
+    // 	classifier.m_wIn,
+    // 	classifier.m_U,
+    // 	classifier.m_wOut,
+    // 	classifier.m_patchSize,
+    // 	// results
+    // 	&m_patch_line_size,
+    // 	&m_number_of_patches_per_line,
+    // 	&m_wIn_gemm,
+    // 	&m_all_bIns,
+    // 	&m_all_bOuts,
+    // 	&m_all_patches,
+    // 	&m_wOut_gemm
+    // 	);
 
-    // printf("ici05g\n");
-    int ncy, cy;
-    for ( ncy = 0, cy = center.y - mapSize; cy < center.y + mapSize + 1; ++ncy, ++cy ) {
-        // printf("mapSize = %d\n", mapSize);
-        // printf("classifier.m_patchSize =%d\n", classifier.m_patchSize );
-        // printf("center.y = %d\n", center.y );        
-        // printf("cy - classifier.m_patchSize = %d\n", cy - classifier.m_patchSize);
+    // // printf("ici05g\n");
+    // int ncy, cy;
+    // for ( ncy = 0, cy = center.y - mapSize; cy < center.y + mapSize + 1; ++ncy, ++cy ) {
+    //     // printf("mapSize = %d\n", mapSize);
+    //     // printf("classifier.m_patchSize =%d\n", classifier.m_patchSize );
+    //     // printf("center.y = %d\n", center.y );        
+    //     // printf("cy - classifier.m_patchSize = %d\n", cy - classifier.m_patchSize);
         
-    	MatChar  sample = GetBlockChar( image, cy - classifier.m_patchSize, cy + classifier.m_patchSize + 1 , center.x - mapSize - classifier.m_patchSize, center.x + mapSize + classifier.m_patchSize + 2 );	
-    	{
-    	    // printf("ici05g0\n");
-    	    MatFloat pack_patches = CreateMatFloat( sample.rows * m_patch_line_size, sample.cols - m_patch_line_size );
-    	    // printf("ici05g1\n");
-    	    generatePatch( sample, m_patch_line_size, &pack_patches );
-    	    // printf("ici05g2\n");
+    // 	MatChar  sample = GetBlockChar( image, cy - classifier.m_patchSize, cy + classifier.m_patchSize + 1 , center.x - mapSize - classifier.m_patchSize, center.x + mapSize + classifier.m_patchSize + 2 );	
+    // 	{
+    // 	    // printf("ici05g0\n");
+    // 	    MatFloat pack_patches = CreateMatFloat( sample.rows * m_patch_line_size, sample.cols - m_patch_line_size );
+    // 	    // printf("ici05g1\n");
+    // 	    generatePatch( sample, m_patch_line_size, &pack_patches );
+    // 	    // printf("ici05g2\n");
 	    
-    	    MatFloat target = GetBlockFloat( m_all_patches, 0, m_all_patches.rows, ncy * m_number_of_patches_per_line, (ncy + 1) * m_number_of_patches_per_line );
-    	    // printf("ici05g3\n");
-    	    copyToFloat( pack_patches, &target );
-    	    // printf("ici05g4\n");
-    	    freeMatFloat(&pack_patches);
-    	    // printf("ici05g5\n");
-    	} // unnamed block
-    } // for
+    // 	    MatFloat target = GetBlockFloat( m_all_patches, 0, m_all_patches.rows, ncy * m_number_of_patches_per_line, (ncy + 1) * m_number_of_patches_per_line );
+    // 	    // printf("ici05g3\n");
+    // 	    copyToFloat( pack_patches, &target );
+    // 	    // printf("ici05g4\n");
+    // 	    freeMatFloat(&pack_patches);
+    // 	    // printf("ici05g5\n");
+    // 	} // unnamed block
+    // } // for
 
-    /* printf("ici05h\n"); */
-    MatFloat evaluated = CreateMatFloat( m_wOut_gemm.rows, m_all_patches.cols );
+    // /* printf("ici05h\n"); */
+    // MatFloat evaluated = CreateMatFloat( m_wOut_gemm.rows, m_all_patches.cols );
 
-    // printf("ici05i\n");
-    evaluateSamples(
-    	m_wIn_gemm,
-    	m_all_patches,
-    	m_all_bIns,
-    	m_wOut_gemm,
-    	m_all_bOuts,
-    	// results
-    	&evaluated
-    	);
+    // // printf("ici05i\n");
+    // evaluateSamples(
+    // 	m_wIn_gemm,
+    // 	m_all_patches,
+    // 	m_all_bIns,
+    // 	m_wOut_gemm,
+    // 	m_all_bOuts,
+    // 	// results
+    // 	&evaluated
+    // 	);
 
-    // printf("ici05j\n");
-    MatFloat toreturn = reshapeFloat( evaluated, m_number_of_patches_per_line );
-    // printf( "toreturn.rows = %d\n", toreturn.rows );
-    // printf( "toreturn.cols = %d\n", toreturn.cols );
-    assert( toreturn.rows == result->rows );
-    assert( toreturn.cols == result->cols );
+    // // printf("ici05j\n");
+    // MatFloat toreturn = reshapeFloat( evaluated, m_number_of_patches_per_line );
+    // // printf( "toreturn.rows = %d\n", toreturn.rows );
+    // // printf( "toreturn.cols = %d\n", toreturn.cols );
+    // assert( toreturn.rows == result->rows );
+    // assert( toreturn.cols == result->cols );
 
-    // printf("result->cols = %d\n", result->cols );
-    // printf("result->rows = %d\n", result->rows );
-    copyToFloat(toreturn, result);
+    // // printf("result->cols = %d\n", result->cols );
+    // // printf("result->rows = %d\n", result->rows );
+    // copyToFloat(toreturn, result);
 
-    // printf("ici05k\n");
-    freeMatFloat(&m_wIn_gemm);
-    // printf("ici05l\n");  
-    freeMatFloat(&m_all_bIns);
-    // printf("ici05m\n");
-    freeMatFloat(&m_all_bOuts);
-    // printf("ici05n\n");
-    freeMatFloat(&m_all_patches);
-    // printf("ici05o\n");
-    freeMatFloat(&evaluated);
-    // printf("ici05p\n");
+    // // printf("ici05k\n");
+    // freeMatFloat(&m_wIn_gemm);
+    // // printf("ici05l\n");  
+    // freeMatFloat(&m_all_bIns);
+    // // printf("ici05m\n");
+    // freeMatFloat(&m_all_bOuts);
+    // // printf("ici05n\n");
+    // freeMatFloat(&m_all_patches);
+    // // printf("ici05o\n");
+    // freeMatFloat(&evaluated);
+    // // printf("ici05p\n");
     return;
 } // generateResponseMap
 
