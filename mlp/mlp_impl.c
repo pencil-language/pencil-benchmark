@@ -638,11 +638,11 @@ calculateMaps(
     // results
     MatFloat * responseMaps[] )
 {
-    printf("calculateMaps started\n");    
+    // printf("calculateMaps started\n");    
     int q;
     for (q=0; q<m_visibleLandmarks_size; q++ )
     {
-	printf("processing patch %d/%d\n", q, m_visibleLandmarks_size );
+	// printf("processing patch %d/%d\n", q, m_visibleLandmarks_size );
         /* const int idx = m_visibleLandmarks[q]; */
         /* assert(idx==q); */
 	int idx = q;
@@ -666,7 +666,7 @@ calculateMaps(
 	// printf("ici06\n");
     }
 
-    printf("calculateMaps finished\n");
+    // printf("calculateMaps finished\n");
     return;
 } // calculateMaps
 

@@ -3,6 +3,7 @@
 // Copyright (c) RealEyes, 2013
 // This version tests the responseMap calculation with input dumps
 
+#include <chrono>
 #include <string>
 #include <stdlib.h>
 #include <opencv2/core/core.hpp>
@@ -170,14 +171,23 @@ void freeResponseMaps( MatFloat * responseMaps[], int size )
     return;    
 }
 
+template <class T0>
+auto
+microseconds( T0 t0 ) -> decltype(std::chrono::duration_cast<std::chrono::microseconds>(t0).count())
+{
+    return std::chrono::duration_cast<std::chrono::microseconds>(t0).count();
+}
+
 
 int main()
 {
-    static conductor_t conductor;
-    int fail = 0;    
+    conductor_t conductor;
+    int fail = 0;
+    long int elapsed_time = 0;
+    
 
-    for ( conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id);
-          ((conductor.id != -1) and (conductor.id != 200));
+    for ( conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id);          
+          ((conductor.id != -1) and (conductor.id != 25));
           // conductor.id != -1;
           conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id)
         )
@@ -193,7 +203,8 @@ int main()
             mlp * m_classifiers = convertHackToMlp(conductor.hack);
             MatFloat * responseMaps;
             allocateResponseMaps( conductor.hack.m_mapSize, conductor.hack.m_visibleLandmarks_size, &responseMaps );
-                        
+
+            auto start = std::chrono::high_resolution_clock::now();
             calculateMaps(
                 conductor.hack.m_visibleLandmarks_size,
                 conductor.hack.m_mapSize,
@@ -202,16 +213,14 @@ int main()
                 m_classifiers,
                 &responseMaps
                 );
-
-            // releasing the inputs
-            std::cout << "cpp 01" << std::endl;
-            freeMatChar(&alignedImage);
-            std::cout << "cpp 02" << std::endl;
-            freeMatFloat(&shape);
-            std::cout << "cpp 03" << std::endl;
-            freeClassifiers(&m_classifiers, conductor.hack.m_classifiers.size());
-            std::cout << "CHECK ME !!! cpp 04" << std::endl;
+            auto end = std::chrono::high_resolution_clock::now();
+            elapsed_time = microseconds(end - start);            
             
+            // releasing the inputs
+            freeMatChar(&alignedImage);
+            freeMatFloat(&shape);
+            freeClassifiers(&m_classifiers, conductor.hack.m_classifiers.size());
+
             // converting the outputs
             std::vector< cv::Mat_<double> > calculatedResults;
             for (int q=0; q<conductor.hack.m_visibleLandmarks_size; q++)
@@ -224,26 +233,25 @@ int main()
             // testing the output
             for (int q=0; q<conductor.hack.m_visibleLandmarks_size; q++)
             {
-                std::cout << "cv::norm( conductor.hack.responseMaps[" << q << "] - calculatedResults[" << q << "] ) = "
-                          << cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) << std::endl;
+                // std::cout << "cv::norm( conductor.hack.responseMaps[" << q << "] - calculatedResults[" << q << "] ) = "
+                //           << cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) << std::endl;
                 assert(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) < 1.5);
                 if (cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) > 0.5 ) fail++;
-                PRINT(fail);
+                // PRINT(fail);
                 int tolerance = 49 * conductor.id * 0.005 + 3;
-                PRINT(tolerance);                
+                // PRINT(tolerance);                
                 assert(fail < tolerance);
             }
             
             // releasing the outputs
             freeResponseMaps( &responseMaps, conductor.hack.m_visibleLandmarks_size );
-            std::cout << "cpp 05" << std::endl;
 
         }
         // here comes the test
         // PRINT(cv::norm( ));
     }
     
-    
+    std::cout << "total elapsed time = " << elapsed_time / 1000000. << " s." << std::endl;    
     //conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.hack);
     
     return EXIT_SUCCESS;
