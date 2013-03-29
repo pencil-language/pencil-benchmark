@@ -623,7 +623,7 @@ generateResponseMap(
       divideFloat( 2.0, xOut, &e);
       addFloat( e, -1.0, &xOut);
 
-      SetValueFloat( *result, ncy, ncx, 1./( 1 + exp(- dotProduct(wOut, xOut) ) - bOut) );
+      SetValueFloat( result, ncy, ncx, 1./( 1 + exp(- dotProduct(wOut, xOut) ) - bOut) );
       
       freeMatFloat(&e);      
       freeMatFloat(&xOut);
@@ -631,9 +631,11 @@ generateResponseMap(
     } // for ncx
   } // for ncy
 
-  freeMatFloat(&m_U_transpose);
+  freeMatFloat(&wOut);
   freeMatFloat(&wIn);
-  freeMatFloat(&wOut_tmp);
+  freeMatFloat(&m_U_transpose);
+
+
 
   
   // end of classic impl
