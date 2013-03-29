@@ -516,6 +516,7 @@ generateResponseMap(
       addFloat( e, -1.0, &xOut);
 
       SetValueFloat( result, ncy, ncx, 1./( 1. + exp(- dotProduct(wOut, xOut) ) - bOut) );
+      SetValueFloat( result, ncy, ncx, 1./( 1. + exp(- dotProduct(wOut, xOut) - bOut ) ) );
       
       freeMatFloat(&e);      
       freeMatFloat(&xOut);
