@@ -299,7 +299,7 @@ gemmFloat( MatFloat A, MatFloat B, float alpha, MatFloat C, float beta, MatFloat
                 result->data[ q * result->step + w + result->start ] = alpha * sum  + beta * C.data[ q * C.step + w + C.start ];
             }
     }
-    else
+    else // NOT fabs(beta) > 0.000001
     {
         for ( q=0; q<C.rows; q++ )
             for ( w=0; w<C.cols; w++ )
@@ -428,7 +428,7 @@ void normalizeSample( MatChar image, MatFloat * result )
   sampleMax -= sampleMean;
   sampleMin -= sampleMean;
 
-  sampleMax = fmax(fabs(sampleMin), fabs(sampleMax));
+  sampleMax = fmax( fabs(sampleMin), fabs(sampleMax));
 
   if (sampleMax == 0.0) sampleMax = 1.0;
 
@@ -492,7 +492,7 @@ generateResponseMap(
       divideFloat( 2.0, xOut, &e);
       addFloat( e, -1.0, &xOut);
 
-      SetValueFloat( result, ncy, ncx, 1./( 1 + exp(- dotProduct(wOut, xOut) ) - bOut) );
+      SetValueFloat( result, ncy, ncx, 1./( 1. + exp(- dotProduct(wOut, xOut) ) - bOut) );
       
       freeMatFloat(&e);      
       freeMatFloat(&xOut);
