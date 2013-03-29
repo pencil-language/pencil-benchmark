@@ -282,22 +282,41 @@ gemmFloat( MatFloat A, MatFloat B, float alpha, MatFloat C, float beta, MatFloat
     int q, w, e;
     float sum=0;
     float c;
-    
-    for ( q=0; q<C.rows; q++ )
-        for ( w=0; w<C.cols; w++ )
-        {	    
-            sum = 0;
-            for ( e=0; e<A.cols; e++ )
-            {              
-              float y = A.data[ q * A.step + e + A.start ] * B.data[ e * B.step + w + B.start ] - c;
-              float t = sum + y;
-              c = (t - sum) - y;
-              sum = t;              
-            }
-            
-            result->data[ q * result->step + w + result->start ] = alpha * sum  + beta * C.data[ q * C.step + w + C.start ];
-        }
 
+    if ( fabs(beta) > 0.000001 ) {
+        for ( q=0; q<C.rows; q++ )
+            for ( w=0; w<C.cols; w++ )
+            {	    
+                sum = 0;
+                for ( e=0; e<A.cols; e++ )
+                {              
+                    float y = A.data[ q * A.step + e + A.start ] * B.data[ e * B.step + w + B.start ] - c;
+                    float t = sum + y;
+                    c = (t - sum) - y;
+                    sum = t;              
+                }
+                
+                result->data[ q * result->step + w + result->start ] = alpha * sum  + beta * C.data[ q * C.step + w + C.start ];
+            }
+    }
+    else
+    {
+        for ( q=0; q<C.rows; q++ )
+            for ( w=0; w<C.cols; w++ )
+            {	    
+                sum = 0;
+                for ( e=0; e<A.cols; e++ )
+                {              
+                    float y = A.data[ q * A.step + e + A.start ] * B.data[ e * B.step + w + B.start ] - c;
+                    float t = sum + y;
+                    c = (t - sum) - y;
+                    sum = t;              
+                }
+                
+                result->data[ q * result->step + w + result->start ] = alpha * sum;
+            }        
+    }
+    
     return;
 }
 
@@ -419,7 +438,6 @@ void normalizeSample( MatChar image, MatFloat * result )
  
   return;
 } // normalizeSample
-
 
 void
 generateResponseMap(
