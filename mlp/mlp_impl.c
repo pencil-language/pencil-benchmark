@@ -41,6 +41,29 @@ void     generateResponseMap( const MatChar image, const Point2i center, int map
 int      cvRound( float value );
 float    dotProduct( MatFloat A, MatFloat B );
 void     normalizeSample( MatChar image, MatFloat * result );
+void     printMatFloat( MatFloat mat, char * name );
+
+void     printMatFloat( MatFloat mat, char * name )
+{
+  printf("%s = [\n", name);
+
+  int q,w;
+
+  for (q=0; q<mat.rows; q++)
+  {
+    printf("[ ");
+    for( w=0; w<mat.cols; w++)
+    {
+      printf( "%f, ", GetValueFloat(mat, q, w) );
+    }
+    printf(" ]\n");
+  }
+  
+  printf("]\n");
+  
+  return;
+} // printMatFloat
+
 
 void freeMLP( mlp * classifier )
 {
