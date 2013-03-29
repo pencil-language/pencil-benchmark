@@ -188,8 +188,8 @@ int main()
     
 
     for ( conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id);          
-          ((conductor.id != -1) and (conductor.id != 25));
-          // conductor.id != -1;
+          //((conductor.id != -1) and (conductor.id != 25));
+          conductor.id != -1;
           conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id)
         )
     {
@@ -236,12 +236,8 @@ int main()
             {
                 // std::cout << "cv::norm( conductor.hack.responseMaps[" << q << "] - calculatedResults[" << q << "] ) = "
                 //           << cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) << std::endl;
-                assert(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) < 1.5);
-                if (cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) > 0.5 ) fail++;
-                // PRINT(fail);
-                int tolerance = 49 * conductor.id * 0.005 + 3;
-                // PRINT(tolerance);                
-                assert(fail < tolerance);
+                
+                assert(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) < 0.00001);
             }
             
             // releasing the outputs
