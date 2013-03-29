@@ -478,13 +478,14 @@ update(
     littleIn = GetBlockFloat( m_wIn, 0, m_wIn.rows, 0, m_wIn.cols - 1 );
     {
 	MatFloat transpU = CreateMatFloat( m_U.cols, m_U.rows );
-	MatFloat tmpMap  = CreateMatFloat( littleIn.rows, transpU.cols );
 	transposeFloat(m_U, &transpU);
+        
+	MatFloat tmpMap  = CreateMatFloat( littleIn.rows, transpU.cols );
         
         gemmFloat( littleIn, transpU, 1., tmpMap, 0., m_wIn_gemm );
 
+        freeMatFloat(&tmpMap);
 	freeMatFloat(&transpU);
-	freeMatFloat(&tmpMap);
     }
     // MatFloat bIn = m_wIn.col( m_wIn.cols - 1 );
     MatFloat bIn = GetBlockFloat( m_wIn, 0, m_wIn.rows, m_wIn.cols - 1, m_wIn.cols);
