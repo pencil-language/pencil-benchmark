@@ -37,13 +37,13 @@ void     addFloat( MatFloat input, float val, MatFloat * output );
 void     divideFloat( float val, MatFloat input, MatFloat * output );
 void     subtractFloat( MatFloat input, float val, MatFloat * output );
 float    GetValueFloat( MatFloat self, int row, int col );
-void     SetValueFloat( MatFloat self, int row, int col, float value );
+void     SetValueFloat( MatFloat * self, int row, int col, float value );
 void     update( int mapSize, MatFloat m_wIn, MatFloat m_U, MatFloat m_wOut, int m_patchSize,  /* results */ int * m_patch_line_size, int * m_number_of_patches_per_line, MatFloat * m_wIn_gemm, MatFloat * m_all_bIns, MatFloat * m_all_bOuts, MatFloat * m_all_patches, MatFloat * m_wOut_gemm  );
 void     generateResponseMap( const MatChar image, const Point2i center, int mapSize, mlp classifier, MatFloat * result  );
 int      cvRound( float value );
-void  evaluateSamples( MatFloat m_wIn_gemm, MatFloat m_all_patches, MatFloat m_all_bIns, MatFloat m_wOut_gemm, MatFloat m_all_bOuts, /* result */ MatFloat * result );
-float dotProduct( MatFloat A, MatFloat B);
-void normalizeSample( MatChar image, MatFloat * result );
+void     evaluateSamples( MatFloat m_wIn_gemm, MatFloat m_all_patches, MatFloat m_all_bIns, MatFloat m_wOut_gemm, MatFloat m_all_bOuts, /* result */ MatFloat * result );
+float    dotProduct( MatFloat A, MatFloat B );
+void     normalizeSample( MatChar image, MatFloat * result );
 
 void freeMLP( mlp * classifier )
 {
@@ -63,7 +63,7 @@ CreateMatFloat( int rows, int cols )
     result.data = (float*)malloc( sizeof(float) * rows * cols );
     assert(result.data);
     result.rows  = rows;
-    result.cols  = cols;    
+    result.cols  = cols;
     result.step  = cols;
     result.start = 0;
 
@@ -92,6 +92,9 @@ CreateMatChar( int rows, int cols )
 void
 copyToFloat( MatFloat input, MatFloat * output )
 {
+    assert(input.data);
+    assert(output);
+    assert(output->data);    
     assert(input.rows == output->rows);
     assert(input.cols == output->cols);
     
@@ -121,6 +124,7 @@ transposeFloat( MatFloat input, MatFloat * output )
 float
 meanChar( MatChar input )
 {
+    assert(input.data);    
     int q,w;
     float sum=0;
     float c = 0; // kahan summation
@@ -140,6 +144,7 @@ meanChar( MatChar input )
 uint8_t
 minChar( MatChar input )
 {
+    assert(input.data);    
     int q,w;
     uint8_t minvalue = 255;
 
@@ -153,6 +158,7 @@ minChar( MatChar input )
 uint8_t
 maxChar( MatChar input )
 {
+    assert(input.data);
     int q,w;
     uint8_t maxvalue = 0;
 
@@ -460,9 +466,10 @@ GetValueFloat( MatFloat self, int row, int col )
 }
 
 void
-SetValueFloat( MatFloat self, int row, int col, float value )
+SetValueFloat( MatFloat * self, int row, int col, float value )
 {
-    self.data[ row * self.step + col + self.start ] = value;
+    self->data[ row * self->step + col + self->start ] = value;
+    return;    
 }
 
 
@@ -522,7 +529,7 @@ update(
     {
         target = GetBlockFloat( *m_all_bIns, 0, m_all_bIns->rows, q, q+1 );
         copyToFloat(bIn, &target); // bIn.copyTo(target);
-        SetValueFloat( *m_all_bOuts, 0, q, bOut);
+        SetValueFloat( m_all_bOuts, 0, q, bOut);
     }    
     return;
 } // update
