@@ -602,9 +602,6 @@ generateResponseMap(
   transposeFloat( wOut_tmp, &wOut );
   float bOut = GetValueFloat( classifier.m_wOut, 0, classifier.m_wOut.cols - 1);
 
-  MatFloat xOut;
-  MatFloat e;
-
   int ncy=0;
   int cy=0;
   int ncx=0;
