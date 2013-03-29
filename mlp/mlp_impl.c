@@ -328,7 +328,8 @@ gemmFloat( MatFloat A, MatFloat B, float alpha, MatFloat C, float beta, MatFloat
     assert(C.cols == result->cols);
 
     int q, w, e;
-    float sum=0;
+    float sum=0.;
+    float c=0.;    
 
     if ( fabs(beta) > 0.000001 ) {
         for ( q=0; q<C.rows; q++ )
