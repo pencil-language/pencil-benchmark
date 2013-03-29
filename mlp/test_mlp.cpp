@@ -233,21 +233,9 @@ int main()
             // testing the output
             for (int q=0; q<conductor.hack.m_visibleLandmarks_size; q++)
             {
-                 std::cout << "cv::norm( conductor.hack.responseMaps[" << q << "] - calculatedResults[" << q << "] ) = "
-                           << cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) << std::endl;
-                assert(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) < 10);
-                // if (cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) > 0.5 )
-                // {
-                //   fail++;
-                //   std::cout << "cv::norm( conductor.hack.responseMaps[" << q << "] - calculatedResults[" << q << "] ) = "
-                //             << cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) << std::endl;
-                  
-                // }
-                
-                // PRINT(fail);
-                int tolerance = 49 * conductor.id * 0.005 + 3;
-                // PRINT(tolerance);                
-                assert(fail < tolerance);
+              // std::cout << "cv::norm( conductor.hack.responseMaps[" << q << "] - calculatedResults[" << q << "] ) = "
+              //             << cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) << std::endl;
+              assert(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) < 0.00001);
             }
             
             // releasing the outputs
