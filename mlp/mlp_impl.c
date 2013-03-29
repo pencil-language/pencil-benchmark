@@ -262,7 +262,7 @@ generatePatch( MatChar sample, int patch_size, MatFloat * result )
         float sample_min  = minChar(patch_image) - sample_mean;
 	// printf("generatePatch::05\n");
 	
-        sample_max = fmax( abs( sample_max ), abs( sample_min ) );
+        sample_max = fmax( fabs( sample_max ), fabs( sample_min ) );
 	// printf("generatePatch::06\n");
         if (sample_max==0) sample_max = 1;
 	
@@ -347,7 +347,7 @@ gemmFloat( MatFloat A, MatFloat B, float alpha, MatFloat C, float beta, MatFloat
                 result->data[ q * result->step + w + result->start ] = alpha * sum  + beta * C.data[ q * C.step + w + C.start ];
             }
     }
-    else
+    else // NOT fabs(beta) > 0.0000001
     {
         for ( q=0; q<C.rows; q++ )
             for ( w=0; w<C.cols; w++ )
