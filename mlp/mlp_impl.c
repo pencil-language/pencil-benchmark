@@ -219,7 +219,7 @@ convertFromCharToFloat( MatChar from, float quotient, float shift, MatFloat * to
     for ( q=0; q<from.rows; q++ )
         for ( w=0; w<from.cols; w++ )
             to->data[ q * to->step + w + to->start ] = 
-        	quotient * from.data[ q * from.step + w + from.start ] + shift;
+        	quotient * (float)from.data[ q * from.step + w + from.start ] + shift;
     return;
 }
 
@@ -482,7 +482,7 @@ generateResponseMap(
 
       MatFloat xOut = CreateMatFloat( bIn.rows, bIn.cols );
 
-      gemmFloat( wIn, patch, -1, bIn, -1, &xOut );
+      gemmFloat( wIn, patch, -1.0, bIn, -1.0, &xOut );
 
       MatFloat e = CreateMatFloat(xOut.rows, xOut.cols);
       
