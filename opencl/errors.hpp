@@ -12,7 +12,7 @@ namespace carp {
 
     namespace opencl {
     
-        const std::map<int, std::string> cl_errors {
+        std::map<int, std::string> errors {
             {CL_SUCCESS, "CL_SUCCESS"},
             {CL_DEVICE_NOT_FOUND, "CL_DEVICE_NOT_FOUND"},
             {CL_DEVICE_NOT_AVAILABLE, "CL_DEVICE_NOT_AVAILABLE"},
