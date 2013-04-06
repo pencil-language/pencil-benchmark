@@ -6,7 +6,7 @@ all:color expand
 
 color: color.o 
 
-color.o: color.cpp $(BASEDIR)/opencl/opencl.hpp
+color.o: color.cpp $(BASEDIR)/opencl/opencl.gch
 
 expand: expand.o
 
