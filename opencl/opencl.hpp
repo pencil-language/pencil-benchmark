@@ -38,9 +38,30 @@ namespace carp {
         } // readfile
 
 
+        void checkerror(
+            const cl_int & error,
+            const std::string & filename = __FILE__,
+            const int & line = __LINE__
+            ) throw (std::exception&) {
+            if ( error != CL_SUCCESS )
+                throw std::runtime_error( std::string("error: OpenCL: ") +
+                                          carp::opencl::errors[error] +
+                                          "; line: " + std::to_string(__LINE__) + " in file " + __FILE__ );
+        }
+
+
         class kernel {
         private:
             cl_kernel cqKernel;
+
+            template <class MT0, class Pos>
+            bool
+            setparameter( Pos & pos, MT0 & mt0 ) {
+                checkerror( clSetKernelArg(cqKernel, pos, sizeof(mt0), static_cast<void*>(&mt0) ), __FILE__, __LINE__ );
+                pos++; // move the position of the parameter applied                
+                return true;
+            } // setparameter            
+                
             
         public:
             kernel() : cqKernel(NULL) { };
@@ -54,7 +75,14 @@ namespace carp {
                 if (cqKernel) clReleaseKernel(cqKernel);
                 cqKernel=NULL;                
             } // release
+
+            template <class ...MT>
+            void operator() ( MT ... mt ) {
+                int pos=0; // the position of the parameters
+                std::vector<bool> err { setparameter(pos, mt)... };                
+            } // operator ()
             
+                
         }; // class kernel
         
 
@@ -76,31 +104,20 @@ namespace carp {
             device() {
                 cl_int err; // for the error messages
 
-                device::check(clGetPlatformIDs(1, &cpPlatform, &num_platforms), __FILE__, __LINE__ );
+                checkerror(clGetPlatformIDs(1, &cpPlatform, &num_platforms), __FILE__, __LINE__ );
                 assert(num_platforms==1);  // there is only one supported platform at the time
 
-                device::check(clGetDeviceIDs(cpPlatform, CL_DEVICE_TYPE_GPU, 1, &cdDevice, &num_devices), __FILE__, __LINE__ );
+                checkerror(clGetDeviceIDs(cpPlatform, CL_DEVICE_TYPE_GPU, 1, &cdDevice, &num_devices), __FILE__, __LINE__ );
                 assert(num_devices==1);
 
                 cxGPUContext = clCreateContext( NULL, 1, &cdDevice, NULL, NULL, &err );
-                device::check( err, __FILE__, __LINE__ );
+                checkerror( err, __FILE__, __LINE__ );
                 
                 cqCommandQueue = clCreateCommandQueue( cxGPUContext, cdDevice, CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, &err );
-                device::check( err, __FILE__, __LINE__ );
+                checkerror( err, __FILE__, __LINE__ );
                 
             }
-            
-            static void check(
-                const cl_int & error,
-                const std::string & filename = __FILE__,
-                const int & line = __LINE__
-                ) throw (std::exception&) {
-                if ( error != CL_SUCCESS )
-                    throw std::runtime_error( std::string("error: OpenCL: ") +
-                                              carp::opencl::errors[error] +
-                                              "; line: " + std::to_string(__LINE__) + " in file " + __FILE__ );
-            }
-    
+                
             ~device() {
                 if(cpProgram) clReleaseProgram(cpProgram);
                 if(cqCommandQueue) clReleaseCommandQueue(cqCommandQueue);
@@ -125,7 +142,7 @@ namespace carp {
                 }
                                 
                 cpProgram = clCreateProgramWithSource( cxGPUContext, sources.size(), &(c_strs[0]), &(lengths[0]), &err );
-                device::check(err);
+                checkerror(err, __FILE__, __LINE__ );
 
                 // building the OpenCL source code
                 err = clBuildProgram( cpProgram, 0, NULL, NULL, NULL, NULL );
@@ -134,7 +151,7 @@ namespace carp {
                     size_t len;
                     std::string buffer(1048576, 0);
 
-                    device::check( clGetProgramBuildInfo( cpProgram, cdDevice, CL_PROGRAM_BUILD_LOG, buffer.size(), reinterpret_cast<void*>(&buffer[0]), &len ) );
+                    checkerror( clGetProgramBuildInfo( cpProgram, cdDevice, CL_PROGRAM_BUILD_LOG, buffer.size(), reinterpret_cast<void*>(&buffer[0]), &len ), __FILE__, __LINE__ );
 
                     std::cerr << buffer << std::endl;
                     throw std::runtime_error("error: OpenCL: The compilation has failed.");                    
@@ -145,7 +162,7 @@ namespace carp {
                 {
                     cl_int err;                    
                     kernels[kernel_name] = clCreateKernel( cpProgram, kernel_name.c_str(), &err);
-                    device::check(err);                    
+                    checkerror(err, __FILE__, __LINE__ );
                 }                
 
                 return;
@@ -156,6 +173,61 @@ namespace carp {
             } // operator[]
         }; // class device
 
+
+        template <class T0>
+        class array {
+        private:
+            cl_mem cl_ptr;
+            size_t size;
+            cl_context context;
+            cl_command_queue command_queue;
+            
+            array( const array<T0> & ) { } // copy constructor forbidden
+            
+        public:
+            array( const cl_context & context,
+                   const cl_command_queue & command_queue,
+                   const size_t & size,
+                   cl_mem_flags flags = CL_MEM_READ_WRITE
+                ) : size(size), context(context), command_queue(command_queue) {
+                assert( (flags & CL_MEM_USE_HOST_PTR) == 0 );
+                cl_int err;                
+                cl_ptr = clCreateBuffer( context, flags, size * sizeof(T0), NULL, &err );
+                checkerror( err, __FILE__, __LINE__ );              
+            } // array
+
+            array( const cl_context & context,
+                   const cl_command_queue & command_queue,
+                   std::vector<T0> & input,
+                   cl_mem_flags flags = CL_MEM_READ_WRITE
+                ) : size(input.size()) {
+                cl_int err;
+                cl_ptr = clCreateBuffer( context, flags | CL_MEM_COPY_HOST_PTR, size * sizeof(T0), reinterpret_cast<void*>(intput[0]), &err );
+                checkerror( err, __FILE__, __LINE__ );
+            } // array
+
+            cl_mem get() {
+                return cl_ptr;
+            } // get
+                        
+            ~array() {
+                clReleaseMemObject(cl_ptr);
+            } // ~array
+
+            size_t size() {
+                return size;
+            } // size
+            
+            std::vector<T0> extract( ) {
+                std::vector<T0> result(size);                
+                checkerror( clEnqueueReadBuffer( command_queue, cl_ptr, CL_TRUE, 0, sizeof(T0) * size, &(result[0]), 0, NULL, NULL), __FILE__, __LINE__ );
+
+                return result;                
+            } // extract
+            
+        }; // class array
+        
+            
         
     } // namespace opencl
 } // namespace carp
