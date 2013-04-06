@@ -1,11 +1,4 @@
 
-CXXFLAGS= -O0 -g -I/home/ujoimro/Inst/opencv/build/OpenCV-2.4.2/optimized/install/include -std=c++0x
-CFLAGS=$(CXXFLAGS) -Wimplicit -Werror=implicit-function-declaration -Werror=int-to-pointer-cast
-
-## Memory Debug Mode
-#LDFLAGS=-lboost_serialization -L/home/ujoimro/Inst/opencv/build/OpenCV-2.4.2/optimized/install/lib -lopencv_core -lstdc++ -lm -lefenc
-
-LDFLAGS=-lboost_serialization -L/home/ujoimro/Inst/opencv/build/OpenCV-2.4.2/optimized/install/lib -lopencv_core -lstdc++ -lm 
 
 all: test_mlp
 
