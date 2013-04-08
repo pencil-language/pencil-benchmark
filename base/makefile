@@ -13,6 +13,6 @@ expand: expand.o
 expand.o: expand.cpp
 
 clean: 
-	-rm -f expand color *.o
+	-rm -f expand test_color *.o
 
 # LuM end of file
