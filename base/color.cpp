@@ -9,14 +9,24 @@ const int cols = 15;
 
 int main()
 {
+    PRINT("ici01");    
     carp::opencl::device device;
     device.compile( {"color.cl"}, {"color"} );
-
-    auto cl_image = device.create_image<float>()
+    PRINT("ici02");
     
-    device["color"](a, b);
+    carp::opencl::image<int> cl_image(device, 10, 25);
+    PRINT("ici03");
+    
+    // device["color"]( cl_image.cl(), cl_image.rows(), cl_image.cols() )        
+    //     .groupsize({16,16}, {cl_image.rows(), cl_image.cols()});
+    // PRINT("ici04");
 
-    return EXIT_SUCCESS;    
+    cv::Mat_<int> image = cl_image.get();
+    PRINT("ici05");
+
+    print_image( image, "image");
+        
+    return EXIT_SUCCESS;
 }
 
 
