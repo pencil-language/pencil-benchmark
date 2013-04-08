@@ -1,13 +1,11 @@
 # UjoImro, 2013
 
-CXXFLAGS=-std=c++0x
-
 all: errors.gch opencl.gch
 
 errors.gch: errors.hpp
 	$(CXX) $(CXXFLAGS) -c errors.hpp -o errors.gch
 
-opencl.gch: opencl.hpp
+opencl.gch: opencl.hpp errors.hpp
 	$(CXX) $(CXXFLAGS) -c opencl.hpp -o opencl.gch
 
 clean:

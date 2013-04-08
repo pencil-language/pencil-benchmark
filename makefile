@@ -1,10 +1,10 @@
 # UjoImro, 2013
 
 # ## absolute directory for the subprojects
-export BASEDIR=$(shell pwd)
+BASEDIR=$(shell pwd)
 
-export CXXFLAGS=-std=c++0x -I$(BASEDIR)/opencl
-export LDFLAGS=-lstdc++ -lOpenCL -lm
+CXXFLAGS=-std=c++0x -I$(BASEDIR)/opencl
+LDFLAGS=-lstdc++ -lOpenCL -lm
 
 # optimization flags
 CXXFLAGS+=-O0 -g 
@@ -21,6 +21,9 @@ CXXFLAGS+=-std=c++0x
 #LDFLAGS=-lboost_serialization -L/home/ujoimro/Inst/opencv/build/OpenCV-2.4.2/optimized/install/lib -lopencv_core -lstdc++ -lm -lefenc
 LDFLAGS+=-lboost_serialization -L/home/ujoimro/Inst/opencv/build/OpenCV-2.4.2/optimized/install/lib -lopencv_core 
 
+export BASEDIR
+export LDFLAGS
+export CXXFLAGS
 
 all:
 	+make -C opencl
