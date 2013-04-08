@@ -83,13 +83,7 @@ namespace carp {
                     group!= group_sizes.end();
                     group++, glob++, rup++
                     )
-                {                    
                     *rup = roundup( *group, *glob );
-                    PRINT(*group);
-                    PRINT(*glob);
-                    PRINT(*rup);
-                    PRINT("-------------------------------------");                    
-                }
                 
                 return result;
                 
@@ -106,7 +100,6 @@ namespace carp {
             template <class MT0, class Pos>
             bool
             setparameter( Pos & pos, MT0 & mt0 ) {
-                PRINT(pos);
                 assert(cqKernel);
                 utility::checkerror( clSetKernelArg(cqKernel, pos, sizeof(mt0), static_cast<void*>(&mt0) ), __FILE__, __LINE__ );
                 pos++; // move the position of the parameter applied
@@ -144,13 +137,9 @@ namespace carp {
                 assert(m_set);
                 assert(cqKernel);
                 assert(cqCommandQueue);
-                PRINT("enqueue 01 ");
                 std::vector<size_t> kernelsize = utility::roundup(groupsize, worksize);
-                PRINT("enqueue 02 ");
                 utility::checkerror(clEnqueueNDRangeKernel( cqCommandQueue, cqKernel, worksize.size(), NULL, &(kernelsize[0]), &(groupsize[0]), 0, NULL, NULL ), __FILE__, __LINE__ );
-                PRINT("enqueue 02a ");                
                 utility::checkerror(clFinish(cqCommandQueue), __FILE__, __LINE__ );
-                PRINT("enqueue 03 ");
             } // groupsize 
             
             

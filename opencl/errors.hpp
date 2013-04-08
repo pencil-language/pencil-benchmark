@@ -14,7 +14,7 @@
 #define PRINT(var)  std::cout << "debug: " << BOOST_PP_STRINGIZE(var) << " = " << var << std::endl
 
 template<class T0>
-cv::Mat_<T0>
+void
 print_image( cv::Mat_<T0> input, std::string name )
 {
     std::cout << name << " = [" << std::endl;
