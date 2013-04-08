@@ -64,21 +64,6 @@ void     printMatFloat( MatFloat mat, char * name )
   return;
 } // printMatFloat
 
-  for (q=0; q<mat.rows; q++)
-  {
-    printf("[ ");
-    for( w=0; w<mat.cols; w++)
-    {
-      printf( "%f, ", GetValueFloat(mat, q, w) );
-    }
-    printf(" ]\n");
-  }
-  
-  printf("]\n");
-  
-  return;
-} // printMatFloat
-
 void freeMLP( mlp * classifier )
 {
     freeMatFloat(&classifier->m_wIn);
@@ -464,7 +449,6 @@ void normalizeSample( MatChar image, MatFloat * result )
 
   sampleMax -= sampleMean;
   sampleMin -= sampleMean;
-	freeMatFloat(&transpU);
 
   sampleMax = fmax( fabs(sampleMin), fabs(sampleMax));
 

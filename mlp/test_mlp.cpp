@@ -15,12 +15,13 @@
 #include "mlp.hpp"
 #include "mlp_impl.h"
 
-
+/*
 extern int EF_ALIGNMENT = 0;
 extern int EF_PROTECT_BELOW = 0;
 extern int EF_PROTECT_FREE = 0;
 extern int EF_ALLOW_MALLOC_0 = 1;
 extern int EF_FILL = 1922;
+*/
 
 namespace { struct hack_t; }
 MatChar  convertCVToMatChar ( const cv::Mat_<uint8_t> & input );
