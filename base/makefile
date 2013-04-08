@@ -1,12 +1,12 @@
 # UjoImro, 2013
 
 
-all:color expand 
+all: test_color expand 
 
 
-color: color.o 
+test_color: test_color.o 
 
-color.o: color.cpp $(BASEDIR)/opencl/opencl.gch
+test_color.o: test_color.cpp $(BASEDIR)/opencl/opencl.gch
 
 expand: expand.o
 
