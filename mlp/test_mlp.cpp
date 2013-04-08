@@ -187,8 +187,8 @@ int main()
     
 
     for ( conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id);          
-          ((conductor.id != -1) and (conductor.id != 25));
-          // conductor.id != -1;
+          //((conductor.id != -1) and (conductor.id != 25));
+          conductor.id != -1;
           conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id)
         )
     {

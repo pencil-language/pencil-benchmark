@@ -64,6 +64,20 @@ void     printMatFloat( MatFloat mat, char * name )
   return;
 } // printMatFloat
 
+  for (q=0; q<mat.rows; q++)
+  {
+    printf("[ ");
+    for( w=0; w<mat.cols; w++)
+    {
+      printf( "%f, ", GetValueFloat(mat, q, w) );
+    }
+    printf(" ]\n");
+  }
+  
+  printf("]\n");
+  
+  return;
+} // printMatFloat
 
 void freeMLP( mlp * classifier )
 {
@@ -242,7 +256,7 @@ convertFromCharToFloat( MatChar from, float quotient, float shift, MatFloat * to
     for ( q=0; q<from.rows; q++ )
         for ( w=0; w<from.cols; w++ )
             to->data[ q * to->step + w + to->start ] = 
-        	quotient * (float)from.data[ q * from.step + w + from.start ] + shift;
+        	quotient * from.data[ q * from.step + w + from.start ] + shift;
     return;
 }
 
@@ -303,7 +317,7 @@ gemmFloat( MatFloat A, MatFloat B, float alpha, MatFloat C, float beta, MatFloat
     assert(C.cols == result->cols);
 
     int q, w, e;
-    float sum=0;
+    float sum=0.;
     float c;
 
     if ( fabs(beta) > 0.000001 ) {
@@ -450,6 +464,7 @@ void normalizeSample( MatChar image, MatFloat * result )
 
   sampleMax -= sampleMean;
   sampleMin -= sampleMean;
+	freeMatFloat(&transpU);
 
   sampleMax = fmax( fabs(sampleMin), fabs(sampleMax));
 
