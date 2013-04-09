@@ -42,7 +42,8 @@ float    GetValueFloat( MatFloat self, int row, int col );
 void     SetValueFloat( MatFloat * self, int row, int col, float value );
 void     generateResponseMap( const MatChar image, const Point2i center, int mapSize, mlp classifier, MatFloat * result  );
 int      cvRound( float value );
-float    dotProduct( MatFloat A, MatFloat B );
+float    dotProductDirDir( MatFloat A, MatFloat B );
+float    dotProductTransDir( MatFloat A, MatFloat B );
 void     normalizeSample( MatChar image, MatFloat * result );
 void     printMatFloat( MatFloat mat, char * name );
 
@@ -568,7 +569,7 @@ SetValueFloat( MatFloat * self, int row, int col, float value )
 
 
 
-float dotProduct( MatFloat A, MatFloat B )
+float dotProductDirDir( MatFloat A, MatFloat B )
 {
   assert( A.cols == 1 );
   assert( B.cols == 1 );
@@ -580,6 +581,26 @@ float dotProduct( MatFloat A, MatFloat B )
   int q;
   for (q=0; q<A.rows; q++) {
       float y = A.data[ q * A.step + A.start ] * B.data[ q * B.step + B.start ] - c;
+      float t = result + y;
+      c = (t - result) - y;
+      result = t ;
+  }
+  
+  return result;
+}
+
+float dotProductTransDir( MatFloat A, MatFloat B )
+{
+  assert( A.rows == 1 );
+  assert( B.cols == 1 );
+  assert( A.cols == B.rows );
+
+  float result = 0.;
+  float c = 0.;  
+
+  int q;
+  for (q=0; q<A.cols; q++) {
+      float y = A.data[ q + A.start ] * B.data[ q * B.step + B.start ] - c;
       float t = result + y;
       c = (t - result) - y;
       result = t ;
@@ -624,40 +645,31 @@ generateResponseMap(
   assert(result->rows == 2 * mapSize + 1);
   assert(result->cols == 2 * mapSize + 1);
 
-  MatFloat m_U_transpose = CreateMatFloat( classifier.m_U.cols, classifier.m_U.rows );
   MatFloat wIn_A = GetBlockFloat( classifier.m_wIn, 0, classifier.m_wIn.rows, 0, classifier.m_wIn.cols - 1 );
-  MatFloat wIn = CreateMatFloat( wIn_A.rows, m_U_transpose.cols );
+  MatFloat wIn = CreateMatFloat( wIn_A.rows, classifier.m_U.rows );
   MatFloat bIn = GetBlockFloat( classifier.m_wIn, 0, classifier.m_wIn.rows, classifier.m_wIn.cols - 1, classifier.m_wIn.cols );
   MatFloat wOut_tmp = GetBlockFloat( classifier.m_wOut, 0, classifier.m_wOut.rows, 0, classifier.m_wOut.cols - 1 );
-  MatFloat wOut = CreateMatFloat( wOut_tmp.cols, wOut_tmp.rows );
-  
+
   {
-      int localid;
-      for ( localid=0; localid<gangsize; localid++ ) 
+      int localid = 0;
+      for ( localid=0; localid<gangsize; localid++ )           
           gemmFloatDirTransDirGang( wIn_A, classifier.m_U, 1.0, wIn, 0.0, localid, &wIn );
   }
-
-  {
-      int localid;
-      for ( localid=0; localid<gangsize; localid++ ) 
-          transposeFloatGang( wOut_tmp, localid, &wOut );
-  }
   
-  float bOut = GetValueFloat( classifier.m_wOut, 0, classifier.m_wOut.cols - 1);
-
-  int work = 0;
-  int localid = 0;
-  int worksize = (2 * mapSize + 1) * (2 * mapSize + 1);
-
-  int ncy=0; 
-  int cy=0;
-  int ncx=0;
-  int cx=0;
-
-  {      
-      int localid;  
-      for ( localid=0; localid<gangsize; localid++ )
-      {            
+  {
+      int localid = 0;
+      for ( localid=0; localid<gangsize; localid++ ) {
+          
+          int work = 0;      
+          int worksize = (2 * mapSize + 1) * (2 * mapSize + 1);
+          
+          float bOut = GetValueFloat( classifier.m_wOut, 0, classifier.m_wOut.cols - 1 );
+          
+          int ncy=0; 
+          int cy=0;
+          int ncx=0;
+          int cx=0;
+          
           for ( work=0; work < (worksize / gangsize) + 1; work++ )
           {
               int index = work * gangsize + localid;
@@ -684,7 +696,7 @@ generateResponseMap(
               divideFloat( 2.0, xOut, &e);
               addFloat( e, -1.0, &xOut);
           
-              SetValueFloat( result, ncy, ncx, 1./( 1. + exp(- dotProduct(wOut, xOut) - bOut ) ) );
+              SetValueFloat( result, ncy, ncx, 1./( 1. + exp(- dotProductTransDir(wOut_tmp, xOut) - bOut ) ) );
           
               freeMatFloat(&e);
               freeMatFloat(&xOut);
@@ -695,11 +707,7 @@ generateResponseMap(
   
 //  assert(false);
   
-  freeMatFloat(&wOut);
   freeMatFloat(&wIn);
-  freeMatFloat(&m_U_transpose);
-
-  
   // end of classic impl
     return;
 } // generateResponseMap
