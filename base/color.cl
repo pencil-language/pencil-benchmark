@@ -1,18 +1,26 @@
 // -*- c -*-
 
-__kernel void color( __global int* image, int rows, int cols )
+typedef struct {
+    int rows;
+    int cols;
+    int step;
+    int start;    
+} Mat; // struct Mat
+
+
+__kernel void color( Mat image, __global int * data )
 {
     // get index into global data array
     int row = get_global_id(0);
     int col = get_global_id(1);
 
-    int id = row*cols + col;
+    int id = row * image.step + col + image.start;
 
-    if ( id >= rows*cols)
+    if ( id >= image.rows * image.cols)
     {
 	return;
     }
     
-    image[id] = id;
+    data[id] = id;
     
-}
+} // color
