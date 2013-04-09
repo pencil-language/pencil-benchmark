@@ -14,6 +14,8 @@
 
 const int MAX_INT = ~(1 << (8*sizeof(int) - 1));
 const int false = (1!=1);
+const int gangsize = 32;
+
 // const int NULL=0;
 
 void     freeMLP( mlp * classifier );
@@ -197,6 +199,8 @@ GetBlockChar( MatChar self, int row_from, int row_to, int col_from, int col_to )
     assert(row_from<row_to);
     assert(col_from<col_to);
     assert(row_to<=self.rows);
+//    printf("col_to = %d\n", col_to );
+//    printf("self.cols = %d\n", self.cols );
     assert(col_to<=self.cols);
     assert(self.data);
     
@@ -489,40 +493,67 @@ generateResponseMap(
   transposeFloat( wOut_tmp, &wOut );
   float bOut = GetValueFloat( classifier.m_wOut, 0, classifier.m_wOut.cols - 1);
 
-  int ncy=0;
+  int group = 0;
+  int localid = 0;
+  int worksize = (2 * mapSize + 1) * (2 * mapSize + 1);
+
+  int ncy=0; 
   int cy=0;
   int ncx=0;
   int cx=0;
+
+//  printf("mapSize=%d\n", mapSize);
   
-  for ( ncy = 0, cy = center.y - mapSize; cy <= center.y + mapSize; ++ncy, ++cy ) {
-    for (ncx = 0, cx = center.x - mapSize; cx <= center.x + mapSize; ++ncx, ++cx ) {
+  
+  static int counter = 0;
+  
+ // for ( ncy = 0, cy = center.y - mapSize; cy <= center.y + mapSize; ++ncy, ++cy ) {
+ //     for (ncx = 0, cx = center.x - mapSize; cx <= center.x + mapSize; ++ncx, ++cx ) {
 
-      MatChar  imagePatch = GetBlockChar( image, cy - classifier.m_patchSize, cy + classifier.m_patchSize + 1, cx - classifier.m_patchSize, cx + classifier.m_patchSize + 1 );
-      MatFloat patch = CreateMatFloat( imagePatch.rows, imagePatch.cols );
-
-      normalizeSample(imagePatch, &patch);
-
-      MatFloat xOut = CreateMatFloat( bIn.rows, bIn.cols );
-
-      gemmFloat( wIn, patch, -1.0, bIn, -1.0, &xOut );
-
-      MatFloat e = CreateMatFloat(xOut.rows, xOut.cols);
-      
-      expFloat( xOut, &e );
-
-      addFloat( e, 1.0, &xOut );
-      divideFloat( 2.0, xOut, &e);
-      addFloat( e, -1.0, &xOut);
-
-      SetValueFloat( result, ncy, ncx, 1./( 1. + exp(- dotProduct(wOut, xOut) ) - bOut) );
-      SetValueFloat( result, ncy, ncx, 1./( 1. + exp(- dotProduct(wOut, xOut) - bOut ) ) );
-      
-      freeMatFloat(&e);      
-      freeMatFloat(&xOut);
-      freeMatFloat(&patch);
-    } // for ncx
+  // for ( ncy = 0; ncy < 2*mapSize + 1; ++ncy ) {
+  //     for (ncx = 0; ncx < 2*mapSize + 1; ++ncx ) {
+  //        cy = center.y - mapSize + ncy;
+  //        cx = center.x - mapSize + ncx;
+         
+  for ( group=0; group < (worksize / gangsize) + 1; group++ )
+  {
+      for ( localid=0; localid<gangsize; localid++ )
+      {          
+          int index = group * gangsize + localid;
+          if (index>=worksize) continue;
+          int ncy= index / (2 * mapSize + 1);
+          int cy=center.y - mapSize + ncy;
+          int ncx= index % (2 * mapSize + 1);
+          int cx=center.x - mapSize + ncx;
+          
+          MatChar  imagePatch = GetBlockChar( image, cy - classifier.m_patchSize, cy + classifier.m_patchSize + 1, cx - classifier.m_patchSize, cx + classifier.m_patchSize + 1 );
+          MatFloat patch = CreateMatFloat( imagePatch.rows, imagePatch.cols );
+          
+          normalizeSample(imagePatch, &patch);
+          
+          MatFloat xOut = CreateMatFloat( bIn.rows, bIn.cols );
+          
+          gemmFloat( wIn, patch, -1.0, bIn, -1.0, &xOut );
+          
+          MatFloat e = CreateMatFloat(xOut.rows, xOut.cols);
+          
+          expFloat( xOut, &e );
+          
+          addFloat( e, 1.0, &xOut );
+          divideFloat( 2.0, xOut, &e);
+          addFloat( e, -1.0, &xOut);
+          
+          SetValueFloat( result, ncy, ncx, 1./( 1. + exp(- dotProduct(wOut, xOut) ) - bOut) );
+          SetValueFloat( result, ncy, ncx, 1./( 1. + exp(- dotProduct(wOut, xOut) - bOut ) ) );
+          
+          freeMatFloat(&e);      
+          freeMatFloat(&xOut);
+          freeMatFloat(&patch);
+      } // for ncx
   } // for ncy
 
+//  assert(false);
+  
   freeMatFloat(&wOut);
   freeMatFloat(&wIn);
   freeMatFloat(&m_U_transpose);
