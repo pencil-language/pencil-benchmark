@@ -16,4 +16,4 @@ test_mlp: test_mlp.o mlp_impl.o
 opencl_mlp: opencl_mlp.o mlp_impl.o
 
 clean:
-	-rm -f *.o test_mlp
+	-rm -f *.o test_mlp opencl_mlp *.gch
