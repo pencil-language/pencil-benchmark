@@ -12,13 +12,14 @@
 #include <boost/smart_ptr.hpp>
 #include <opencv2/core/core.hpp>
 
+#include "cltypes.h"
 #include "errors.hpp"
 
 
-
 namespace carp {
-    namespace opencl {
 
+    namespace opencl {
+                
         namespace utility {            
 
             std::string
@@ -342,24 +343,46 @@ namespace carp {
 
             int cols() const { return m_cols; };
 
-            cl_mem cl() {
-                assert(buf.cl());
-                return buf.cl();
-            };
+            clMat
+            cl() {
+                assert(buf.cl());                
+                clMat result = { rows(), cols(), cols(), 0 };
+
+                return result;
+            }; // clMat
+
+            cl_mem
+            ptr() {
+                assert(buf.cl());                
+                return buf.cl();                
+            } // ptr
+            
 
             cv::Mat_<value_type> get() {
                 cv::Mat_<value_type> result(rows(), cols());
                 assert(result.isContinuous());
 
                 utility::checkerror(
-                    clEnqueueReadBuffer( cqCommandQueue, cl(), CL_TRUE, 0, buf.size() * sizeof(value_type), reinterpret_cast<void*>(&result(0,0)), 0, NULL, NULL ) );
+                    clEnqueueReadBuffer( cqCommandQueue, ptr(), CL_TRUE, 0, buf.size() * sizeof(value_type), reinterpret_cast<void*>(&result(0,0)), 0, NULL, NULL ) );
                 
                 return result;
             } // get
 
+            void set( cv::Mat_<value_type> & image ) {
+                assert(image.isContinuous());
+
+                utility::checkerror(
+                    clEnqueueWriteBuffer(
+                        cqCommandQueue, ptr(), CL_TRUE, 0, buf.size() * sizeof(value_type), reinterpret_cast<void*>(&image(0,0)), 0, NULL, NULL ) );
+                                
+                return;                
+            } // set
+            
+                
         }; // class image
         
     } // namespace opencl
+    
 } // namespace carp
 
 

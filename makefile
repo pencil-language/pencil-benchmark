@@ -12,7 +12,7 @@ CXXFLAGS+=-O0 -g
 # includes 
 CXXFLAGS+=-I/home/ujoimro/Inst/opencv/build/OpenCV-2.4.2/optimized/install/include
 
-CFLAGS+=-Wimplicit -Werror=implicit-function-declaration -Werror=int-to-pointer-cast
+CFLAGS+=-Wimplicit -Werror=implicit-function-declaration -Werror=int-to-pointer-cast -I$(BASEDIR)/opencl
 
 # c++0x and c++ specific flags
 CXXFLAGS+=-std=c++0x
@@ -24,6 +24,7 @@ LDFLAGS+=-lboost_serialization -L/home/ujoimro/Inst/opencv/build/OpenCV-2.4.2/op
 export BASEDIR
 export LDFLAGS
 export CXXFLAGS
+export CFLAGS
 
 all:
 	+make -C opencl
