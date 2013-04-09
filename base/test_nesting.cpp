@@ -20,8 +20,7 @@ int main()
         {
             image(q,w) = q*image.cols + w;            
         }
-    
-    
+        
     carp::opencl::image<float> cl_image(device, rows, cols);
     carp::opencl::image<float> cl_trans(device, cols, rows);    
 
