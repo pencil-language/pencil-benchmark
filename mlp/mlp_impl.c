@@ -23,6 +23,7 @@ MatFloat CreateMatFloat( int rows, int cols );
 MatChar  CreateMatChar( int rows, int cols );
 void     copyToFloat( MatFloat input, MatFloat * output );
 void     transposeFloat( MatFloat input, MatFloat * output );
+void     transposeFloatGang( MatFloat input, int localid, MatFloat * output );
 float    meanChar( MatChar input );
 uint8_t  minChar( MatChar input );
 uint8_t  maxChar( MatChar input );
@@ -141,6 +142,27 @@ transposeFloat( MatFloat input, MatFloat * output )
 
     return;
 } // transposeFloat
+
+void
+transposeFloatGang( MatFloat input, int localid, MatFloat * output )
+{
+    assert(output->rows == input.cols);
+    assert(output->cols == input.rows);
+    
+    int worksize = input.cols * input.rows;
+    int work = 0;
+            
+    for ( work=0; work < (worksize/gangsize) + 1; work++) {
+        int index = work * gangsize + localid;
+        if (index>=worksize) continue;
+        int q = index / input.cols;
+        int w = index % input.cols;
+              
+        output->data[ w * output->step + q + output->start ] 
+            = input.data[ q * input.step + w + input.start ];
+    }
+} // transposeFloatGang
+
 
 float
 meanChar( MatChar input )
@@ -297,7 +319,7 @@ freeMatChar( MatChar * mat )
 
 // returns alpha*A*B + beta * C
 void 
-gemmFloat( MatFloat A, MatFloat B, float alpha, MatFloat C, float beta, MatFloat * result )
+gemmFloatDirDirDir( MatFloat A, MatFloat B, float alpha, MatFloat C, float beta, MatFloat * result )
 {
     assert(A.rows == C.rows);
     assert(A.cols == B.rows); 
@@ -344,7 +366,131 @@ gemmFloat( MatFloat A, MatFloat B, float alpha, MatFloat C, float beta, MatFloat
     }
     
     return;
-}
+} // gemmFloatDirDirDir
+
+void 
+gemmFloatDirDirDirGang( MatFloat A, MatFloat B, float alpha, MatFloat C, float beta, int localid, MatFloat * result )
+{
+    assert(A.rows == C.rows);
+    assert(A.cols == B.rows); 
+    assert(B.cols == C.cols);
+    assert(C.rows == result->rows);
+    assert(C.cols == result->cols);
+
+    int q, w, e;
+    float sum=0.;
+    float c;    
+    if ( fabs(beta) > 0.000001 ) {
+        int worksize = C.rows * C.cols;
+        int work = 0;
+        
+        for ( work=0; work < (worksize/gangsize) + 1; work++) {            
+            int index = work * gangsize + localid;
+            if (index>=worksize) continue;
+            int q = index / C.cols;
+            int w = index % C.cols;
+
+            sum = 0;
+            for ( e=0; e<A.cols; e++ )
+            {              
+                float y = A.data[ q * A.step + e + A.start ] * B.data[ e * B.step + w + B.start ] - c;
+                float t = sum + y;
+                c = (t - sum) - y;
+                sum = t;              
+            }
+                
+            result->data[ q * result->step + w + result->start ] = alpha * sum  + beta * C.data[ q * C.step + w + C.start ];
+        }
+    }
+    else // NOT fabs(beta) > 0.000001
+    {
+        int worksize = C.rows * C.cols;
+        int work = 0;
+        
+        for ( work=0; work < (worksize/gangsize) + 1; work++) {
+            int index = work * gangsize + localid;
+            if (index>=worksize) continue;
+            int q = index / C.cols;
+            int w = index % C.cols;
+            
+            sum = 0;
+            for ( e=0; e<A.cols; e++ )
+            {              
+                float y = A.data[ q * A.step + e + A.start ] * B.data[ e * B.step + w + B.start ] - c;
+                float t = sum + y;
+                c = (t - sum) - y;
+                sum = t;              
+            }
+            
+            result->data[ q * result->step + w + result->start ] = alpha * sum;
+        }
+    }
+    
+    return;
+} // gemmFloatDirDirDirGang
+
+
+void 
+gemmFloatDirTransDirGang( MatFloat A, MatFloat B, float alpha, MatFloat C, float beta, int localid, MatFloat * result )
+{
+    assert(A.rows == C.rows);
+    assert(A.cols == B.cols); 
+    assert(B.rows == C.cols);
+    assert(C.rows == result->rows);
+    assert(C.cols == result->cols);
+
+    int q, w, e;
+    float sum=0.;
+    float c;    
+    if ( fabs(beta) > 0.000001 ) {
+        int worksize = C.rows * C.cols;
+        int work = 0;
+        
+        for ( work=0; work < (worksize/gangsize) + 1; work++) {            
+            int index = work * gangsize + localid;
+            if (index>=worksize) continue;
+            int q = index / C.cols;
+            int w = index % C.cols;
+
+            sum = 0;
+            for ( e=0; e<A.cols; e++ )
+            {              
+                float y = A.data[ q * A.step + e + A.start ] * B.data[ w * B.step + e + B.start ] - c;
+                float t = sum + y;
+                c = (t - sum) - y;
+                sum = t;              
+            }
+                
+            result->data[ q * result->step + w + result->start ] = alpha * sum  + beta * C.data[ q * C.step + w + C.start ];
+        }
+    }
+    else // NOT fabs(beta) > 0.000001
+    {
+        int worksize = C.rows * C.cols;
+        int work = 0;
+        
+        for ( work=0; work < (worksize/gangsize) + 1; work++) {
+            int index = work * gangsize + localid;
+            if (index>=worksize) continue;
+            int q = index / C.cols;
+            int w = index % C.cols;
+            
+            sum = 0;
+            for ( e=0; e<A.cols; e++ )
+            {              
+                float y = A.data[ q * A.step + e + A.start ] * B.data[ w * B.step + e + B.start ] - c;
+                float t = sum + y;
+                c = (t - sum) - y;
+                sum = t;              
+            }
+            
+            result->data[ q * result->step + w + result->start ] = alpha * sum;
+        }
+    }
+    
+    return;
+} // gemmFloatDirTransDirGang
+
 
 void
 expFloat( MatFloat input, MatFloat * output )
@@ -477,23 +623,29 @@ generateResponseMap(
 
   assert(result->rows == 2 * mapSize + 1);
   assert(result->cols == 2 * mapSize + 1);
-  
-  // MatFloat resMap( 2 * mapSize + 1, 2 * mapSize + 1 );
+
   MatFloat m_U_transpose = CreateMatFloat( classifier.m_U.cols, classifier.m_U.rows );
-  transposeFloat( classifier.m_U, &m_U_transpose );
-  
   MatFloat wIn_A = GetBlockFloat( classifier.m_wIn, 0, classifier.m_wIn.rows, 0, classifier.m_wIn.cols - 1 );
   MatFloat wIn = CreateMatFloat( wIn_A.rows, m_U_transpose.cols );
-  gemmFloat( wIn_A, m_U_transpose, 1.0, wIn, 0.0, &wIn );
-
   MatFloat bIn = GetBlockFloat( classifier.m_wIn, 0, classifier.m_wIn.rows, classifier.m_wIn.cols - 1, classifier.m_wIn.cols );
-
   MatFloat wOut_tmp = GetBlockFloat( classifier.m_wOut, 0, classifier.m_wOut.rows, 0, classifier.m_wOut.cols - 1 );
   MatFloat wOut = CreateMatFloat( wOut_tmp.cols, wOut_tmp.rows );
-  transposeFloat( wOut_tmp, &wOut );
+  
+  {
+      int localid;
+      for ( localid=0; localid<gangsize; localid++ ) 
+          gemmFloatDirTransDirGang( wIn_A, classifier.m_U, 1.0, wIn, 0.0, localid, &wIn );
+  }
+
+  {
+      int localid;
+      for ( localid=0; localid<gangsize; localid++ ) 
+          transposeFloatGang( wOut_tmp, localid, &wOut );
+  }
+  
   float bOut = GetValueFloat( classifier.m_wOut, 0, classifier.m_wOut.cols - 1);
 
-  int group = 0;
+  int work = 0;
   int localid = 0;
   int worksize = (2 * mapSize + 1) * (2 * mapSize + 1);
 
@@ -502,56 +654,45 @@ generateResponseMap(
   int ncx=0;
   int cx=0;
 
-//  printf("mapSize=%d\n", mapSize);
-  
-  
-  static int counter = 0;
-  
- // for ( ncy = 0, cy = center.y - mapSize; cy <= center.y + mapSize; ++ncy, ++cy ) {
- //     for (ncx = 0, cx = center.x - mapSize; cx <= center.x + mapSize; ++ncx, ++cx ) {
-
-  // for ( ncy = 0; ncy < 2*mapSize + 1; ++ncy ) {
-  //     for (ncx = 0; ncx < 2*mapSize + 1; ++ncx ) {
-  //        cy = center.y - mapSize + ncy;
-  //        cx = center.x - mapSize + ncx;
-         
-  for ( group=0; group < (worksize / gangsize) + 1; group++ )
-  {
+  {      
+      int localid;  
       for ( localid=0; localid<gangsize; localid++ )
-      {          
-          int index = group * gangsize + localid;
-          if (index>=worksize) continue;
-          int ncy= index / (2 * mapSize + 1);
-          int cy=center.y - mapSize + ncy;
-          int ncx= index % (2 * mapSize + 1);
-          int cx=center.x - mapSize + ncx;
+      {            
+          for ( work=0; work < (worksize / gangsize) + 1; work++ )
+          {
+              int index = work * gangsize + localid;
+              if (index>=worksize) continue;
+              int ncy = index / (2 * mapSize + 1);
+              int cy  = center.y - mapSize + ncy;
+              int ncx = index % (2 * mapSize + 1);
+              int cx  = center.x - mapSize + ncx;
           
-          MatChar  imagePatch = GetBlockChar( image, cy - classifier.m_patchSize, cy + classifier.m_patchSize + 1, cx - classifier.m_patchSize, cx + classifier.m_patchSize + 1 );
-          MatFloat patch = CreateMatFloat( imagePatch.rows, imagePatch.cols );
+              MatChar  imagePatch = GetBlockChar( image, cy - classifier.m_patchSize, cy + classifier.m_patchSize + 1, cx - classifier.m_patchSize, cx + classifier.m_patchSize + 1 );
+              MatFloat patch = CreateMatFloat( imagePatch.rows, imagePatch.cols );
           
-          normalizeSample(imagePatch, &patch);
+              normalizeSample(imagePatch, &patch);
           
-          MatFloat xOut = CreateMatFloat( bIn.rows, bIn.cols );
+              MatFloat xOut = CreateMatFloat( bIn.rows, bIn.cols );
           
-          gemmFloat( wIn, patch, -1.0, bIn, -1.0, &xOut );
+              gemmFloatDirDirDir( wIn, patch, -1.0, bIn, -1.0, &xOut );
           
-          MatFloat e = CreateMatFloat(xOut.rows, xOut.cols);
+              MatFloat e = CreateMatFloat(xOut.rows, xOut.cols);
           
-          expFloat( xOut, &e );
+              expFloat( xOut, &e );
           
-          addFloat( e, 1.0, &xOut );
-          divideFloat( 2.0, xOut, &e);
-          addFloat( e, -1.0, &xOut);
+              addFloat( e, 1.0, &xOut );
+              divideFloat( 2.0, xOut, &e);
+              addFloat( e, -1.0, &xOut);
           
-          SetValueFloat( result, ncy, ncx, 1./( 1. + exp(- dotProduct(wOut, xOut) ) - bOut) );
-          SetValueFloat( result, ncy, ncx, 1./( 1. + exp(- dotProduct(wOut, xOut) - bOut ) ) );
+              SetValueFloat( result, ncy, ncx, 1./( 1. + exp(- dotProduct(wOut, xOut) - bOut ) ) );
           
-          freeMatFloat(&e);      
-          freeMatFloat(&xOut);
-          freeMatFloat(&patch);
-      } // for ncx
-  } // for ncy
-
+              freeMatFloat(&e);
+              freeMatFloat(&xOut);
+              freeMatFloat(&patch);
+          } // for localid 
+      } // for gangsize
+  } // localid block
+  
 //  assert(false);
   
   freeMatFloat(&wOut);
