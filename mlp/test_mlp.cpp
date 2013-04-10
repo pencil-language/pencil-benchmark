@@ -12,6 +12,7 @@ extern int EF_ALLOW_MALLOC_0 = 1;
 extern int EF_FILL = 1922;
 */
 
+#include "opencl.hpp"
 #include "bench_mlp.hpp"
 
 int main()
@@ -94,8 +95,6 @@ int main()
     
     return EXIT_SUCCESS;
 } // int main
-
-
 
 
 // LuM end of file
