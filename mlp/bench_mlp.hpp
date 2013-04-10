@@ -3,6 +3,7 @@
 // Copyright (c) RealEyes, 2013
 // This version tests the responseMap calculation with input dumps
 
+#include <tuple>
 #include <chrono>
 #include <string>
 #include <stdlib.h>
@@ -17,7 +18,7 @@
 
 namespace { struct hack_t; }
 MatChar  convertCVToMatChar ( const cv::Mat_<uint8_t> & input );
-mlp *    convertHackToMlp ( const hack_t & hack );
+std::tuple< std::vector<int>, std::vector<MatFloat>, std::vector<MatFloat>, std::vector<MatFloat>, std::vector<int>, std::vector<double> > convertHackToMlp ( const hack_t & hack );
 void     freeClassifiers( mlp * classifiers[], int size );
 MatChar  convertCVToMatChar ( const cv::Mat_<uint8_t> & input );
 MatFloat convertCVToMatFloat (  const cv::Mat_<double> & input );
@@ -67,28 +68,34 @@ namespace {
 } // unnamed namespace 
 
 
-
-mlp *
+// patchsize, m_wIn, m_wOut, m_U, hidden_num, rho2
+std::tuple< std::vector<int>, std::vector<MatFloat>, std::vector<MatFloat>, std::vector<MatFloat>, std::vector<int>, std::vector<double> >
 convertHackToMlp ( const hack_t & hack )
 {
     assert(hack.m_visibleLandmarks_size==hack.m_classifiers.size());
     assert(hack.m_visibleLandmarks_size==hack.responseMaps.size());
-        
-    mlp * result;
-    result = reinterpret_cast<mlp*>( malloc( sizeof(mlp) * hack.m_visibleLandmarks_size ) );
 
+    int size = hack.m_visibleLandmarks_size;
+    
+    std::vector<int> m_patchSizes(size);
+    std::vector<MatFloat> m_wIns(size);
+    std::vector<MatFloat> m_wOuts(size);
+    std::vector<MatFloat> m_Us(size);
+    std::vector<int> hidden_nums(size);
+    std::vector<double> rho2s(size);    
+    
     // we export each classifier
-    for (int q=0; q<hack.m_visibleLandmarks_size; q++)
+    for (int q=0; q<size; q++)
     {
-        result[q].m_patchSize = hack.m_classifiers[q].m_patchSize;
-        result[q].m_wIn       = convertCVToMatFloat(hack.m_classifiers[q].m_wIn);
-        result[q].m_wOut      = convertCVToMatFloat(hack.m_classifiers[q].m_wOut);
-        result[q].m_U         = convertCVToMatFloat(hack.m_classifiers[q].m_U);
-        result[q].hidden_num  = hack.m_classifiers[q].hidden_num;
-        result[q].rho2        = hack.m_classifiers[q].rho2;
+        m_patchSizes[q] = hack.m_classifiers[q].m_patchSize;
+        m_wIns[q]       = convertCVToMatFloat(hack.m_classifiers[q].m_wIn);
+        m_wOuts[q]      = convertCVToMatFloat(hack.m_classifiers[q].m_wOut);
+        m_Us[q]         = convertCVToMatFloat(hack.m_classifiers[q].m_U);
+        hidden_nums[q]  = hack.m_classifiers[q].hidden_num;
+        rho2s[q]        = hack.m_classifiers[q].rho2;
     } // for q in m_visibleLandmarks_size
 
-    return result;
+    return std::make_tuple(m_patchSizes, m_wIns, m_wOuts, m_Us, hidden_nums, rho2s);
 } // convertHackToMlp
 
 void

@@ -35,7 +35,7 @@ int main()
             // preparing the inputs
             MatChar alignedImage = convertCVToMatChar(conductor.hack.alignedImage);
             MatFloat shape = convertCVToMatFloat(conductor.hack.shape);
-            mlp * m_classifiers = convertHackToMlp(conductor.hack);
+            auto m_classifiers = convertHackToMlp(conductor.hack);
             MatFloat * responseMaps;
             allocateResponseMaps( conductor.hack.m_mapSize, conductor.hack.m_visibleLandmarks_size, &responseMaps );
 
@@ -45,7 +45,10 @@ int main()
                 conductor.hack.m_mapSize,
                 alignedImage,
                 shape,
-                m_classifiers,
+                &(std::get<0>(m_classifiers)[0]), // &patchSizes[0]
+                &(std::get<1>(m_classifiers)[0]), // &m_wIns[0]
+                &(std::get<2>(m_classifiers)[0]), // &m_wOuts[0]
+                &(std::get<3>(m_classifiers)[0]), // &m_Us[0]
                 &responseMaps
                 );
             auto end = std::chrono::high_resolution_clock::now();
@@ -54,7 +57,12 @@ int main()
             // releasing the inputs
             freeMatChar(&alignedImage);
             freeMatFloat(&shape);
-            freeClassifiers(&m_classifiers, conductor.hack.m_classifiers.size());
+            for ( auto & q : std::get<1>(m_classifiers) ) freeMatFloat(&q);
+            for ( auto & q : std::get<2>(m_classifiers) ) freeMatFloat(&q);
+            for ( auto & q : std::get<3>(m_classifiers) ) freeMatFloat(&q);
+            
+            // !!!! freeMatFloat(&())
+            //freeClassifiers(&m_classifiers, conductor.hack.m_classifiers.size());
 
             // converting the outputs
             std::vector< cv::Mat_<double> > calculatedResults;

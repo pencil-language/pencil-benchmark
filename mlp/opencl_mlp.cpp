@@ -35,19 +35,19 @@ int main()
             // preparing the inputs
             MatChar alignedImage = convertCVToMatChar(conductor.hack.alignedImage);
             MatFloat shape = convertCVToMatFloat(conductor.hack.shape);
-            mlp * m_classifiers = convertHackToMlp(conductor.hack);
+            mlp * m_classifiers = NULL ; //convertHackToMlp(conductor.hack);
             MatFloat * responseMaps;
             allocateResponseMaps( conductor.hack.m_mapSize, conductor.hack.m_visibleLandmarks_size, &responseMaps );
 
             auto start = std::chrono::high_resolution_clock::now();
-            calculateMaps(
-                conductor.hack.m_visibleLandmarks_size,
-                conductor.hack.m_mapSize,
-                alignedImage,
-                shape,
-                m_classifiers,
-                &responseMaps
-                );
+            // calculateMaps(
+            //     conductor.hack.m_visibleLandmarks_size,
+            //     conductor.hack.m_mapSize,
+            //     alignedImage,
+            //     shape,
+            //     m_classifiers,
+            //     &responseMaps
+            //     );
             auto end = std::chrono::high_resolution_clock::now();
             elapsed_time = microseconds(end - start);            
             

@@ -40,7 +40,7 @@ void     divideFloat( float val, MatFloat input, MatFloat * output );
 void     subtractFloat( MatFloat input, float val, MatFloat * output );
 float    GetValueFloat( MatFloat self, int row, int col );
 void     SetValueFloat( MatFloat * self, int row, int col, float value );
-void     generateResponseMap( const MatChar image, const Point2i center, int mapSize, mlp classifier, MatFloat * result  );
+void     generateResponseMap( const MatChar image, const Point2i center, int mapSize, int m_patchSize, MatFloat m_wIn, MatFloat m_wOut, MatFloat m_U, /* result */ MatFloat * result );
 int      cvRound( float value );
 float    dotProductDirDir( MatFloat A, MatFloat B );
 float    dotProductTransDir( MatFloat A, MatFloat B );
@@ -637,7 +637,12 @@ generateResponseMap(
     const MatChar image,
     const Point2i center,
     int mapSize, 
-    mlp classifier, 
+    int m_patchSize,
+    MatFloat m_wIn,
+    MatFloat m_wOut,
+    MatFloat m_U,
+
+    // result
     MatFloat * result
     )
 {
@@ -645,15 +650,15 @@ generateResponseMap(
   assert(result->rows == 2 * mapSize + 1);
   assert(result->cols == 2 * mapSize + 1);
 
-  MatFloat wIn_A = GetBlockFloat( classifier.m_wIn, 0, classifier.m_wIn.rows, 0, classifier.m_wIn.cols - 1 );
-  MatFloat wIn = CreateMatFloat( wIn_A.rows, classifier.m_U.rows );
-  MatFloat bIn = GetBlockFloat( classifier.m_wIn, 0, classifier.m_wIn.rows, classifier.m_wIn.cols - 1, classifier.m_wIn.cols );
-  MatFloat wOut_tmp = GetBlockFloat( classifier.m_wOut, 0, classifier.m_wOut.rows, 0, classifier.m_wOut.cols - 1 );
+  MatFloat wIn_A = GetBlockFloat( m_wIn, 0, m_wIn.rows, 0, m_wIn.cols - 1 );
+  MatFloat wIn = CreateMatFloat( wIn_A.rows, m_U.rows );
+  MatFloat bIn = GetBlockFloat( m_wIn, 0, m_wIn.rows, m_wIn.cols - 1, m_wIn.cols );
+  MatFloat wOut_tmp = GetBlockFloat( m_wOut, 0, m_wOut.rows, 0, m_wOut.cols - 1 );
 
   {
       int localid = 0;
       for ( localid=0; localid<gangsize; localid++ )           
-          gemmFloatDirTransDirGang( wIn_A, classifier.m_U, 1.0, wIn, 0.0, localid, &wIn );
+          gemmFloatDirTransDirGang( wIn_A, m_U, 1.0, wIn, 0.0, localid, &wIn );
   }
   
   {
@@ -663,7 +668,7 @@ generateResponseMap(
           int work = 0;      
           int worksize = (2 * mapSize + 1) * (2 * mapSize + 1);
           
-          float bOut = GetValueFloat( classifier.m_wOut, 0, classifier.m_wOut.cols - 1 );
+          float bOut = GetValueFloat( m_wOut, 0, m_wOut.cols - 1 );
           
           int ncy=0; 
           int cy=0;
@@ -679,7 +684,7 @@ generateResponseMap(
               int ncx = index % (2 * mapSize + 1);
               int cx  = center.x - mapSize + ncx;
           
-              MatChar  imagePatch = GetBlockChar( image, cy - classifier.m_patchSize, cy + classifier.m_patchSize + 1, cx - classifier.m_patchSize, cx + classifier.m_patchSize + 1 );
+              MatChar  imagePatch = GetBlockChar( image, cy - m_patchSize, cy + m_patchSize + 1, cx - m_patchSize, cx + m_patchSize + 1 );
               MatFloat patch = CreateMatFloat( imagePatch.rows, imagePatch.cols );
           
               normalizeSample(imagePatch, &patch);
@@ -724,7 +729,11 @@ calculateMaps(
     int m_mapSize, 
     MatChar alignedImage, 
     MatFloat shape, 
-    mlp m_classifiers[], 
+    int m_patchSizes[],      /*!< \brief Radius like patch size, the true size of the patch is [(2*patchSize+1) x (2*patchSize+1)] */
+    MatFloat m_wIns[], /*!< \brief */
+    MatFloat m_wOuts[], /*!< \brief  */
+    MatFloat m_Us[], /*!< \brief */
+    
     // results
     MatFloat * responseMaps[] )
 {
@@ -741,19 +750,25 @@ calculateMaps(
 	float shape_x;
 	float shape_y;
 
-	// printf("ici01\n");
 	shape_x = GetValueFloat( shape, 2*idx, 0 );
-	// printf("ici02\n");
 	shape_y = GetValueFloat( shape, 2*idx+1, 0 );
-	// printf("ici03\n");
 	center.x = cvRound(shape_x);
-	// printf("ici04\n");
 	center.y = cvRound(shape_y);
-	// printf("ici05\n");
         
 	// responseMaps[q] = m_classifiers[idx].generateResponseMap( alignedImage, center, m_mapSize );
-	generateResponseMap( alignedImage, center, m_mapSize, m_classifiers[idx], (&(*responseMaps)[q]) );
-	// printf("ici06\n");
+//        printf("alignedImage.rows = %d\n", alignedImage.rows );
+//        printf("alignedImage.cols = %d\n", alignedImage.cols );
+        
+	generateResponseMap(
+            alignedImage,
+            center,
+            m_mapSize,
+            m_patchSizes[idx],
+            m_wIns[idx],
+            m_wOuts[idx],
+            m_Us[idx],            
+            (&(*responseMaps)[q]) );
+
     }
 
     // printf("calculateMaps finished\n");

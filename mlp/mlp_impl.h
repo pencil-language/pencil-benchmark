@@ -65,20 +65,25 @@ extern "C" {
 
     void freeMLP( mlp * classifier );
 
+
     void
-    calculateMaps(
-        int m_visibleLandmarks_size,
-        int m_mapSize,
-        MatChar alignedImage,
-        MatFloat shape,
-        mlp m_classifiers[],
+    calculateMaps( 
+        int m_visibleLandmarks_size, 
+        int m_mapSize, 
+        MatChar alignedImage, 
+        MatFloat shape, 
+        int m_patchSizes[],      /*!< \brief Radius like patch size, the true size of the patch is [(2*patchSize+1) x (2*patchSize+1)] */
+        MatFloat m_wIns[], /*!< \brief */
+        MatFloat m_wOuts[], /*!< \brief  */
+        MatFloat m_Us[], /*!< \brief */
+        
         // results
         MatFloat * responseMaps[] );
-
-
+    
+        
 #endif /* __MLP_IMPL__H__ */
 
 #ifdef __cplusplus
-}
+} // extern C
 #endif // __cplusplus
 // LuM end of file
