@@ -57,6 +57,8 @@ namespace carp {
 
             // this function is equivalent to the OpenCL example in the NVidia repository
             int roundup( int group_size, int global_size ) {
+                if (global_size < group_size) global_size = group_size;
+                 
                 int r = global_size % group_size;
                 if(r == 0) 
                 {
@@ -91,9 +93,38 @@ namespace carp {
             } // roundup for vectors
              
         } // namespace utility
+
+
+
+        class buffer
+        {
+        private:
+            size_t m_size;
+            
+        public:
+            buffer(size_t size) : m_size(size) { }
+
+            size_t size() { return m_size; }
+            
+        }; // class buffer 
+
+        
         
         class kernel {
         private:
+
+            template <class MT0>
+            class preparator {
+            private:
+                void * m_ptr;
+                size_t m_size;
+                
+            public:
+                preparator( MT0 & mt0 ) : m_ptr(reinterpret_cast<void*>(&mt0)), m_size(sizeof(mt0)) { }                
+                void * ptr() { return m_ptr; } // ptr
+                size_t size() { return m_size; } // size                 
+            }; // class preparator
+            
             cl_kernel cqKernel;
             cl_command_queue cqCommandQueue;
             bool m_set;
@@ -102,11 +133,14 @@ namespace carp {
             bool
             setparameter( Pos & pos, MT0 & mt0 ) {
                 assert(cqKernel);
-                utility::checkerror( clSetKernelArg(cqKernel, pos, sizeof(mt0), static_cast<void*>(&mt0) ), __FILE__, __LINE__ );
+
+                kernel::preparator<MT0> parameter(mt0);                
+                
+                utility::checkerror( clSetKernelArg(cqKernel, pos, parameter.size(), parameter.ptr() ), __FILE__, __LINE__ );
                 pos++; // move the position of the parameter applied
                 return true;
             } // setparameter
-        
+                        
         public:
             kernel() : cqKernel(NULL), cqCommandQueue(NULL), m_set(false) { };
 
@@ -145,6 +179,19 @@ namespace carp {
             
             
         }; // class kernel
+
+        template <>
+        class carp::opencl::kernel::preparator<opencl::buffer> {
+        private:
+            void * m_ptr;
+            size_t m_size;
+                
+        public:
+            preparator( opencl::buffer & mt0 ) : m_ptr(NULL), m_size(mt0.size()) { }
+            void * ptr() { return m_ptr; } // ptr
+            size_t size() { return m_size; } // size                 
+        }; // class preparator <opencl::buffer>
+
         
         class device {
         private:
@@ -381,6 +428,7 @@ namespace carp {
                 
         }; // class image
         
+            
     } // namespace opencl
     
 } // namespace carp
