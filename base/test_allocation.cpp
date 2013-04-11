@@ -1,19 +1,54 @@
 // UjoImro, 2013
 // Experimental Research Code for the CARP Project
 
-#include "errors.hpp"
+#include <iostream>
+#include <boost/preprocessor.hpp>
+
 #include "memory.hpp"
 
 int main()
 {
-    carp::pool pool(1000);
+    carp::memory<float> pool(1000);
 
-    PRINT(pool.acquire(10));
-    PRINT(pool.acquire(100));
-    PRINT(pool.acquire(500));
-    PRINT(pool.acquire(500));
+    PRINT(pool.allocate(10));
+//    PRINT(pool.netallocated());
+//    PRINT(pool.grossallocated());
     
-}
+    PRINT(pool.allocate(100));
+//    PRINT(pool.netallocated());
+//    PRINT(pool.grossallocated());
+
+    PRINT(pool.allocate(500));
+//    PRINT(pool.netallocated());
+//    PRINT(pool.grossallocated());
+
+    try {
+        
+        PRINT(pool.allocate(500));
+    }
+    catch ( carp::exception & exception )
+    {
+        assert(exception.error == carp::INSUFFICIENT_MEMORY );
+        PRINT("insufficient memory exception caught");
+    }
+
+    PRINT(pool.allocate(100));
+//    PRINT(pool.netallocated());
+//    PRINT(pool.grossallocated());
+
+    PRINT(pool.allocate(50));
+//    PRINT(pool.netallocated());
+//    PRINT(pool.grossallocated());
+
+    PRINT(pool.allocate(100));
+    PRINT(pool.netallocated());
+    PRINT(pool.grossallocated());
+    
+    
+    PRINT( (1<<7) );
+    
+    return EXIT_SUCCESS;
+} // main
 
 
 
