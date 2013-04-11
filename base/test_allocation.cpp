@@ -15,6 +15,11 @@ int main()
 //    PRINT(pool.grossallocated());
     
     PRINT(pool.allocate(100));
+
+    pool.release(128);
+
+    PRINT(pool.allocate(100));
+
 //    PRINT(pool.netallocated());
 //    PRINT(pool.grossallocated());
 

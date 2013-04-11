@@ -6,6 +6,7 @@
 
 #include <bitset>
 #include <memory>
+#include <string>
 #include <cstddef>
 #include <cstdint>
 #include <utility>
@@ -15,6 +16,19 @@
 
 #define PRINT(var)  std::cout << "debug: " << BOOST_PP_STRINGIZE(var) << " = " << var << std::endl
 
+template <class T0>
+void
+print_pos( T0 & pos, std::string name ) {
+    std::cout << name << " = ";
+    for (int q=0; q<8; q++ )
+        std::cout << pos[q] << ", ";
+
+    std::cout << "..." << std::endl;
+    
+    return;
+    
+} // print_pos
+
 
 // #include "errors.hpp"
 
@@ -22,10 +36,24 @@ namespace carp {
 
     enum error_t { INSUFFICIENT_MEMORY, FREEING_UNALLOCATED_MEMORY };
     
-    class exception {
+    class exception : public std::exception {
     public:
         error_t error;
         exception( const error_t & error ) : error(error) { }
+        virtual const char* what() const noexcept override {
+            switch (error) {
+            case INSUFFICIENT_MEMORY:
+                return "INSUFFICIENT_MEMORY";
+                break;
+            case FREEING_UNALLOCATED_MEMORY:
+                return "FREEING_UNALLOCATED_MEMORY";
+                break;
+                
+            } // switch
+            return "";
+            
+        }
+        
     }; // class exception 
 
     
@@ -128,35 +156,44 @@ namespace carp {
             } // split
                         
             void merge() {
-                // PRINT("block_t::merge");
+                PRINT("block_t::merge");
                 
                 if ( ( m_status == broken ) and
-                     ( m_left.status  == free ) and
-                     ( m_right.status == free ) ) {
+                     ( m_left->m_status  == free ) and
+                     ( m_right->m_status == free ) ) {
                     m_left.reset();
                     m_right.reset();
                     m_status = free;
-                    // PRINT("merge occurred");
+                    PRINT("merge occurred");
                     
                 } // if
             } // merge
 
-            void release( const position_t & pos ) throw ( carp::exception& ){
+            void release( const position_t & pos) throw ( carp::exception& ){
                 if (m_status == free) throw carp::exception(FREEING_UNALLOCATED_MEMORY);
                     
                 if (m_status == allocated) {
-                    m_status == free;
-                    return;                    
+                    PRINT("found an allocated node");
+                    m_status = free;
+                    return;
                 }
 
                 // here the status is broken
                 assert(m_status==broken);
-                
-                if (not pos.test(m_level))
-                    m_left->release();
-                else // NOT nextbig
-                    m_right->release();
 
+                PRINT(m_level);
+                
+                
+                if (not pos.test(m_level-1)) {
+                    PRINT("went left");
+                    
+                    m_left->release(pos);
+                }
+                else {// NOT nextbig
+                    PRINT("went right");
+                    m_right->release(pos);
+                }
+                
                 merge(); // we merge the blocks if it's possible                
 
                 return;                
@@ -194,7 +231,7 @@ namespace carp {
         int64_t
         grossallocated() const {
             return m_gross_allocated;
-        }
+         }
                 
         int64_t
         allocate( int64_t numel ) throw( carp::exception& ) {
@@ -220,10 +257,14 @@ namespace carp {
         release( int64_t elpos ) throw ( carp::exception& ) {
             // int64_t size = elpos * sizeof(value_type);
 
-            assert( elpos * sizeof(value_type) % 128 == 0 );
+            if ( elpos * sizeof(value_type) % granularity != 0 )
+                throw carp::exception(FREEING_UNALLOCATED_MEMORY);
+                        
+            position_t pos( elpos * sizeof(value_type) / granularity );
+
+            print_pos( pos, "memory::release::pos"  );
             
-            position_t position( elpos * sizeof(value_type) / 128 );
-            pool.release(position);            
+            pool.release(pos);            
 
             return;
         } // release
