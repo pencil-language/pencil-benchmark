@@ -14,14 +14,23 @@ namespace carp {
     template <class T0>
     class memory {
     private:
-        
+
+        typedef std::bitset<8*sizeof(int64_t)> position_t;
+                
         int64_t m_size;        
 
         // three statuses:
         // free - the block is not allocated
-        // broken - the block is broken into subblocks (left and right are not empty)
+        // broken - the block is broken into subblocks (left and right are not NULL)
         // allocated - the block is used for allocation
         enum status_t { free, broken, allocated };
+
+        int64_t
+        log2ceil( const int64_t & val ) {
+            int64_t result;
+            for ( int64_t = 0; (1ul<<result) < val; result++);
+            return result;
+        } // log2ceil 
         
         class block_t {
         public:
@@ -34,8 +43,9 @@ namespace carp {
 
             std::pair<bool, int64_t>
             acquire( const int64_t & level ) {
-                assert( m_level >= level );
-
+                if ( m_level < level )
+                    return make_pair(false, 0);
+                
                 if ( m_status == allocated ) 
                     return make_pair(false, 0);
 
@@ -44,9 +54,10 @@ namespace carp {
                         m_status = allocated;
                         return std::make_pair( true, 0 );
                     }
-                    else // NOT m_level == level (m_level > level )
+                    else { // NOT m_level == level (m_level > level ) 
                         assert(m_level>level);                    
                         split();
+                    }
                 } // m_status == free
 
                 // if we have got here then m_status == broken AND m_level>level (so m_level>0)
@@ -63,9 +74,9 @@ namespace carp {
             } // acquire
 
             bool split() {
-                assert(m_level>0);
-                assert(m_status==free);                
-                m_status = broken;                
+                assert( m_level > 0 );
+                assert( m_status == free );
+                m_status = broken;
                 m_left.reset( new block(m_level-1) );
                 m_right.reset( new block(m_level-1) );
             } // split
@@ -73,15 +84,15 @@ namespace carp {
             void merge() {
                 if ( ( m_status == broken ) and
                      ( left.status  == free ) and
-                     ( right.status == free ) ) {                    
+                     ( right.status == free ) ) {
                     left.reset();
                     right.reset();
                     m_status = free;
-                }
+                } // if
             } // merge
 
-            void release( const std::bitsetint64_t & pos ) throw ( memory::exception& ){
-                if (m_status == free) throw memory::exception(FREEING_UNALLOCATED_MEMORY);                
+            void release( const position_t & pos ) throw ( memory::exception& ){
+                if (m_status == free) throw memory::exception(FREEING_UNALLOCATED_MEMORY);
                     
                 if (m_status == allocated) {
                     m_status == free;
@@ -100,8 +111,7 @@ namespace carp {
 
                 return;                
             } // release
-            
-            
+                        
         }; // class block
 
         block pool;        
@@ -120,24 +130,26 @@ namespace carp {
 
         memory ( const int64_t & numel )
             : m_size( sizeof(value_type) * size ),
-              pool( log2ceil(m_size) ){ } // memory
+              pool( log2ceil(m_size) ) { } // memory
 
         int64_t
         allocate( const int64_t & numel ) throw( memory::exception& ) {
             int64_t size = numel * sizeof(value_type);            
 
-            level = log2ceil(size);
+            level = log2ceil( size / memsize );
             auto node = pool.allocate(level);
             if (!node.first) throw memory::exception(INSUFFICIENT_MEMORY);
 
-            return node.second;            
+            return 128 * node.second / sizeof(value_type);
         } // allocate
 
         void
         release( const int64_t & elpos ) throw ( memory::exception& ) {
             // int64_t size = elpos * sizeof(value_type);
 
-            std::setbit<memsize> position(elpos);
+            assert( elpos * sizeof(value_type) % 128 == 0 );
+            
+            position_t position( elpos * sizeof(value_type) / 128 );
             pool.release(position);            
 
             return;
