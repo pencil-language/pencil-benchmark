@@ -3,7 +3,7 @@
 # ## absolute directory for the subprojects
 BASEDIR=$(shell pwd)
 
-CXXFLAGS=-std=c++0x -I$(BASEDIR)/opencl
+CXXFLAGS=-std=c++0x -I$(BASEDIR)/opencl -I$(BASEDIR)/core
 LDFLAGS=-lstdc++ -lOpenCL -lm
 
 # optimization flags
@@ -27,11 +27,13 @@ export CXXFLAGS
 export CFLAGS
 
 all:
+	+make -C core
 	+make -C opencl
 	+make -C base
 	+make -C mlp
 
 clean:
+	make -C core clean
 	make -C opencl clean
 	make -C base clean
 	make -C mlp clean
