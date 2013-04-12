@@ -14,18 +14,13 @@
 
 #include "cast.h"
 #include "mlp.hpp"
+#include "memory.hpp"
 #include "mlp_impl.h"
+#include "allocator.hpp"
 
 namespace { struct hack_t; }
-MatChar  convertCVToMatChar ( const cv::Mat_<uint8_t> & input );
-std::tuple< std::vector<int>, std::vector<MatFloat>, std::vector<MatFloat>, std::vector<MatFloat>, std::vector<int>, std::vector<double> > convertHackToMlp ( const hack_t & hack );
-void     freeClassifiers( mlp * classifiers[], int size );
-MatChar  convertCVToMatChar ( const cv::Mat_<uint8_t> & input );
-MatFloat convertCVToMatFloat (  const cv::Mat_<double> & input );
-cv::Mat_<double> convertMatFloatToCV( MatFloat input );
-void     allocateResponseMaps( int mapSize, int size, MatFloat * responseMaps[] );
-void     freeResponseMaps( MatFloat * responseMaps[], int size );
 
+cMat /*float*/convertCVToMatFloat /*float*/( void * self, void * allocator, const cv::Mat_<double> & input );
 
 namespace {
      
@@ -69,8 +64,8 @@ namespace {
 
 
 // patchsize, m_wIn, m_wOut, m_U, hidden_num, rho2
-std::tuple< std::vector<int>, std::vector<MatFloat>, std::vector<MatFloat>, std::vector<MatFloat>, std::vector<int>, std::vector<double> >
-convertHackToMlp ( const hack_t & hack )
+std::tuple< std::vector<int>, std::vector<cMat /*float*/>, std::vector<cMat /*float*/>, std::vector<cMat /*float*/>, std::vector<int>, std::vector<double> >
+convertHackToMlp ( void * self, void * allocator, const hack_t & hack )
 {
     assert(hack.m_visibleLandmarks_size==hack.m_classifiers.size());
     assert(hack.m_visibleLandmarks_size==hack.responseMaps.size());
@@ -78,9 +73,9 @@ convertHackToMlp ( const hack_t & hack )
     int size = hack.m_visibleLandmarks_size;
     
     std::vector<int> m_patchSizes(size);
-    std::vector<MatFloat> m_wIns(size);
-    std::vector<MatFloat> m_wOuts(size);
-    std::vector<MatFloat> m_Us(size);
+    std::vector<cMat /*float*/> m_wIns(size);
+    std::vector<cMat /*float*/> m_wOuts(size);
+    std::vector<cMat /*float*/> m_Us(size);
     std::vector<int> hidden_nums(size);
     std::vector<double> rho2s(size);    
     
@@ -88,9 +83,9 @@ convertHackToMlp ( const hack_t & hack )
     for (int q=0; q<size; q++)
     {
         m_patchSizes[q] = hack.m_classifiers[q].m_patchSize;
-        m_wIns[q]       = convertCVToMatFloat(hack.m_classifiers[q].m_wIn);
-        m_wOuts[q]      = convertCVToMatFloat(hack.m_classifiers[q].m_wOut);
-        m_Us[q]         = convertCVToMatFloat(hack.m_classifiers[q].m_U);
+        m_wIns[q]       = convertCVToMatFloat(self, allocator, hack.m_classifiers[q].m_wIn);
+        m_wOuts[q]      = convertCVToMatFloat(self, allocator, hack.m_classifiers[q].m_wOut);
+        m_Us[q]         = convertCVToMatFloat(self, allocator, hack.m_classifiers[q].m_U);
         hidden_nums[q]  = hack.m_classifiers[q].hidden_num;
         rho2s[q]        = hack.m_classifiers[q].rho2;
     } // for q in m_visibleLandmarks_size
@@ -99,11 +94,11 @@ convertHackToMlp ( const hack_t & hack )
 } // convertHackToMlp
 
 void
-freeClassifiers( mlp * classifiers[], int size )
+freeClassifiers( void * self, void * allocator, mlp * classifiers[], int size )
 {
     mlp * result = *classifiers;    
     for (int q=0; q<size; q++ )
-        freeMLP( &(result[q]) );
+        freeMLP( self, allocator, &(result[q]) );
 
     free(*classifiers);
     *classifiers=NULL;
@@ -112,59 +107,59 @@ freeClassifiers( mlp * classifiers[], int size )
 } // freeClassifiers
 
 
-MatChar convertCVToMatChar ( const cv::Mat_<uint8_t> & input )
+cMat /*uint8_t*/  convertCVToMatChar /*uint8_t*/  ( void * self, void * allocator, const cv::Mat_<uint8_t> & input )
 {
-    MatChar result = CreateMatChar( input.rows, input.cols );
+    cMat /*uint8_t*/  result = CreateMatChar /*uint8_t*/ ( self, allocator, input.rows, input.cols );
 
     for ( int q=0; q<input.rows; q++)
         for ( int w=0; w<input.cols; w++ )
-            result.data[ q * result.step + w + result.start ] = input(q,w);
+            reinterpret_cast<uint8_t*>(self)[ q * result.step + w + result.start ] = input(q,w);
     
     return result;    
-} // convertCVToMatChar
+} // convertCVTocMat /*uint8_t*/ 
 
-MatFloat convertCVToMatFloat (  const cv::Mat_<double> & input )
+cMat /*float*/convertCVToMatFloat /*float*/( void * self, void * allocator, const cv::Mat_<double> & input )
 {
-    MatFloat result = CreateMatFloat( input.rows, input.cols );
+    cMat /*float*/result = CreateMatFloat( self, allocator, input.rows, input.cols );
     
     for ( int q=0; q<input.rows; q++)
         for ( int w=0; w<input.cols; w++ )
-            result.data[ q * result.step + w + result.start ] = input(q,w);
+            reinterpret_cast<float*>(self)[ q * result.step + w + result.start ] = input(q,w);
     
     return result;    
 } // convertCVToMatFloat
 
 
-cv::Mat_<double> convertMatFloatToCV( MatFloat input )
+cv::Mat_<double> convertMatFloatToCV( void * self, cMat /*float*/input )
 {
     cv::Mat_<double> result( input.rows, input.cols );
     
     for ( int q=0; q<input.rows; q++)
         for ( int w=0; w<input.cols; w++ )
-            result(q,w) = input.data[ q * input.step + w + input.start ];
+            result(q,w) = reinterpret_cast<float*>(self)[ q * input.step + w + input.start ];
     
     return result;
 } // convertMatFloatToCV
 
 
-void allocateResponseMaps( int mapSize, int size, MatFloat * responseMaps[] )
+void allocateResponseMaps( void * self, void * allocator, int mapSize, int size, cMat /*float*/* responseMaps[] )
 {
-    *responseMaps = (MatFloat*)malloc( sizeof(MatFloat) * size );
+    *responseMaps = (cMat /*float*/*)malloc( sizeof(cMat /*float*/) * size );
     assert(*responseMaps);    
-    MatFloat * result = *responseMaps;    
+    cMat /*float*/* result = *responseMaps;    
 
     for ( int q=0; q<size; q++ )
-        result[q] = CreateMatFloat( 2 * mapSize + 1, 2 * mapSize + 1 );
+        result[q] = CreateMatFloat( self, allocator, 2 * mapSize + 1, 2 * mapSize + 1 );
     
     return;
 }
 
-void freeResponseMaps( MatFloat * responseMaps[], int size )
+void freeResponseMaps( void * self, void * allocator, cMat /*float*/* responseMaps[], int size )
 {
-    MatFloat * result = *responseMaps;    
+    cMat /*float*/* result = *responseMaps;    
     assert(result);
     for ( int q=0; q<size; q++ )
-        freeMatFloat(&(result[q]));
+        freeMatFloat( self, allocator, &(result[q]));
 
     free(result);
     *responseMaps=NULL;

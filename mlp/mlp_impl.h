@@ -7,78 +7,28 @@
 #define __MLP_IMPL__H__
 
 #include "cltypes.h"
+#include "allocator.hpp"
 
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
-    typedef struct {
-        int rows;
-        int cols;
-        int step;
-        int start;    
-        float * data;
-    } MatFloat; // struct MatFloat
-
-    typedef struct {
-        int rows;
-        int cols;
-        int step;
-        int start;    
-        uint8_t * data;    
-    } MatChar; // struct MatChar
-
-    typedef struct {
-        int rows;
-        int cols;
-        int step;
-        int start;    
-        int * data;    
-    } MatInt; // struct MatInt
-
-    
-    typedef struct {
-        int x;
-        int y;
-    } Point2i; // struct Point2i
-
-    typedef enum { none, maxAbs, meanStd } NormalizationMethod;
-
-    typedef struct {
-        int m_patchSize;      /*!< \brief Radius like patch size, the true size of the patch is [(2*patchSize+1) x (2*patchSize+1)] */
-        MatFloat m_wIn; /*!< \brief */
-        MatFloat m_wOut; /*!< \brief  */
-        MatFloat m_U; /*!< \brief */
-        int hidden_num;
-        double rho2;
-        // NormalizationMethod preSVDNormalizationMethod /*= none*/;
-        // NormalizationMethod postSVDNormalizationMethod;
-    } mlp; // struct 
-
-    MatFloat CreateMatFloat( int rows, int cols );
-
-    MatChar CreateMatChar( int rows, int cols );
-
-    void freeMatFloat( MatFloat * mat );
-
-    void freeMatChar( MatChar * mat );
-
-    void freeMLP( mlp * classifier );
-
 
     void
-    calculateMaps( 
+    calculateMaps(
+        void * self,
+        void * allocator,
         int m_visibleLandmarks_size, 
         int m_mapSize, 
-        MatChar alignedImage, 
-        MatFloat shape, 
+        cMat /*uint8_t*/  alignedImage, 
+        cMat /*float*/shape, 
         int m_patchSizes[],      /*!< \brief Radius like patch size, the true size of the patch is [(2*patchSize+1) x (2*patchSize+1)] */
-        MatFloat m_wIns[], /*!< \brief */
-        MatFloat m_wOuts[], /*!< \brief  */
-        MatFloat m_Us[], /*!< \brief */
+        cMat /*float*/m_wIns[], /*!< \brief */
+        cMat /*float*/m_wOuts[], /*!< \brief  */
+        cMat /*float*/m_Us[], /*!< \brief */
         
         // results
-        MatFloat * responseMaps[] );
+        cMat /*float*/* responseMaps[] );
     
         
 #endif /* __MLP_IMPL__H__ */

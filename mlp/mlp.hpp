@@ -154,7 +154,7 @@ template<class T0, class T1> inline void boost::serialization::serialize( T0 & a
     boost::serialization::split_free( archiver, matrix, version );
 }
 
-#define PRINT(x) std::cout << "_debug: " << #x << " = " << x << "\n"
+// #define PRINT(x) std::cout << "_debug: " << #x << " = " << x << "\n"
     
 #define GEL_EXPORT_VAR( archiver, var )                                 \
     try                                                                 \

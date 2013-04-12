@@ -9,6 +9,7 @@
 #include <boost/random/uniform_int.hpp>
 #include <boost/generator_iterator.hpp>
 
+#include "errors.hpp"
 #include "memory.hpp"
 
 const int KiB = 1024;
@@ -24,7 +25,7 @@ struct chunk_t {
 int main()
 {
     
-    carp::memory<float> pool(numel);
+    carp::memory pool( numel, float() );
     
     // std::ifstream input("/dev/urandom");
     uint64_t seed = 0;
@@ -47,7 +48,7 @@ int main()
             int64_t size = dice();
             int64_t pointer;        
             try {
-                pointer = pool.allocate(size);
+                pointer = pool.allocate<float>(size);
             }
             catch ( carp::exception & exception )
             {
@@ -77,7 +78,7 @@ int main()
 
         for ( auto & q : arrays )
         {        
-            pool.release(q.pointer);
+            pool.release<float>(q.pointer);
 
             real_allocated -= q.size;
 

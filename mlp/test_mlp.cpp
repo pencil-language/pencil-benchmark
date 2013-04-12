@@ -12,8 +12,15 @@ extern int EF_ALLOW_MALLOC_0 = 1;
 extern int EF_FILL = 1922;
 */
 
+#include <boost/smart_ptr.hpp>
+
 #include "opencl.hpp"
+#include "memory.hpp"
 #include "bench_mlp.hpp"
+
+const int KiB=1024;
+const int MiB=1024*KiB;
+const int memsize = 10 * MiB;
 
 int main()
 {
@@ -21,7 +28,6 @@ int main()
     int fail = 0;
     long int elapsed_time = 0;
     
-
     for ( conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id);          
           ((conductor.id != -1) and (conductor.id != 25));
           // conductor.id != -1;
@@ -31,17 +37,24 @@ int main()
         PRINT(conductor.id);
         conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.hack);
 
+        boost::shared_array<char> buffer( new char[memsize] );
+        carp::memory pool( memsize, uint8_t() );
+        void * self = buffer.get();        
+        void * allocator = &pool;
+        
         // here comes the function call
         {
             // preparing the inputs
-            MatChar alignedImage = convertCVToMatChar(conductor.hack.alignedImage);
-            MatFloat shape = convertCVToMatFloat(conductor.hack.shape);
-            auto m_classifiers = convertHackToMlp(conductor.hack);
-            MatFloat * responseMaps;
-            allocateResponseMaps( conductor.hack.m_mapSize, conductor.hack.m_visibleLandmarks_size, &responseMaps );
+            cMat /*uint8_t*/  alignedImage = convertCVToMatChar(self, allocator, conductor.hack.alignedImage);
+            cMat /*float*/ shape = convertCVToMatFloat(self, allocator, conductor.hack.shape);
+            auto m_classifiers = convertHackToMlp(self, allocator, conductor.hack);
+            cMat /*float*/ * responseMaps;
+            allocateResponseMaps( self, allocator, conductor.hack.m_mapSize, conductor.hack.m_visibleLandmarks_size, &responseMaps );
 
             auto start = std::chrono::high_resolution_clock::now();
             calculateMaps(
+                self,
+                allocator,
                 conductor.hack.m_visibleLandmarks_size,
                 conductor.hack.m_mapSize,
                 alignedImage,
@@ -56,11 +69,11 @@ int main()
             elapsed_time = microseconds(end - start);            
             
             // releasing the inputs
-            freeMatChar(&alignedImage);
-            freeMatFloat(&shape);
-            for ( auto & q : std::get<1>(m_classifiers) ) freeMatFloat(&q);
-            for ( auto & q : std::get<2>(m_classifiers) ) freeMatFloat(&q);
-            for ( auto & q : std::get<3>(m_classifiers) ) freeMatFloat(&q);
+            freeMatChar( self, allocator, &alignedImage);
+            freeMatFloat( self, allocator, &shape );
+            for ( auto & q : std::get<1>(m_classifiers) ) freeMatFloat( self, allocator, &q );
+            for ( auto & q : std::get<2>(m_classifiers) ) freeMatFloat( self, allocator, &q );
+            for ( auto & q : std::get<3>(m_classifiers) ) freeMatFloat( self, allocator, &q );
             
             // !!!! freeMatFloat(&())
             //freeClassifiers(&m_classifiers, conductor.hack.m_classifiers.size());
@@ -70,7 +83,7 @@ int main()
             for (int q=0; q<conductor.hack.m_visibleLandmarks_size; q++)
             {
                 cv::Mat_<double> nextResult;
-                nextResult = convertMatFloatToCV( responseMaps[q] );
+                nextResult = convertMatFloatToCV( self, responseMaps[q] );
                 calculatedResults.push_back(nextResult);                
             }
             
@@ -83,7 +96,7 @@ int main()
             }
             
             // releasing the outputs
-            freeResponseMaps( &responseMaps, conductor.hack.m_visibleLandmarks_size );
+            freeResponseMaps( self, allocator, &responseMaps, conductor.hack.m_visibleLandmarks_size );
 
         }
         // here comes the test

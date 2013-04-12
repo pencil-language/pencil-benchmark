@@ -6,29 +6,27 @@
 
 #include <bitset>
 #include <memory>
-#include <string>
+// #include <string>
 #include <cstddef>
 #include <cstdint>
 #include <utility>
-#include <iostream>
+// #include <iostream>
 #include <assert.h>
 #include <algorithm>
 #include <boost/preprocessor.hpp>
 
-#define PRINT(var)  std::cout << "debug: " << BOOST_PP_STRINGIZE(var) << " = " << var << std::endl
+// template <class T0>
+// void
+// print_pos( T0 & pos, std::string name ) {
+//     std::cout << name << " = ";
+//     for (int q=0; q<8; q++ )
+//         std::cout << pos[q] << ", ";
 
-template <class T0>
-void
-print_pos( T0 & pos, std::string name ) {
-    std::cout << name << " = ";
-    for (int q=0; q<8; q++ )
-        std::cout << pos[q] << ", ";
-
-    std::cout << "..." << std::endl;
+//     std::cout << "..." << std::endl;
     
-    return;
+//     return;
     
-} // print_pos
+// } // print_pos
 
 
 // #include "errors.hpp"
@@ -60,7 +58,6 @@ namespace carp {
     }; // class exception 
 
     
-    template <class T0>        
     class memory {
     private:
 
@@ -210,40 +207,36 @@ namespace carp {
         
     public:
         
-        typedef T0 value_type;        
         static const int64_t memsize = 128;        
         static const int64_t granularity = memsize / 8;
         static const int64_t log2granularity = 4;
-                
-        memory ( const int64_t & numel )
-            : m_size( sizeof(value_type) * numel ),
+
+        template <class MT0>
+        memory ( const int64_t & numel, MT0 )
+            : m_size( sizeof(MT0) * numel ),
               // m_net_allocated(0),
               m_gross_allocated(0),
-              pool( log2ceil( numel * sizeof(value_type) ) - log2granularity ) {
+              pool( log2ceil( numel * sizeof(MT0) ) - log2granularity ) {
             // only sizes which divide 128bits are supported
             // PRINT("memory::memory");
-            assert( (granularity % sizeof(value_type)) == 0);
+            assert( (granularity % sizeof(MT0)) == 0);
 //            PRINT(numel);
             
 //            PRINT( log2ceil( numel * sizeof(value_type) ) - log2granularity );
         } // memory
 
-        // int64_t
-        // netallocated() const {
-        //     return m_net_allocated;
-        // }
-
         int64_t
         grossallocated() const {
             return m_gross_allocated;
          }
-                
+
+        template <class MT0>
         int64_t
         allocate( int64_t numel ) throw( carp::exception& ) {
             assert(numel>0);            
             // PRINT("memory::allocate");
             // PRINT(numel);
-            int64_t size = numel * sizeof(value_type);
+            int64_t size = numel * sizeof(MT0);
 
             int64_t level = std::max<int64_t>( log2ceil( size ) - log2granularity, 0 );
                         
@@ -255,25 +248,26 @@ namespace carp {
             // PRINT(memsize * node.second / sizeof(value_type));
 
             // m_net_allocated += numel;
-            m_gross_allocated += (1<<level) * granularity / sizeof(value_type);
+            m_gross_allocated += (1<<level) * granularity / sizeof(MT0);
             
-            return granularity * node.second / sizeof(value_type);
+            return granularity * node.second / sizeof(MT0);
         } // allocate
 
+        template <class MT0>
         void
         release( int64_t elpos ) throw ( carp::exception& ) {
             // int64_t size = elpos * sizeof(value_type);
 
-            if ( elpos * sizeof(value_type) % granularity != 0 )
+            if ( elpos * sizeof(MT0) % granularity != 0 )
                 throw carp::exception(FREEING_UNALLOCATED_MEMORY);
                         
-            position_t pos( elpos * sizeof(value_type) / granularity );
+            position_t pos( elpos * sizeof(MT0) / granularity );
 
             // print_pos( pos, "memory::release::pos"  );
             
             auto released = pool.release(pos);
 
-            m_gross_allocated -= (1<<released) * granularity / sizeof(value_type);
+            m_gross_allocated -= (1<<released) * granularity / sizeof(MT0);
 
             return;
         } // release
