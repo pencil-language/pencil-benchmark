@@ -144,7 +144,7 @@ cv::Mat_<double> convertMatFloatToCV( void * self, cMat /*float*/input )
 
 void allocateResponseMaps( void * self, void * allocator, int mapSize, int size, cMat /*float*/* responseMaps[] )
 {
-    *responseMaps = (cMat /*float*/*)malloc( sizeof(cMat /*float*/) * size );
+    *responseMaps = new cMat[size];
     assert(*responseMaps);    
     cMat /*float*/* result = *responseMaps;    
 
@@ -161,7 +161,7 @@ void freeResponseMaps( void * self, void * allocator, cMat /*float*/* responseMa
     for ( int q=0; q<size; q++ )
         freeMatFloat( self, allocator, &(result[q]));
 
-    free(result);
+    delete [] result;
     *responseMaps=NULL;
     return;    
 }

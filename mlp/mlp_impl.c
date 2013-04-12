@@ -535,16 +535,25 @@ generateResponseMap(
     cMat /*float*/m_wOut,
     cMat /*float*/m_U,
 
+    // temporary variables
+    cMat wIn,
+//    cMat /*float*/patch,
+    
     // result
     cMat /*float*/* result
     )
 {
 
+    // printf("***patch.rows = %d\n", patch.rows );
+    // printf("***patch.cols = %d\n", patch.cols );
+
   assert(result->rows == 2 * mapSize + 1);
   assert(result->cols == 2 * mapSize + 1);
 
   cMat /*float*/wIn_A = GetBlockFloat( self, m_wIn, 0, m_wIn.rows, 0, m_wIn.cols - 1 );
-  cMat /*float*/wIn = CreateMatFloat( self, allocator, wIn_A.rows, m_U.rows );
+  // cMat /*float*/wIn = CreateMatFloat( self, allocator, wIn_A.rows, m_U.rows );
+  assert(wIn.rows == wIn_A.rows);
+  assert(wIn.cols == m_U.rows);
   cMat /*float*/bIn = GetBlockFloat( self, m_wIn, 0, m_wIn.rows, m_wIn.cols - 1, m_wIn.cols );
   cMat /*float*/wOut_tmp = GetBlockFloat( self, m_wOut, 0, m_wOut.rows, 0, m_wOut.cols - 1 );
 
@@ -578,15 +587,27 @@ generateResponseMap(
               int cx  = center.x - mapSize + ncx;
           
               cMat /*uint8_t*/   imagePatch = GetBlockChar( self, image, cy - m_patchSize, cy + m_patchSize + 1, cx - m_patchSize, cx + m_patchSize + 1 );
+
               cMat /*float*/patch = CreateMatFloat( self, allocator, imagePatch.rows, imagePatch.cols );
-          
+              // printf("imagePatch.rows = %d\n", imagePatch.rows );
+              // printf("imagePatch.cols = %d\n", imagePatch.cols );
+              // printf("patch.rows = %d\n", patch.rows );
+              // printf("patch.cols = %d\n", patch.cols );
+              
+              // assert( patch[localid].rows == imagePatch.rows );
+              // assert( patch[localid].cols == imagePatch.cols );
+                        
               normalizeSample( self, imagePatch, &patch);
           
               cMat /*float*/xOut = CreateMatFloat( self, allocator, bIn.rows, bIn.cols );
+              assert( xOut.rows == bIn.rows );
+              assert( xOut.cols == bIn.cols );
           
               gemmFloatDirDirDir( self, wIn, patch, -1.0, bIn, -1.0, &xOut );
           
               cMat /*float*/e = CreateMatFloat( self, allocator, xOut.rows, xOut.cols);
+              assert( e.rows == xOut.rows );
+              assert( e.cols == xOut.cols );              
           
               expFloat( self, xOut, &e );
           
@@ -649,6 +670,11 @@ calculateMaps(
 	shape_y = GetValueFloat( self, shape, 2*idx+1, 0 );
 	center.x = cvRound(shape_x);
 	center.y = cvRound(shape_y);
+
+        cMat wIn = CreateMatFloat( self, allocator, m_wIns[idx].rows, m_Us[idx].rows );
+        // cMat /*float*/patch = CreateMatFloat( self, allocator, 2 * m_patchSizes[idx] + 1, 2 * m_patchSizes[idx] + 1 );
+        // printf("2 * m_patchSizes[idx] + 1 = %d\n", 2 * m_patchSizes[idx] + 1);
+        // printf("patch.cols = %d\n", patch.cols );
         
 	// responseMaps[q] = m_classifiers[idx].generateResponseMap( alignedImage, center, m_mapSize );
 //        printf("alignedImage.rows = %d\n", alignedImage.rows );
@@ -663,7 +689,13 @@ calculateMaps(
             m_patchSizes[idx],
             m_wIns[idx],
             m_wOuts[idx],
-            m_Us[idx],            
+            m_Us[idx],
+
+            // temporaries
+            wIn,
+            //  patch,
+            
+            // result
             (&(*responseMaps)[q]) );
 
     }

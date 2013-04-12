@@ -20,7 +20,7 @@ extern int EF_FILL = 1922;
 
 const int KiB=1024;
 const int MiB=1024*KiB;
-const int memsize = 10 * MiB;
+const int memsize = 1.1 * MiB;
 
 int main()
 {
