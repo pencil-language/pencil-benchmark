@@ -537,8 +537,9 @@ generateResponseMap(
 
     // temporary variables
     cMat wIn,
-//    cMat /*float*/patch,
-    
+    cMat /*float*/patches[],
+    cMat /*float*/xOuts[],
+    cMat es[],
     // result
     cMat /*float*/* result
     )
@@ -588,24 +589,28 @@ generateResponseMap(
           
               cMat /*uint8_t*/   imagePatch = GetBlockChar( self, image, cy - m_patchSize, cy + m_patchSize + 1, cx - m_patchSize, cx + m_patchSize + 1 );
 
-              cMat /*float*/patch = CreateMatFloat( self, allocator, imagePatch.rows, imagePatch.cols );
+              // cMat /*float*/patch = CreateMatFloat( self, allocator, imagePatch.rows, imagePatch.cols );
+              cMat patch = patches[localid];
+              
               // printf("imagePatch.rows = %d\n", imagePatch.rows );
               // printf("imagePatch.cols = %d\n", imagePatch.cols );
               // printf("patch.rows = %d\n", patch.rows );
               // printf("patch.cols = %d\n", patch.cols );
               
-              // assert( patch[localid].rows == imagePatch.rows );
-              // assert( patch[localid].cols == imagePatch.cols );
+              assert( patch.rows == imagePatch.rows );
+              assert( patch.cols == imagePatch.cols );
                         
               normalizeSample( self, imagePatch, &patch);
           
-              cMat /*float*/xOut = CreateMatFloat( self, allocator, bIn.rows, bIn.cols );
+              // cMat /*float*/xOut = CreateMatFloat( self, allocator, bIn.rows, bIn.cols );
+              cMat xOut = xOuts[localid];
               assert( xOut.rows == bIn.rows );
               assert( xOut.cols == bIn.cols );
           
               gemmFloatDirDirDir( self, wIn, patch, -1.0, bIn, -1.0, &xOut );
           
-              cMat /*float*/e = CreateMatFloat( self, allocator, xOut.rows, xOut.cols);
+              // cMat /*float*/e = CreateMatFloat( self, allocator, xOut.rows, xOut.cols);
+              cMat e = es[localid];
               assert( e.rows == xOut.rows );
               assert( e.cols == xOut.cols );              
           
@@ -617,16 +622,16 @@ generateResponseMap(
           
               SetValueFloat( self, result, ncy, ncx, 1./( 1. + exp(- dotProductTransDir( self, wOut_tmp, xOut) - bOut ) ) );
           
-              freeMatFloat( self, allocator, &e);
-              freeMatFloat( self, allocator, &xOut);
-              freeMatFloat( self, allocator, &patch);
+              // freeMatFloat( self, allocator, &e);
+              // freeMatFloat( self, allocator, &xOut);
+              // freeMatFloat( self, allocator, &patch);
           } // for localid 
       } // for gangsize
   } // localid block
   
 //  assert(false);
   
-  freeMatFloat( self, allocator, &wIn);
+  // freeMatFloat( self, allocator, &wIn);
   // end of classic impl
     return;
 } // generateResponseMap
@@ -672,8 +677,21 @@ calculateMaps(
 	center.y = cvRound(shape_y);
 
         cMat wIn = CreateMatFloat( self, allocator, m_wIns[idx].rows, m_Us[idx].rows );
-        // cMat /*float*/patch = CreateMatFloat( self, allocator, 2 * m_patchSizes[idx] + 1, 2 * m_patchSizes[idx] + 1 );
-        // printf("2 * m_patchSizes[idx] + 1 = %d\n", 2 * m_patchSizes[idx] + 1);
+
+        cMat patches[gangsize];
+        cMat xOuts[gangsize];
+        cMat es[gangsize];
+        
+        {
+          int w;
+          for (w=0; w<gangsize; w++) {
+            patches[w] = CreateMatFloat( self, allocator, 2 * m_patchSizes[idx] + 1, 2 * m_patchSizes[idx] + 1 );
+            xOuts[w] = CreateMatFloat( self, allocator, m_wIns[idx].rows, 1 );
+            es[w] = CreateMatFloat( self, allocator, xOuts[w].rows, xOuts[w].cols );
+          }
+        }
+        
+          // printf("2 * m_patchSizes[idx] + 1 = %d\n", 2 * m_patchSizes[idx] + 1);
         // printf("patch.cols = %d\n", patch.cols );
         
 	// responseMaps[q] = m_classifiers[idx].generateResponseMap( alignedImage, center, m_mapSize );
@@ -693,12 +711,23 @@ calculateMaps(
 
             // temporaries
             wIn,
-            //  patch,
-            
+            patches,
+            xOuts,
+            es,
             // result
             (&(*responseMaps)[q]) );
 
-    }
+        freeMatFloat(self, allocator, &wIn);
+        {
+          int w;
+          for (w=0; w<gangsize; w++) {
+            freeMatFloat( self, allocator, &(patches[w]) );
+            freeMatFloat( self, allocator, &(xOuts[w]) );
+            freeMatFloat( self, allocator, &(es[w]) );
+          }
+        }
+        
+    } // for q in visiblelandmarks_size
 
     // printf("calculateMaps finished\n");
     return;
