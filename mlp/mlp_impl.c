@@ -596,16 +596,16 @@ generateResponseMap(
           
               SetValueFloat( self, result, ncy, ncx, 1./( 1. + exp(- dotProductTransDir( self, wOut_tmp, xOut) - bOut ) ) );
           
-              freeMatFloat(&e);
-              freeMatFloat(&xOut);
-              freeMatFloat(&patch);
+              freeMatFloat( self, allocator, &e);
+              freeMatFloat( self, allocator, &xOut);
+              freeMatFloat( self, allocator, &patch);
           } // for localid 
       } // for gangsize
   } // localid block
   
 //  assert(false);
   
-  freeMatFloat(&wIn);
+  freeMatFloat( self, allocator, &wIn);
   // end of classic impl
     return;
 } // generateResponseMap

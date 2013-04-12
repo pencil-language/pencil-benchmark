@@ -39,9 +39,8 @@ int main()
 
         boost::shared_array<char> buffer( new char[memsize] );
         carp::memory pool( memsize, uint8_t() );
-        void * self = buffer.get();        
+        void * self = buffer.get();
         void * allocator = &pool;
-        
         // here comes the function call
         {
             // preparing the inputs
@@ -50,7 +49,7 @@ int main()
             auto m_classifiers = convertHackToMlp(self, allocator, conductor.hack);
             cMat /*float*/ * responseMaps;
             allocateResponseMaps( self, allocator, conductor.hack.m_mapSize, conductor.hack.m_visibleLandmarks_size, &responseMaps );
-
+            
             auto start = std::chrono::high_resolution_clock::now();
             calculateMaps(
                 self,
