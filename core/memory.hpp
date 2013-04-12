@@ -12,6 +12,7 @@
 #include <utility>
 #include <iostream>
 #include <assert.h>
+#include <algorithm>
 #include <boost/preprocessor.hpp>
 
 #define PRINT(var)  std::cout << "debug: " << BOOST_PP_STRINGIZE(var) << " = " << var << std::endl
@@ -39,8 +40,10 @@ namespace carp {
     class exception : public std::exception {
     public:
         error_t error;
+
         exception( const error_t & error ) : error(error) { }
-        virtual const char* what() const noexcept override {
+        
+        virtual const char* what() const noexcept /* override */ {
             switch (error) {
             case INSUFFICIENT_MEMORY:
                 return "INSUFFICIENT_MEMORY";
@@ -64,7 +67,7 @@ namespace carp {
         typedef std::bitset<8*sizeof(int64_t)> position_t;
                 
         int64_t m_size;
-        int64_t m_net_allocated;
+        // int64_t m_net_allocated;
         int64_t m_gross_allocated;
         
         // three statuses:
@@ -156,7 +159,7 @@ namespace carp {
             } // split
                         
             void merge() {
-                PRINT("block_t::merge");
+                // PRINT("block_t::merge");
                 
                 if ( ( m_status == broken ) and
                      ( m_left->m_status  == free ) and
@@ -164,39 +167,41 @@ namespace carp {
                     m_left.reset();
                     m_right.reset();
                     m_status = free;
-                    PRINT("merge occurred");
+//                    PRINT("merge occurred");
                     
                 } // if
             } // merge
 
-            void release( const position_t & pos) throw ( carp::exception& ){
+            int64_t
+            release( const position_t & pos) throw ( carp::exception& ){
                 if (m_status == free) throw carp::exception(FREEING_UNALLOCATED_MEMORY);
                     
                 if (m_status == allocated) {
-                    PRINT("found an allocated node");
+//                    PRINT("found an allocated node");
                     m_status = free;
-                    return;
+                    return m_level;
                 }
 
                 // here the status is broken
                 assert(m_status==broken);
 
-                PRINT(m_level);
-                
+//                PRINT(m_level);
+
+                auto released_size = 0;
                 
                 if (not pos.test(m_level-1)) {
-                    PRINT("went left");
+//                    PRINT("went left");
                     
-                    m_left->release(pos);
+                    released_size = m_left->release(pos);
                 }
                 else {// NOT nextbig
-                    PRINT("went right");
-                    m_right->release(pos);
+//                    PRINT("went right");
+                    released_size = m_right->release(pos);
                 }
                 
                 merge(); // we merge the blocks if it's possible                
 
-                return;                
+                return released_size;
             } // release
                         
         }; // class block_t
@@ -212,21 +217,21 @@ namespace carp {
                 
         memory ( const int64_t & numel )
             : m_size( sizeof(value_type) * numel ),
-              m_net_allocated(0),
+              // m_net_allocated(0),
               m_gross_allocated(0),
               pool( log2ceil( numel * sizeof(value_type) ) - log2granularity ) {
             // only sizes which divide 128bits are supported
             // PRINT("memory::memory");
             assert( (granularity % sizeof(value_type)) == 0);
-            PRINT(numel);
+//            PRINT(numel);
             
-            PRINT( log2ceil( numel * sizeof(value_type) ) - log2granularity );
+//            PRINT( log2ceil( numel * sizeof(value_type) ) - log2granularity );
         } // memory
 
-        int64_t
-        netallocated() const {
-            return m_net_allocated;
-        }
+        // int64_t
+        // netallocated() const {
+        //     return m_net_allocated;
+        // }
 
         int64_t
         grossallocated() const {
@@ -235,11 +240,13 @@ namespace carp {
                 
         int64_t
         allocate( int64_t numel ) throw( carp::exception& ) {
+            assert(numel>0);            
             // PRINT("memory::allocate");
             // PRINT(numel);
             int64_t size = numel * sizeof(value_type);
 
-            int64_t level = log2ceil( size ) - log2granularity;
+            int64_t level = std::max<int64_t>( log2ceil( size ) - log2granularity, 0 );
+                        
             // PRINT(level);
                         
             auto node = pool.allocate(level);
@@ -247,7 +254,7 @@ namespace carp {
 
             // PRINT(memsize * node.second / sizeof(value_type));
 
-            m_net_allocated += numel;
+            // m_net_allocated += numel;
             m_gross_allocated += (1<<level) * granularity / sizeof(value_type);
             
             return granularity * node.second / sizeof(value_type);
@@ -262,9 +269,11 @@ namespace carp {
                         
             position_t pos( elpos * sizeof(value_type) / granularity );
 
-            print_pos( pos, "memory::release::pos"  );
+            // print_pos( pos, "memory::release::pos"  );
             
-            pool.release(pos);            
+            auto released = pool.release(pos);
+
+            m_gross_allocated -= (1<<released) * granularity / sizeof(value_type);
 
             return;
         } // release

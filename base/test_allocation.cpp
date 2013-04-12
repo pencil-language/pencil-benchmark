@@ -1,56 +1,96 @@
 // UjoImro, 2013
 // Experimental Research Code for the CARP Project
 
+#include <fstream>
+#include <iomanip>
 #include <iostream>
+#include <boost/random.hpp>
 #include <boost/preprocessor.hpp>
+#include <boost/random/uniform_int.hpp>
+#include <boost/generator_iterator.hpp>
 
 #include "memory.hpp"
 
+const int KiB = 1024;
+const int memsize = 64 * KiB;
+const int numel = memsize / sizeof(float);
+const bool debug = false;
+
+struct chunk_t {
+    int64_t size;
+    int64_t pointer;    
+}; // chunk_t
+
 int main()
 {
-    carp::memory<float> pool(1000);
-
-    PRINT(pool.allocate(10));
-//    PRINT(pool.netallocated());
-//    PRINT(pool.grossallocated());
     
-    PRINT(pool.allocate(100));
+    carp::memory<float> pool(numel);
+    
+    // std::ifstream input("/dev/urandom");
+    uint64_t seed = 0;
+    // input.read(reinterpret_cast<char*>(&seed), sizeof(seed));
 
-    pool.release(128);
+    typedef boost::mt19937 RNGType;
+    RNGType rng(seed);
+    boost::uniform_int<> allocsize(1, numel/10);
+    boost::variate_generator< RNGType, boost::uniform_int<> > dice(rng, allocsize);
 
-    PRINT(pool.allocate(100));
-
-//    PRINT(pool.netallocated());
-//    PRINT(pool.grossallocated());
-
-    PRINT(pool.allocate(500));
-//    PRINT(pool.netallocated());
-//    PRINT(pool.grossallocated());
-
-    try {
+    for (int repeat = 0; repeat < 1000; repeat++ ) {
+        PRINT(repeat);
         
-        PRINT(pool.allocate(500));
-    }
-    catch ( carp::exception & exception )
-    {
-        assert(exception.error == carp::INSUFFICIENT_MEMORY );
-        PRINT("insufficient memory exception caught");
-    }
+        std::vector<chunk_t> arrays;
 
-    PRINT(pool.allocate(100));
-//    PRINT(pool.netallocated());
-//    PRINT(pool.grossallocated());
+        int64_t real_allocated=0;
 
-    PRINT(pool.allocate(50));
-//    PRINT(pool.netallocated());
-//    PRINT(pool.grossallocated());
+        // allocation 
+        for ( int q=0; q<14; q++ ) {
+            int64_t size = dice();
+            int64_t pointer;        
+            try {
+                pointer = pool.allocate(size);
+            }
+            catch ( carp::exception & exception )
+            {
+                if (exception.error == carp::INSUFFICIENT_MEMORY ) {
+                    if (debug) {                        
+                        std::cout << "insufficient memory at " << pool.grossallocated() << "/" << numel
+                                  << " (requested size: " << size << ")" << std::endl;
 
-    PRINT(pool.allocate(100));
-    PRINT(pool.netallocated());
-    PRINT(pool.grossallocated());
+                        std::cout << "real allocated memory: " << real_allocated << "/" << pool.grossallocated() << "=" << 100 * real_allocated / pool.grossallocated() << "%" << std::endl;
+                    }                    
+                }
+                else throw exception;
+
+                continue;            
+            }
+
+            arrays.push_back({size, pointer});
+            real_allocated += size;
+
+            if (debug) std::cout << "allocated: " << size << " (size); " << real_allocated << " (net_size); "  << pool.grossallocated() << " (gross_size); " << pointer << " (pointer)" << std::endl;        
+        }
+
+        std::cout << "real allocated memory: " << real_allocated << "/" << pool.grossallocated() << "=" << 100 * real_allocated / pool.grossallocated() << "%" << std::endl;
+        
+        // release
+        std::random_shuffle( arrays.begin(), arrays.end() );
+
+        for ( auto & q : arrays )
+        {        
+            pool.release(q.pointer);
+
+            real_allocated -= q.size;
+
+            if (debug)
+                if (pool.grossallocated()>0)
+                    std::cout << "real allocated memory: " << real_allocated << "/" << pool.grossallocated() << "=" << 100 * real_allocated / pool.grossallocated() << "%" << std::endl;
+                else
+                    std::cout << "real allocated memory: " << real_allocated << "/" << pool.grossallocated() << std::endl;
+        }
+
+        std::cout << "real allocated memory: " << real_allocated << "/" << pool.grossallocated() << std::endl;
+    } // repeat
     
-    
-    PRINT( (1<<7) );
     
     return EXIT_SUCCESS;
 } // main
