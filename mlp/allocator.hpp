@@ -39,8 +39,14 @@ extern "C" {
         // NormalizationMethod postSVDNormalizationMethod;
     } mlp; // struct 
 
-
-
+    typedef struct {
+        int m_patchSize;
+        cMat alignedImage;
+        cMat m_wIn;
+        cMat m_wOut;
+        cMat m_Us;
+    } calcpackage; // struct 
+    
     cMat /*float*/CreateMatFloat( void * self, void * allocator, int rows, int cols );
 
     cMat /*uint8_t*/CreateMatChar /*uint8_t*/ ( void * self, void * allocator, int rows, int cols );

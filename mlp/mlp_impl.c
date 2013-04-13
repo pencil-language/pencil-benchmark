@@ -640,32 +640,24 @@ cvRound( float value )
     return (int)(value + (value >= 0 ? 0.5 : -0.5));
 } // cvRound
 
-typedef struct {
-    cMat alignedImage;
-    cMat m_wIn;
-    cMat m_wOut;
-    cMat m_Us;
-
-    cMat wIn;
-    cMat patches[];
-    cMat xOuts[];
-    cMat es;
-
-    cMat responseMap;    
-} calcpackage; // struct 
-    
-
+ 
 void
 calculateMaps(
     void * self,
     void * allocator,
+    int memory_segments[]; // representing the start of the gang's memory segment
     int m_visibleLandmarks_size, 
     int m_mapSize, 
     cMat /*float*/shape, 
-    int m_patchSizes[],
 
     calcpackage packages[],
-    
+
+    // temporaries
+    cMat wIn;
+    cMat patches[];
+    cMat xOuts[];
+    cMat es[];
+
     // results
     cMat /*float*/responseMaps[] )
 {
@@ -687,37 +679,32 @@ calculateMaps(
 	center.x = cvRound(shape_x);
 	center.y = cvRound(shape_y);
 
-        cMat wIn = CreateMatFloat( self, allocator, m_wIns[idx].rows, m_Us[idx].rows );
+        // cMat wIn = CreateMatFloat( self, allocator, m_wIns[idx].rows, m_Us[idx].rows );
 
-        cMat patches[gangsize];
-        cMat xOuts[gangsize];
-        cMat es[gangsize];
+        // cMat patches[gangsize];
+        // cMat xOuts[gangsize];
+        // cMat es[gangsize];
         
-        {
-          int w;
-          for (w=0; w<gangsize; w++) {
-            patches[w] = CreateMatFloat( self, allocator, 2 * m_patchSizes[idx] + 1, 2 * m_patchSizes[idx] + 1 );
-            xOuts[w] = CreateMatFloat( self, allocator, m_wIns[idx].rows, 1 );
-            es[w] = CreateMatFloat( self, allocator, xOuts[w].rows, xOuts[w].cols );
-          }
-        }
-        
-          // printf("2 * m_patchSizes[idx] + 1 = %d\n", 2 * m_patchSizes[idx] + 1);
-        // printf("patch.cols = %d\n", patch.cols );
+        // {
+        //   int w;
+        //   for (w=0; w<gangsize; w++) {
+        //     patches[w] = CreateMatFloat( self, allocator, 2 * m_patchSizes[idx] + 1, 2 * m_patchSizes[idx] + 1 );
+        //     xOuts[w] = CreateMatFloat( self, allocator, m_wIns[idx].rows, 1 );
+        //     es[w] = CreateMatFloat( self, allocator, xOuts[w].rows, xOuts[w].cols );
+        //   }
+        // }
         
 	// responseMaps[q] = m_classifiers[idx].generateResponseMap( alignedImage, center, m_mapSize );
-//        printf("alignedImage.rows = %d\n", alignedImage.rows );
-//        printf("alignedImage.cols = %d\n", alignedImage.cols );
         
 	generateResponseMap(
-            self,
+            self + memory_segments[idx],
             alignedImage,
             center,
             m_mapSize,
-            m_patchSizes[idx],
-            m_wIns[idx],
-            m_wOuts[idx],
-            m_Us[idx],
+            packages[idx].m_patchSize,
+            packages[idx].m_wIns,
+            packages[idx].m_wOuts,
+            packages[idx].m_Us,
 
             // temporaries
             wIn,
@@ -727,15 +714,15 @@ calculateMaps(
             // result
             responseMaps[q] );
 
-        freeMatFloat(self, allocator, &wIn);
-        {
-          int w;
-          for (w=0; w<gangsize; w++) {
-            freeMatFloat( self, allocator, &(patches[w]) );
-            freeMatFloat( self, allocator, &(xOuts[w]) );
-            freeMatFloat( self, allocator, &(es[w]) );
-          }
-        }
+        // freeMatFloat(self, allocator, &wIn);
+        // {
+        //   int w;
+        //   for (w=0; w<gangsize; w++) {
+        //     freeMatFloat( self, allocator, &(patches[w]) );
+        //     freeMatFloat( self, allocator, &(xOuts[w]) );
+        //     freeMatFloat( self, allocator, &(es[w]) );
+        //   }
+        // }
         
     } // for q in visiblelandmarks_size
 

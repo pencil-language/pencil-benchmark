@@ -13,21 +13,27 @@
 extern "C" {
 #endif // __cplusplus
 
-
+    
 void
 calculateMaps(
     void * self,
     void * allocator,
+    int memory_segments[]; // representing the start of the gang's memory segment
     int m_visibleLandmarks_size, 
     int m_mapSize, 
     cMat /*float*/shape, 
-    int m_patchSizes[],
 
     calcpackage packages[],
-    
+
+    // temporaries
+    cMat wIn;
+    cMat patches[];
+    cMat xOuts[];
+    cMat es[];
+
     // results
     cMat /*float*/responseMaps[] );
-        
+    
     
         
 #endif /* __MLP_IMPL__H__ */
