@@ -43,40 +43,39 @@ void     printMatFloat( void* self, cMat /*float*/mat, char * name )
 
 
 void
-copyToFloat( void* self, cMat /*float*/input, cMat /*float*/* output )
+copyToFloat( void* self, cMat /*float*/input, cMat /*float*/ output )
 {
-    assert(output);
-    assert(input.rows == output->rows);
-    assert(input.cols == output->cols);
+    assert(input.rows == output.rows);
+    assert(input.cols == output.cols);
     
     int q, w;
     for ( q=0; q<input.rows; q++ )
         for ( w=0; w<input.cols; w++ )
-            ((float*)self)[ q * output->step + w + output->start ] =
+            ((float*)self)[ q * output.step + w + output.start ] =
                 ((float*)self)[ q * input.step + w + input.start ];
     
     return;
 } // copyTo
 
 void
-transposeFloat( void* self, cMat /*float*/input, cMat /*float*/* output )
+transposeFloat( void* self, cMat /*float*/input, cMat /*float*/ output )
 {
     int q,w;
-    assert(output->rows == input.cols);
-    assert(output->cols == input.rows);
+    assert(output.rows == input.cols);
+    assert(output.cols == input.rows);
     for (q=0; q<input.rows; q++)
         for (w=0; w<input.cols; w++)
-            ((float*)self)[ w * output->step + q + output->start ] 
+            ((float*)self)[ w * output.step + q + output.start ] 
         	= ((float*)self)[ q * input.step + w + input.start ];
 
     return;
 } // transposeFloat
 
 void
-transposeFloatGang( void* self, cMat /*float*/input, int localid, cMat /*float*/* output )
+transposeFloatGang( void* self, cMat /*float*/input, int localid, cMat /*float*/ output )
 {
-    assert(output->rows == input.cols);
-    assert(output->cols == input.rows);
+    assert(output.rows == input.cols);
+    assert(output.cols == input.rows);
     
     int worksize = input.cols * input.rows;
     int work = 0;
@@ -87,7 +86,7 @@ transposeFloatGang( void* self, cMat /*float*/input, int localid, cMat /*float*/
         int q = index / input.cols;
         int w = index % input.cols;
               
-        ((float*)self)[ w * output->step + q + output->start ] 
+        ((float*)self)[ w * output.step + q + output.start ] 
             = ((float*)self)[ q * input.step + w + input.start ];
     }
 } // transposeFloatGang
@@ -180,15 +179,15 @@ GetBlockFloat( void* self, cMat /*float*/smat, int row_from, int row_to, int col
 }
 
 void
-convertFromCharToFloat( void* self, cMat /*uint8_t*/  from, float quotient, float shift, cMat /*float*/* to )
+convertFromCharToFloat( void* self, cMat /*uint8_t*/  from, float quotient, float shift, cMat /*float*/ to )
 {
-    assert(from.rows == to->rows);
-    assert(from.cols == to->cols);
+    assert(from.rows == to.rows);
+    assert(from.cols == to.cols);
     
     int q, w;
     for ( q=0; q<from.rows; q++ )
         for ( w=0; w<from.cols; w++ )
-            ((float*)self)[ q * to->step + w + to->start ] = 
+            ((float*)self)[ q * to.step + w + to.start ] = 
         	quotient * ((uint8_t*)self)[ q * from.step + w + from.start ] + shift;
     return;
 }
@@ -211,13 +210,13 @@ reshapeFloat( void* self, cMat /*float*/smat, int new_rows )
 
 // returns alpha*A*B + beta * C
 void 
-gemmFloatDirDirDir( void* self, cMat /*float*/A, cMat /*float*/B, float alpha, cMat /*float*/C, float beta, cMat /*float*/* result )
+gemmFloatDirDirDir( void* self, cMat /*float*/A, cMat /*float*/B, float alpha, cMat /*float*/C, float beta, cMat /*float*/ result )
 {
     assert(A.rows == C.rows);
     assert(A.cols == B.rows); 
     assert(B.cols == C.cols);
-    assert(C.rows == result->rows);
-    assert(C.cols == result->cols);
+    assert(C.rows == result.rows);
+    assert(C.cols == result.cols);
 
     int q, w, e;
     float sum=0.;
@@ -236,7 +235,7 @@ gemmFloatDirDirDir( void* self, cMat /*float*/A, cMat /*float*/B, float alpha, c
                     sum = t;              
                 }
                 
-                ((float*)self)[ q * result->step + w + result->start ] = alpha * sum  + beta * ((float*)self)[ q * C.step + w + C.start ];
+                ((float*)self)[ q * result.step + w + result.start ] = alpha * sum  + beta * ((float*)self)[ q * C.step + w + C.start ];
             }
     }
     else // NOT fabs(beta) > 0.000001
@@ -253,7 +252,7 @@ gemmFloatDirDirDir( void* self, cMat /*float*/A, cMat /*float*/B, float alpha, c
                     sum = t;              
                 }
                 
-                ((float*)self)[ q * result->step + w + result->start ] = alpha * sum;
+                ((float*)self)[ q * result.step + w + result.start ] = alpha * sum;
             }        
     }
     
@@ -261,13 +260,13 @@ gemmFloatDirDirDir( void* self, cMat /*float*/A, cMat /*float*/B, float alpha, c
 } // gemmFloatDirDirDir
 
 void 
-gemmFloatDirDirDirGang( void* self, cMat /*float*/A, cMat /*float*/B, float alpha, cMat /*float*/C, float beta, int localid, cMat /*float*/* result )
+gemmFloatDirDirDirGang( void* self, cMat /*float*/A, cMat /*float*/B, float alpha, cMat /*float*/C, float beta, int localid, cMat /*float*/ result )
 {
     assert(A.rows == C.rows);
     assert(A.cols == B.rows); 
     assert(B.cols == C.cols);
-    assert(C.rows == result->rows);
-    assert(C.cols == result->cols);
+    assert(C.rows == result.rows);
+    assert(C.cols == result.cols);
 
     int q, w, e;
     float sum=0.;
@@ -291,7 +290,7 @@ gemmFloatDirDirDirGang( void* self, cMat /*float*/A, cMat /*float*/B, float alph
                 sum = t;              
             }
                 
-            ((float*)self)[ q * result->step + w + result->start ] = alpha * sum  + beta * ((float*)self)[ q * C.step + w + C.start ];
+            ((float*)self)[ q * result.step + w + result.start ] = alpha * sum  + beta * ((float*)self)[ q * C.step + w + C.start ];
         }
     }
     else // NOT fabs(beta) > 0.000001
@@ -314,7 +313,7 @@ gemmFloatDirDirDirGang( void* self, cMat /*float*/A, cMat /*float*/B, float alph
                 sum = t;              
             }
             
-            ((float*)self)[ q * result->step + w + result->start ] = alpha * sum;
+            ((float*)self)[ q * result.step + w + result.start ] = alpha * sum;
         }
     }
     
@@ -323,13 +322,13 @@ gemmFloatDirDirDirGang( void* self, cMat /*float*/A, cMat /*float*/B, float alph
 
 
 void 
-gemmFloatDirTransDirGang( void* self, cMat /*float*/A, cMat /*float*/B, float alpha, cMat /*float*/C, float beta, int localid, cMat /*float*/* result )
+gemmFloatDirTransDirGang( void* self, cMat /*float*/A, cMat /*float*/B, float alpha, cMat /*float*/C, float beta, int localid, cMat /*float*/ result )
 {
     assert(A.rows == C.rows);
     assert(A.cols == B.cols); 
     assert(B.rows == C.cols);
-    assert(C.rows == result->rows);
-    assert(C.cols == result->cols);
+    assert(C.rows == result.rows);
+    assert(C.cols == result.cols);
 
     int q, w, e;
     float sum=0.;
@@ -353,7 +352,7 @@ gemmFloatDirTransDirGang( void* self, cMat /*float*/A, cMat /*float*/B, float al
                 sum = t;              
             }
                 
-            ((float*)self)[ q * result->step + w + result->start ] = alpha * sum  + beta * ((float*)self)[ q * C.step + w + C.start ];
+            ((float*)self)[ q * result.step + w + result.start ] = alpha * sum  + beta * ((float*)self)[ q * C.step + w + C.start ];
         }
     }
     else // NOT fabs(beta) > 0.000001
@@ -376,7 +375,7 @@ gemmFloatDirTransDirGang( void* self, cMat /*float*/A, cMat /*float*/B, float al
                 sum = t;              
             }
             
-            ((float*)self)[ q * result->step + w + result->start ] = alpha * sum;
+            ((float*)self)[ q * result.step + w + result.start ] = alpha * sum;
         }
     }
     
@@ -385,60 +384,60 @@ gemmFloatDirTransDirGang( void* self, cMat /*float*/A, cMat /*float*/B, float al
 
 
 void
-expFloat( void* self, cMat /*float*/input, cMat /*float*/* output )
+expFloat( void* self, cMat /*float*/input, cMat /*float*/ output )
 {
-    assert(input.rows == output->rows);
-    assert(input.cols == output->cols);
+    assert(input.rows == output.rows);
+    assert(input.cols == output.cols);
 
     int q, w;
     for ( q=0; q<input.rows; q++ )
         for ( w=0; w<input.cols; w++ )
-            ((float*)self)[ q * output->step + w + output->start ] = 
+            ((float*)self)[ q * output.step + w + output.start ] = 
         	exp(((float*)self)[ q * input.step + w + input.start ]);
 
     return;
 }
 
 void
-addFloat( void* self, cMat /*float*/input, float val, cMat /*float*/* output )
+addFloat( void* self, cMat /*float*/input, float val, cMat /*float*/ output )
 {
-    assert(input.rows == output->rows);
-    assert(input.cols == output->cols);
+    assert(input.rows == output.rows);
+    assert(input.cols == output.cols);
 
     int q, w;
     for ( q=0; q<input.rows; q++ )
         for ( w=0; w<input.cols; w++ )
-            ((float*)self)[ q * output->step + w + output->start ] = 
+            ((float*)self)[ q * output.step + w + output.start ] = 
         	val + ((float*)self)[ q * input.step + w + input.start ];
 
     return;
 }
 
 void 
-divideFloat( void* self, float val, cMat /*float*/input, cMat /*float*/* output )
+divideFloat( void* self, float val, cMat /*float*/input, cMat /*float*/ output )
 {
-    assert(input.rows == output->rows);
-    assert(input.cols == output->cols);
+    assert(input.rows == output.rows);
+    assert(input.cols == output.cols);
 
     int q, w;
     for ( q=0; q<input.rows; q++ )
         for ( w=0; w<input.cols; w++ )
-            ((float*)self)[ q * output->step + w + output->start ] = 
+            ((float*)self)[ q * output.step + w + output.start ] = 
         	val / ((float*)self)[ q * input.step + w + input.start ];
 
     return;
 }
 
 void
-subtractFloat( void* self, cMat /*float*/input, float val, cMat /*float*/* output )
+subtractFloat( void* self, cMat /*float*/input, float val, cMat /*float*/ output )
 {
-    assert(input.rows == output->rows);
-    assert(input.cols == output->cols);
+    assert(input.rows == output.rows);
+    assert(input.cols == output.cols);
 
     int q, w;
     for ( q=0; q<input.rows; q++ )
         for ( w=0; w<input.cols; w++ )
-            ((float*)self)[ q * output->step + w + output->start ] = 
+            ((float*)self)[ q * output.step + w + output.start ] = 
         	((float*)self)[ q * input.step + w + input.start ] - val;
     
     return;
@@ -452,9 +451,9 @@ GetValueFloat( void* self, cMat /*float*/smat, int row, int col )
 }
 
 void
-SetValueFloat( void* self, cMat /*float*/* smat, int row, int col, float value )
+SetValueFloat( void* self, cMat /*float*/ smat, int row, int col, float value )
 {
-    ((float*)self)[ row * smat->step + col + smat->start ] = value;
+    ((float*)self)[ row * smat.step + col + smat.start ] = value;
     return;    
 }
 
@@ -500,7 +499,7 @@ float dotProductTransDir( void* self, cMat /*float*/A, cMat /*float*/B )
   return result;
 }
 
-void normalizeSample( void* self, cMat /*uint8_t*/  image, cMat /*float*/* result )
+void normalizeSample( void* self, cMat /*uint8_t*/  image, cMat /*float*/ * result )
 {
   assert(result->cols == image.cols);
   assert(result->rows == image.rows);
@@ -516,7 +515,7 @@ void normalizeSample( void* self, cMat /*uint8_t*/  image, cMat /*float*/* resul
 
   if (sampleMax == 0.0) sampleMax = 1.0;
 
-  convertFromCharToFloat( self, image, 1.0/sampleMax, -(1.0/sampleMax)*sampleMean, result );
+  convertFromCharToFloat( self, image, 1.0/sampleMax, -(1.0/sampleMax)*sampleMean, *result );
 
   *result = reshapeFloat( self, *result, image.rows * image.cols );
  
@@ -526,7 +525,6 @@ void normalizeSample( void* self, cMat /*uint8_t*/  image, cMat /*float*/* resul
 void
 generateResponseMap(
     void * self,
-    void * allocator,
     const cMat /*uint8_t*/  image,
     const Point2i center,
     int mapSize, 
@@ -541,15 +539,15 @@ generateResponseMap(
     cMat /*float*/xOuts[],
     cMat es[],
     // result
-    cMat /*float*/* result
+    cMat /*float*/ result
     )
 {
 
     // printf("***patch.rows = %d\n", patch.rows );
     // printf("***patch.cols = %d\n", patch.cols );
 
-  assert(result->rows == 2 * mapSize + 1);
-  assert(result->cols == 2 * mapSize + 1);
+  assert( result.rows == 2 * mapSize + 1 );
+  assert( result.cols == 2 * mapSize + 1 );
 
   cMat /*float*/wIn_A = GetBlockFloat( self, m_wIn, 0, m_wIn.rows, 0, m_wIn.cols - 1 );
   // cMat /*float*/wIn = CreateMatFloat( self, allocator, wIn_A.rows, m_U.rows );
@@ -561,7 +559,7 @@ generateResponseMap(
   {
       int localid = 0;
       for ( localid=0; localid<gangsize; localid++ )           
-          gemmFloatDirTransDirGang( self, wIn_A, m_U, 1.0, wIn, 0.0, localid, &wIn );
+          gemmFloatDirTransDirGang( self, wIn_A, m_U, 1.0, wIn, 0.0, localid, wIn );
   }
   
   {
@@ -607,18 +605,18 @@ generateResponseMap(
               assert( xOut.rows == bIn.rows );
               assert( xOut.cols == bIn.cols );
           
-              gemmFloatDirDirDir( self, wIn, patch, -1.0, bIn, -1.0, &xOut );
+              gemmFloatDirDirDir( self, wIn, patch, -1.0, bIn, -1.0, xOut );
           
               // cMat /*float*/e = CreateMatFloat( self, allocator, xOut.rows, xOut.cols);
               cMat e = es[localid];
               assert( e.rows == xOut.rows );
               assert( e.cols == xOut.cols );              
           
-              expFloat( self, xOut, &e );
+              expFloat( self, xOut, e );
           
-              addFloat( self, e, 1.0, &xOut );
-              divideFloat( self, 2.0, xOut, &e);
-              addFloat( self, e, -1.0, &xOut);
+              addFloat( self, e, 1.0, xOut );
+              divideFloat( self, 2.0, xOut, e);
+              addFloat( self, e, -1.0, xOut);
           
               SetValueFloat( self, result, ncy, ncx, 1./( 1. + exp(- dotProductTransDir( self, wOut_tmp, xOut) - bOut ) ) );
           
@@ -642,21 +640,34 @@ cvRound( float value )
     return (int)(value + (value >= 0 ? 0.5 : -0.5));
 } // cvRound
 
+typedef struct {
+    cMat alignedImage;
+    cMat m_wIn;
+    cMat m_wOut;
+    cMat m_Us;
+
+    cMat wIn;
+    cMat patches[];
+    cMat xOuts[];
+    cMat es;
+
+    cMat responseMap;    
+} calcpackage; // struct 
+    
+
 void
 calculateMaps(
     void * self,
     void * allocator,
     int m_visibleLandmarks_size, 
     int m_mapSize, 
-    cMat /*uint8_t*/  alignedImage, 
     cMat /*float*/shape, 
-    int m_patchSizes[],      /*!< \brief Radius like patch size, the true size of the patch is [(2*patchSize+1) x (2*patchSize+1)] */
-    cMat /*float*/m_wIns[], /*!< \brief */
-    cMat /*float*/m_wOuts[], /*!< \brief  */
-    cMat /*float*/m_Us[], /*!< \brief */
+    int m_patchSizes[],
+
+    calcpackage packages[],
     
     // results
-    cMat /*float*/* responseMaps[] )
+    cMat /*float*/responseMaps[] )
 {
     // printf("calculateMaps started\n");    
     int q;
@@ -700,7 +711,6 @@ calculateMaps(
         
 	generateResponseMap(
             self,
-            allocator,
             alignedImage,
             center,
             m_mapSize,
@@ -715,7 +725,7 @@ calculateMaps(
             xOuts,
             es,
             // result
-            (&(*responseMaps)[q]) );
+            responseMaps[q] );
 
         freeMatFloat(self, allocator, &wIn);
         {

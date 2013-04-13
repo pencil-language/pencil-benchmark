@@ -62,7 +62,7 @@ int main()
                 &(std::get<1>(m_classifiers)[0]), // &m_wIns[0]
                 &(std::get<2>(m_classifiers)[0]), // &m_wOuts[0]
                 &(std::get<3>(m_classifiers)[0]), // &m_Us[0]
-                &responseMaps
+                responseMaps
                 );
             auto end = std::chrono::high_resolution_clock::now();
             elapsed_time = microseconds(end - start);            
