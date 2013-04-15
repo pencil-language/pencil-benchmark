@@ -20,7 +20,7 @@
 
 namespace { struct hack_t; }
 
-cMat /*float*/convertCVToMatFloat /*float*/( void * self, void * allocator, const cv::Mat_<double> & input );
+cMat /*float*/convertCVToMatFloat /*float*/( void * self, carp::memory & pool, const cv::Mat_<double> & input );
 
 namespace {
      
@@ -62,54 +62,68 @@ namespace {
 
 } // unnamed namespace 
 
+typedef struct {
+    calcinput input;
+    
+    // temporaries
+    cMat wIn;    
+    cMat patches[];    
+    cMat xOuts[];    
+    cMat es[];    
+
+    // results
+    cMat /*float*/responseMap;
+} calcpackage;
 
 // patchsize, m_wIn, m_wOut, m_U, hidden_num, rho2
-std::tuple< std::vector<int>, std::vector<cMat /*float*/>, std::vector<cMat /*float*/>, std::vector<cMat /*float*/>, std::vector<int>, std::vector<double> >
-convertHackToMlp ( void * self, void * allocator, const hack_t & hack )
+std::vector<calcpackage>
+convertHackToMlp ( void * self, std::vector<carp::memory> & pools, std::vector<int> & memory_segments, const hack_t & hack )
 {
     assert(hack.m_visibleLandmarks_size==hack.m_classifiers.size());
     assert(hack.m_visibleLandmarks_size==hack.responseMaps.size());
 
     int size = hack.m_visibleLandmarks_size;
+    std::vector<calcpackage> result(size);
     
-    std::vector<int> m_patchSizes(size);
-    std::vector<cMat /*float*/> m_wIns(size);
-    std::vector<cMat /*float*/> m_wOuts(size);
-    std::vector<cMat /*float*/> m_Us(size);
-    std::vector<int> hidden_nums(size);
-    std::vector<double> rho2s(size);    
+    // std::vector<int> m_patchSizes(size);
+    // std::vector<cMat /*float*/> m_wIns(size);
+    // std::vector<cMat /*float*/> m_wOuts(size);
+    // std::vector<cMat /*float*/> m_Us(size);
+    // std::vector<int> hidden_nums(size);
+    // std::vector<double> rho2s(size);    
     
     // we export each classifier
     for (int q=0; q<size; q++)
     {
-        m_patchSizes[q] = hack.m_classifiers[q].m_patchSize;
-        m_wIns[q]       = convertCVToMatFloat(self, allocator, hack.m_classifiers[q].m_wIn);
-        m_wOuts[q]      = convertCVToMatFloat(self, allocator, hack.m_classifiers[q].m_wOut);
-        m_Us[q]         = convertCVToMatFloat(self, allocator, hack.m_classifiers[q].m_U);
-        hidden_nums[q]  = hack.m_classifiers[q].hidden_num;
-        rho2s[q]        = hack.m_classifiers[q].rho2;
+        result[q].input.m_patchSize = hack.m_classifiers[q].m_patchSize;
+        result[q].input.m_wIn       = convertCVToMatFloat( self + memory_segments[q] * sizeof(float), pools[q], hack.m_classifiers[q].m_wIn );
+        result[q].input.m_wOut      = convertCVToMatFloat( self + memory_segments[q] * sizeof(float), pools[q], hack.m_classifiers[q].m_wOut );
+        // result[q].input.m_U         = convertCVToMatFloat( self + memory_segments[q] * sizeof(float), pools[q], hack.m_classifiers[q].m_U );
+        // hidden_nums[q]  = hack.m_classifiers[q].hidden_num;
+        // rho2s[q]        = hack.m_classifiers[q].rho2;
     } // for q in m_visibleLandmarks_size
-
-    return std::make_tuple(m_patchSizes, m_wIns, m_wOuts, m_Us, hidden_nums, rho2s);
+    
+    
+    return result;
 } // convertHackToMlp
 
-void
-freeClassifiers( void * self, void * allocator, mlp * classifiers[], int size )
+// void
+// freeClassifiers( void * self, carp::memory & pool, mlp * classifiers[], int size )
+// {
+//     mlp * result = *classifiers;    
+//     for (int q=0; q<size; q++ )
+//         freeMLP( self, pool[q], &(result[q]) );
+
+//     free(*classifiers);
+//     *classifiers=NULL;
+
+//     return;    
+// } // freeClassifiers
+
+
+cMat /*uint8_t*/  convertCVToMatChar /*uint8_t*/  ( void * self, carp::memory & pool, const cv::Mat_<uint8_t> & input )
 {
-    mlp * result = *classifiers;    
-    for (int q=0; q<size; q++ )
-        freeMLP( self, allocator, &(result[q]) );
-
-    free(*classifiers);
-    *classifiers=NULL;
-
-    return;    
-} // freeClassifiers
-
-
-cMat /*uint8_t*/  convertCVToMatChar /*uint8_t*/  ( void * self, void * allocator, const cv::Mat_<uint8_t> & input )
-{
-    cMat /*uint8_t*/  result = CreateMatChar /*uint8_t*/ ( self, allocator, input.rows, input.cols );
+    cMat /*uint8_t*/  result = CreateMatChar /*uint8_t*/ ( self, pool, input.rows, input.cols );
 
     for ( int q=0; q<input.rows; q++)
         for ( int w=0; w<input.cols; w++ )
@@ -118,9 +132,9 @@ cMat /*uint8_t*/  convertCVToMatChar /*uint8_t*/  ( void * self, void * allocato
     return result;    
 } // convertCVTocMat /*uint8_t*/ 
 
-cMat /*float*/convertCVToMatFloat /*float*/( void * self, void * allocator, const cv::Mat_<double> & input )
+cMat /*float*/convertCVToMatFloat /*float*/( void * self, carp::memory & pool, const cv::Mat_<double> & input )
 {
-    cMat /*float*/result = CreateMatFloat( self, allocator, input.rows, input.cols );
+    cMat /*float*/result = CreateMatFloat( self, pool, input.rows, input.cols );
     
     for ( int q=0; q<input.rows; q++)
         for ( int w=0; w<input.cols; w++ )
@@ -142,7 +156,8 @@ cv::Mat_<double> convertMatFloatToCV( void * self, cMat /*float*/input )
 } // convertMatFloatToCV
 
 
-void allocateResponseMaps( void * self, void * allocator, int mapSize, int size, cMat /*float*/* responseMaps[] )
+std::vector<cMat>
+void allocateResponseMaps( void * self, std::vector<carp::memory> & pools, int mapSize, int size, cMat /*float*/* responseMaps[] )
 {
     *responseMaps = new cMat[size];
     assert(*responseMaps);    

@@ -644,19 +644,18 @@ cvRound( float value )
 void
 calculateMaps(
     void * self,
-    void * allocator,
-    int memory_segments[]; // representing the start of the gang's memory segment
+    int memory_segments[], // representing the start of the gang's memory segment
     int m_visibleLandmarks_size, 
     int m_mapSize, 
     cMat /*float*/shape, 
 
-    calcpackage packages[],
+    calcinput input[],
 
     // temporaries
-    cMat wIn;
-    cMat patches[];
-    cMat xOuts[];
-    cMat es[];
+    cMat wIn,
+    cMat patches[],
+    cMat xOuts[],
+    cMat es[],
 
     // results
     cMat /*float*/responseMaps[] )

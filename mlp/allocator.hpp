@@ -7,6 +7,7 @@
 #define __ALLOCATOR__H__
 
 #include "cltypes.h"
+#include "memory.hpp"
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,19 +46,19 @@ extern "C" {
         cMat m_wIn;
         cMat m_wOut;
         cMat m_Us;
-    } calcpackage; // struct 
+    } calcinput; // struct 
     
-    cMat /*float*/CreateMatFloat( void * self, void * allocator, int rows, int cols );
+    cMat /*float*/CreateMatFloat( void * self, carp::memory & pool, int rows, int cols );
 
-    cMat /*uint8_t*/CreateMatChar /*uint8_t*/ ( void * self, void * allocator, int rows, int cols );
+    cMat /*uint8_t*/CreateMatChar /*uint8_t*/ ( void * self, carp::memory & pool, int rows, int cols );
 
-    void freeMatFloat( void * self, void * allocator, cMat /*float*/* mat );
+    void freeMatFloat( void * self, carp::memory & pool, cMat /*float*/* mat );
 
-    void freeMatChar( void * self, void * allocator, cMat /*float*/* mat );
+    void freeMatChar( void * self, carp::memory & pool, cMat /*float*/* mat );
     
-    void freecMat /*uint8_t*/ ( void * self, void * allocator, cMat /*uint8_t*/  * mat );
+    void freecMat /*uint8_t*/ ( void * self, carp::memory & pool, cMat /*uint8_t*/  * mat );
 
-    void freeMLP( void * self, void * allocator, mlp * classifier );
+    void freeMLP( void * self, carp::memory & pool, mlp * classifier );
 
     
             

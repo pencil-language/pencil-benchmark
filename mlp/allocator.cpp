@@ -9,19 +9,17 @@
 extern "C" {
 #endif // __cplusplus
 
-void freeMLP( void * self, void * allocator, mlp * classifier )
+void freeMLP( void * self, carp::memory & pool, mlp * classifier )
 {
-    freeMatFloat( self, allocator, &classifier->m_wIn );
-    freeMatFloat( self, allocator, &classifier->m_wOut );
-    freeMatFloat( self, allocator, &classifier->m_U );
+    freeMatFloat( self, pool, &classifier->m_wIn );
+    freeMatFloat( self, pool, &classifier->m_wOut );
+    freeMatFloat( self, pool, &classifier->m_U );
 } // freeMLP
 
 
 cMat /*float*/
-CreateMatFloat( void * self, void * allocator, int rows, int cols )
+CreateMatFloat( void * self, carp::memory & pool, int rows, int cols )
 {
-    carp::memory * pool = reinterpret_cast<carp::memory*>(allocator);
-    
     cMat /*float*/result; 
     assert(rows>0);
     assert(cols>0);
@@ -32,16 +30,14 @@ CreateMatFloat( void * self, void * allocator, int rows, int cols )
     result.rows  = rows;
     result.cols  = cols;
     result.step  = cols;
-    result.start = pool->allocate<float>(rows * cols);
+    result.start = pool.allocate<float>(rows * cols);
 
     return result;
 } // CreateMatFloat
 
 cMat /*uint8_t*/ 
-CreateMatChar /*uint8_t*/ ( void * self, void * allocator, int rows, int cols )
+CreateMatChar /*uint8_t*/ ( void * self, carp::memory & pool, int rows, int cols )
 {
-    carp::memory * pool = reinterpret_cast<carp::memory*>(allocator);
-    
     cMat /*float*/result; 
     assert(rows>0);
     assert(cols>0);
@@ -52,17 +48,15 @@ CreateMatChar /*uint8_t*/ ( void * self, void * allocator, int rows, int cols )
     result.rows  = rows;
     result.cols  = cols;
     result.step  = cols;
-    result.start = pool->allocate<uint8_t>(rows * cols);
+    result.start = pool.allocate<uint8_t>(rows * cols);
 
     return result;
 }
 
 void
-freeMatFloat( void * self, void * allocator, cMat /*float*/* mat )
+freeMatFloat( void * self, carp::memory & pool, cMat /*float*/* mat )
 {
-    carp::memory * pool = reinterpret_cast<carp::memory*>(allocator);
-
-    pool->release<float>(mat->start);
+    pool.release<float>(mat->start);
     
     mat->rows  = 0;
     mat->cols  = 0;
@@ -72,11 +66,9 @@ freeMatFloat( void * self, void * allocator, cMat /*float*/* mat )
 } // freeMatFloat
 
 void 
-freeMatChar /*uint8_t*/ ( void* self, void * allocator, cMat /*uint8_t*/  * mat )
+freeMatChar /*uint8_t*/ ( void * self, carp::memory & pool, cMat /*uint8_t*/  * mat )
 {
-    carp::memory * pool = reinterpret_cast<carp::memory*>(allocator);
-
-    pool->release<uint8_t>(mat->start);
+    pool.release<uint8_t>(mat->start);
     
     mat->rows  = 0;
     mat->cols  = 0;
