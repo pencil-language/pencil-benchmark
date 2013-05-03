@@ -5,11 +5,11 @@
 
 
 /*
-extern int EF_ALIGNMENT = 0;
-extern int EF_PROTECT_BELOW = 0;
-extern int EF_PROTECT_FREE = 0;
-extern int EF_ALLOW_MALLOC_0 = 1;
-extern int EF_FILL = 1922;
+  extern int EF_ALIGNMENT = 0;
+  extern int EF_PROTECT_BELOW = 0;
+  extern int EF_PROTECT_FREE = 0;
+  extern int EF_ALLOW_MALLOC_0 = 1;
+  extern int EF_FILL = 1922;
 */
 
 #include <boost/smart_ptr.hpp>
@@ -20,8 +20,8 @@ extern int EF_FILL = 1922;
 
 const int KiB=1024;
 const int MiB=1024*KiB;
-const int memsize = 1.1 * MiB;
-const int local_memsize = 64 * KiB;
+// const int memsize = 1.1 * MiB;
+const int local_memsize = 8 * 64 * KiB;
 
 int main()
 {
@@ -39,42 +39,53 @@ int main()
         conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.hack);
 
         int groupsize = conductor.hack.m_visibleLandmarks_size;
-        
+
         boost::shared_array<char> buffer( new char[groupsize * local_memsize] );
         std::vector<carp::memory> pools( groupsize, {local_memsize, uint8_t()} );
-        void * self = buffer.get();
-
-        std::vector<int> shifts(groupsize);
-        for (int q=0; q<groupsize; q++ ) shifts[q] = q * local_memsize;
-                
+        carp::local_memory_manager locmm( groupsize * local_memsize, groupsize, local_memsize );
         
+        void * self = buffer.get();
+        std::vector<int> segments = locmm.get_segments();
+
         // here comes the function call
         {
             // preparing the inputs
-            // cMat /*uint8_t*/  alignedImage = convertCVToMatChar( self, pools, conductor.hack.alignedImage );
-            std::vector<cMat /*uint8_t*/> alignedImages = allocateImage( self, pools, alignedImage );            
-            std::vector<cMat /*float*/> shapes = allocateImage( self, pools, conductor.hack.shape );
+//            std::vector<cMat /* uint8_t */> alignedImages(pools.size());
+//            std::vector<cMat /* float */> shapes(pools.size());
+
+            // for (int q=0; q<pools.size(); q++)
+            // {
+            //     alignedImages[q] = convertCVToMatChar( self, pools[q], conductor.hack.alignedImage );
+            //     shapes[q]        = convertCVToMatChar( self, pools[q], conductor.hack.shape );
+            // }
             
-            auto calcpackage = convertHackToMlp( self, pools, conductor.hack );
+            // cMat /*uint8_t*/  alignedImage = convertCVToMatChar( self, pools, conductor.hack.alignedImage );
+            
+            // std::vector<cMat /*uint8_t*/> alignedImages = allocateImage( self, pools, alignedImage );
+            // std::vector<cMat /*float*/> shapes = allocateImage( self, pools, conductor.hack.shape );
+            
+            auto calcpackages = convertHackToMlp( self, pools, segments, conductor.hack );
             // cMat /*float*/ * responseMaps;
-            std::vector<cMat /*float*/> responseMaps = allocateResponseMaps( self, pools, conductor.hack.m_mapSize, conductor.hack.m_visibleLandmarks_size, &calcpackage );
+            
+//            std::vector<clMat /*float*/> responseMaps = allocateResponseMaps( self, pools, conductor.hack.m_mapSize, conductor.hack.m_visibleLandmarks_size );
             
             auto start = std::chrono::high_resolution_clock::now();
             calculateMaps(
                 self,
-                &(shifts[0]),
+                &(segments[0]),
                 conductor.hack.m_visibleLandmarks_size,
                 conductor.hack.m_mapSize,
-                alignedImage,
-                shape,
-                &(std::get<0>(m_classifiers)[0]), // &patchSizes[0]
-                &(std::get<1>(m_classifiers)[0]), // &m_wIns[0]
-                &(std::get<2>(m_classifiers)[0]), // &m_wOuts[0]
-                &(std::get<3>(m_classifiers)[0]), // &m_Us[0]
-                responseMaps
+                // &(alignedImages[0]),
+                // &(shapes[0]),
+                &(calcpackages[0]) // ,
+                // &(std::get<0>(m_classifiers)[0]), // &patchSizes[0]
+                // &(std::get<1>(m_classifiers)[0]), // &m_wIns[0]
+                // &(std::get<2>(m_classifiers)[0]), // &m_wOuts[0]
+                // &(std::get<3>(m_classifiers)[0]), // &m_Us[0]
+                // responseMaps
                 );
             auto end = std::chrono::high_resolution_clock::now();
-            elapsed_time = microseconds(end - start);            
+            elapsed_time = microseconds(end - start);
 
             // inputs will be released automatically, when the pool is destroyed
             // // releasing the inputs
@@ -92,20 +103,21 @@ int main()
             for (int q=0; q<conductor.hack.m_visibleLandmarks_size; q++)
             {
                 cv::Mat_<double> nextResult;
-                nextResult = convertMatFloatToCV( self, responseMaps[q] );
+                nextResult = convertMatFloatToCV( self, calcpackages[q].output.responseMap );
                 calculatedResults.push_back(nextResult);                
             }
             
             // testing the output
             for (int q=0; q<conductor.hack.m_visibleLandmarks_size; q++)
             {
-              // std::cout << "cv::norm( conductor.hack.responseMaps[" << q << "] - calculatedResults[" << q << "] ) = "
-              //             << cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) << std::endl;
-              assert(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) < 0.00001);
+                // std::cout << "cv::norm( conductor.hack.responseMaps[" << q << "] - calculatedResults[" << q << "] ) = "
+                //             << cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) << std::endl;
+                PRINT(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ));
+                assert(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) < 0.00001);
             }
             
             // releasing the outputs
-            freeResponseMaps( self, allocator, &responseMaps, conductor.hack.m_visibleLandmarks_size );
+            // freeResponseMaps( self, pools, &responseMaps, conductor.hack.m_visibleLandmarks_size );
 
         }
         // here comes the test

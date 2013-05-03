@@ -7,7 +7,7 @@
 #define __MLP_IMPL__H__
 
 #include "cltypes.h"
-#include "allocator.hpp"
+// #include "allocator.hpp"
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,18 +20,19 @@ calculateMaps(
     int memory_segments[], // representing the start of the gang's memory segment
     int m_visibleLandmarks_size, 
     int m_mapSize, 
-    cMat /*float*/shape, 
+//    clMat /*float*/shape, 
 
-    calcinput inputs[],
+    calcpackage inputs[] //,
 
-    // temporaries
-    cMat wIn,
-    cMat patches[],
-    cMat xOuts[],
-    cMat es[],
+    // // temporaries
+    // cMat wIn,
+    // cMat patches[],
+    // cMat xOuts[],
+    // cMat es[],
 
     // results
-    cMat /*float*/responseMaps[] );
+    // clMat /*float*/responseMaps[] );
+    );
     
     
         

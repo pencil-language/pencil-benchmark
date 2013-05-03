@@ -273,6 +273,38 @@ namespace carp {
         } // release
         
     }; // memory
+
+
+    // this class manages the continuous segments of the memory
+    class local_memory_manager {
+        int64_t size;
+        int64_t nb_segments;        
+        std::vector<int> segments;
+        
+    public:
+
+        local_memory_manager( int64_t size, int64_t nb_segments, int64_t segment_size )
+            : size(size), nb_segments(nb_segments), segments(nb_segments) {
+            assert( size >= nb_segments * segment_size );
+
+            for (int q = 0; q < nb_segments; q++ )
+                segments[q] =  (static_cast<float>(size) / nb_segments) * q;
+            
+        } // cr
+
+        std::vector<int>
+        get_segments() {
+            return segments;
+        } // get_segments
+
+        int operator[] ( int64_t num ) {
+            assert(num>0);
+            assert(num<nb_segments);
+            return segments[num];
+        } // operator[]
+        
+    }; // class volumemanager
+    
         
 } // namespace CARP
 

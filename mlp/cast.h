@@ -23,7 +23,7 @@ namespace gel
 {
 
     template <class RT, class T0>
-    RT gel_cast( const T0 & from )
+    RT cast( const T0 & from )
     {
         std::stringstream stringstream;
         RT to;    

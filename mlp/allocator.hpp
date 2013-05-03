@@ -9,63 +9,38 @@
 #include "cltypes.h"
 #include "memory.hpp"
 
-#ifdef __cplusplus
-extern "C" {
-#endif // __cplusplus
+typedef enum { none, maxAbs, meanStd } NormalizationMethod;
 
+typedef struct {
+    int m_patchSize;      /*!< \brief Radius like patch size, the true size of the patch is [(2*patchSize+1) x (2*patchSize+1)] */
+    clMat /*float*/m_wIn; /*!< \brief */
+    clMat /*float*/m_wOut; /*!< \brief  */
+    clMat /*float*/m_U; /*!< \brief */
+    int hidden_num;
+    double rho2;
+    // NormalizationMethod preSVDNormalizationMethod /*= none*/;
+    // NormalizationMethod postSVDNormalizationMethod;
+} mlp; // struct 
 
-    typedef struct {
-        int rows;
-        int cols;
-        int step;
-        int start;    
-    } cMat; // struct cMat
+clMat /*float*/CreateMatFloat( carp::memory & pool, int rows, int cols );
 
+clMat /*uint8_t*/CreateMatChar /*uint8_t*/ ( carp::memory & pool, int rows, int cols );
+
+clVector createVectorMatFloat( carp::memory & pool, int size, int rows, int cols );    
+
+void freeMatFloat( carp::memory & pool, clMat /*float*/* mat );
+
+void freeMatChar( carp::memory & pool, clMat /*float*/* mat );
     
-    typedef struct {
-        int x;
-        int y;
-    } Point2i; // struct Point2i
+void freeclMat /*uint8_t*/ ( carp::memory & pool, clMat /*uint8_t*/  * mat );
 
-    typedef enum { none, maxAbs, meanStd } NormalizationMethod;
+void freeMLP( carp::memory & pool, mlp * classifier );
 
-    typedef struct {
-        int m_patchSize;      /*!< \brief Radius like patch size, the true size of the patch is [(2*patchSize+1) x (2*patchSize+1)] */
-        cMat /*float*/m_wIn; /*!< \brief */
-        cMat /*float*/m_wOut; /*!< \brief  */
-        cMat /*float*/m_U; /*!< \brief */
-        int hidden_num;
-        double rho2;
-        // NormalizationMethod preSVDNormalizationMethod /*= none*/;
-        // NormalizationMethod postSVDNormalizationMethod;
-    } mlp; // struct 
+void freeVector( carp::memory & pool, clVector * vec );
 
-    typedef struct {
-        int m_patchSize;
-        cMat alignedImage;
-        cMat m_wIn;
-        cMat m_wOut;
-        cMat m_Us;
-    } calcinput; // struct 
-    
-    cMat /*float*/CreateMatFloat( void * self, carp::memory & pool, int rows, int cols );
+clVector /* <clMat> */ CreateVectorMat( carp::memory & pool, int nb_elements );
 
-    cMat /*uint8_t*/CreateMatChar /*uint8_t*/ ( void * self, carp::memory & pool, int rows, int cols );
-
-    void freeMatFloat( void * self, carp::memory & pool, cMat /*float*/* mat );
-
-    void freeMatChar( void * self, carp::memory & pool, cMat /*float*/* mat );
-    
-    void freecMat /*uint8_t*/ ( void * self, carp::memory & pool, cMat /*uint8_t*/  * mat );
-
-    void freeMLP( void * self, carp::memory & pool, mlp * classifier );
-
-    
-            
-
-#ifdef __cplusplus
-} // extern C
-#endif // __cplusplus
+void freeVectorMat( carp::memory & pool, clVector * vec );
 
 
 #endif /* __ALLOCATOR__H__ */

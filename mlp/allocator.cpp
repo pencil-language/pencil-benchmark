@@ -5,22 +5,19 @@
 #include "memory.hpp"
 #include "allocator.hpp"
 
-#ifdef __cplusplus
-extern "C" {
-#endif // __cplusplus
 
-void freeMLP( void * self, carp::memory & pool, mlp * classifier )
+void freeMLP( carp::memory & pool, mlp * classifier )
 {
-    freeMatFloat( self, pool, &classifier->m_wIn );
-    freeMatFloat( self, pool, &classifier->m_wOut );
-    freeMatFloat( self, pool, &classifier->m_U );
+    freeMatFloat( pool, &classifier->m_wIn );
+    freeMatFloat( pool, &classifier->m_wOut );
+    freeMatFloat( pool, &classifier->m_U );
 } // freeMLP
 
 
-cMat /*float*/
-CreateMatFloat( void * self, carp::memory & pool, int rows, int cols )
+clMat /*float*/
+CreateMatFloat( carp::memory & pool, int rows, int cols )
 {
-    cMat /*float*/result; 
+    clMat /*float*/result; 
     assert(rows>0);
     assert(cols>0);
 
@@ -35,10 +32,10 @@ CreateMatFloat( void * self, carp::memory & pool, int rows, int cols )
     return result;
 } // CreateMatFloat
 
-cMat /*uint8_t*/ 
-CreateMatChar /*uint8_t*/ ( void * self, carp::memory & pool, int rows, int cols )
+clMat /*uint8_t*/ 
+CreateMatChar /*uint8_t*/ ( carp::memory & pool, int rows, int cols )
 {
-    cMat /*float*/result; 
+    clMat /*float*/result; 
     assert(rows>0);
     assert(cols>0);
 
@@ -53,8 +50,22 @@ CreateMatChar /*uint8_t*/ ( void * self, carp::memory & pool, int rows, int cols
     return result;
 }
 
+clVector /* <clMat> */
+CreateVectorMat( carp::memory & pool, int nb_elements )
+{
+    clVector result;
+    assert(nb_elements>0);
+
+    result.size = nb_elements;
+    result.step = 1;
+    result.start = pool.allocate<clMat>(nb_elements);
+
+    return result;        
+} // CreateVectorMat
+       
+    
 void
-freeMatFloat( void * self, carp::memory & pool, cMat /*float*/* mat )
+freeMatFloat( carp::memory & pool, clMat /*float*/* mat )
 {
     pool.release<float>(mat->start);
     
@@ -66,7 +77,7 @@ freeMatFloat( void * self, carp::memory & pool, cMat /*float*/* mat )
 } // freeMatFloat
 
 void 
-freeMatChar /*uint8_t*/ ( void * self, carp::memory & pool, cMat /*uint8_t*/  * mat )
+freeMatChar /*uint8_t*/ ( carp::memory & pool, clMat /*uint8_t*/  * mat )
 {
     pool.release<uint8_t>(mat->start);
     
@@ -75,20 +86,15 @@ freeMatChar /*uint8_t*/ ( void * self, carp::memory & pool, cMat /*uint8_t*/  * 
     mat->step  = 0;
     mat->start = 0;
     return;
-} // freecMat /*uint8_t*/
+} // freeclMat /*uint8_t*/
 
-
-
-
-
-
-
-
-
-
-#ifdef __cplusplus
-} // extern C
-#endif // __cplusplus
-
+void 
+freeVectorMat( carp::memory & pool, clVector * vec )
+{
+    pool.release<clMat>(vec->start);
+    vec->size  = 0;        
+    vec->step  = 0;        
+    vec->start = 0;
+} // freeVectorMat <clMat>
 
 // LuM end of file

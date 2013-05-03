@@ -128,7 +128,7 @@ void boost::serialization::load( T0 & archiver, cv::Mat_<T1> & matrix, unsigned 
         archiver >> BOOST_SERIALIZATION_NVP(type);
 
         if (matrix.type()!=type)                    
-            throw ::exception( std::string("serialization error: the matrix data type (") + gel::gel_cast<std::string>(matrix.type()) + ") in the file is different from the class type (" + gel::gel_cast<std::string>(type) + ")" );
+            throw ::exception( std::string("serialization error: the matrix data type (") + gel::cast<std::string>(matrix.type()) + ") in the file is different from the class type (" + gel::cast<std::string>(type) + ")" );
 
         matrix.create(rows, cols);
                 
@@ -142,7 +142,7 @@ void boost::serialization::load( T0 & archiver, cv::Mat_<T1> & matrix, unsigned 
         break;
                 
     default:
-        throw ::exception ( std::string("serialization error: file version (") + gel::gel_cast<std::string>(gel_xml_export_version) + ") not recognized " );
+        throw ::exception ( std::string("serialization error: file version (") + gel::cast<std::string>(gel_xml_export_version) + ") not recognized " );
     } /* switch */
 
     return;            
