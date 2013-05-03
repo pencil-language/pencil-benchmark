@@ -16,7 +16,9 @@ const int MAX_INT = ~(1 << (8*sizeof(int) - 1));
 const int false = (1!=1);
 const int gangsize = 32;
 
-// const int NULL=0;
+// const int NULL=0
+float GetValueFloat( void * self, clMat /*float*/smat, int row, int col );
+uint8_t GetValueChar( void * self, clMat /* uint8_t*/ smat, int row, int col );
 
 clMat GetMatFromVector( void * self, clVector /*clMat*/ vec, int idx )
 {
@@ -27,10 +29,8 @@ clMat GetMatFromVector( void * self, clVector /*clMat*/ vec, int idx )
     return ((clMat*)self)[ vec.start + vec.step * idx ];
 } // GetMatFromVector
 
-
-float GetValueFloat( void * self, clMat /*float*/smat, int row, int col );
-
-void     printMatFloat( void * self, clMat /*float*/mat, char * name )
+void
+printMatFloat( void * self, clMat /*float*/mat, char * name )
 {
   printf("%s = [\n", name);
 
@@ -50,6 +50,28 @@ void     printMatFloat( void * self, clMat /*float*/mat, char * name )
   
   return;
 } // printMatFloat
+
+void
+printMatChar( void * self, clMat /*uint8_t*/ mat, char * name )
+{
+  printf("%s = [\n", name);
+
+  int q,w;
+
+  for (q=0; q<mat.rows; q++)
+  {
+    printf("[ ");
+    for( w=0; w<mat.cols; w++)
+    {
+        printf( "%d, ", (int)GetValueChar(self, mat, q, w) );
+    }
+    printf(" ]\n");
+  }
+  
+  printf("]\n");
+  
+  return;
+} // printMatChar
 
 
 void
@@ -466,6 +488,20 @@ GetValueFloat( void * self, clMat /*float*/smat, int row, int col )
     // return -1231.;
 }
 
+uint8_t
+GetValueChar( void * self, clMat /* uint8_t*/ smat, int row, int col )
+{
+    assert(self);
+    assert(row >= 0);
+    assert(col >= 0);
+    assert(row < smat.rows);
+    assert(col < smat.cols);
+    assert(smat.step >= smat.cols);
+    
+    return ((uint8_t*)self)[ row * smat.step + col + smat.start ];
+    // return -1231.;
+}
+
 void
 SetValueFloat( void * self, clMat /*float*/ smat, int row, int col, float value )
 {
@@ -583,7 +619,7 @@ generateResponseMap(
       for ( localid=0; localid<gangsize; localid++ )           
           gemmFloatDirTransDirGang( self, wIn_A, m_U, 1.0, wIn, 0.0, localid, wIn );
   }
-  
+
   {
       int localid = 0;
       for ( localid=0; localid<gangsize; localid++ ) {
@@ -592,7 +628,7 @@ generateResponseMap(
           int worksize = (2 * mapSize + 1) * (2 * mapSize + 1);
           
           float bOut = GetValueFloat( self, m_wOut, 0, m_wOut.cols - 1 );
-          
+
           int ncy=0; 
           int cy=0;
           int ncx=0;
@@ -614,17 +650,17 @@ generateResponseMap(
                             
               assert( patch.rows == imagePatch.rows );
               assert( patch.cols == imagePatch.cols );
-              
+
               normalizeSample( self, imagePatch, &patch );
           
               // clMat /*float*/xOut = CreateMatFloat( self, allocator, bIn.rows, bIn.cols );
               clMat xOut = GetMatFromVector( self, xOuts, localid );
-              
+
               assert( xOut.rows == bIn.rows );
               assert( xOut.cols == bIn.cols );
           
               gemmFloatDirDirDir( self, wIn, patch, -1.0, bIn, -1.0, xOut );
-          
+              
               // clMat /*float*/e = CreateMatFloat( self, allocator, xOut.rows, xOut.cols);
               clMat e = GetMatFromVector( self, es, localid );
               assert( e.rows == xOut.rows );
@@ -635,7 +671,7 @@ generateResponseMap(
               addFloat( self, e, 1.0, xOut );
               divideFloat( self, 2.0, xOut, e);
               addFloat( self, e, -1.0, xOut);
-          
+              
               SetValueFloat( self, result, ncy, ncx, 1./( 1. + exp(- dotProductTransDir( self, wOut_tmp, xOut) - bOut ) ) );
           
               // freeMatFloat( self, allocator, &e);

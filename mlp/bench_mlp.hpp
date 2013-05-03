@@ -22,6 +22,7 @@
 namespace { struct hack_t; }
 
 clMat /*float*/convertCVToMatFloat /*float*/( void * self, carp::memory & pool, const cv::Mat_<double> & input );
+clMat /*uint8_t*/  convertCVToMatChar /*uint8_t*/  ( void * self, carp::memory & pool, const cv::Mat_<uint8_t> & input );
 
 namespace {
     
@@ -107,7 +108,7 @@ convertHackToMlp ( void * self, std::vector<carp::memory> & pools, std::vector<i
     // we export each classifier
     for (int q=0; q<size; q++)
     {
-        result[q].input.alignedImage = convertCVToMatFloat( self + memory_segments[q], pools[q], hack.alignedImage );
+        result[q].input.alignedImage = convertCVToMatChar( self + memory_segments[q], pools[q], hack.alignedImage );
         result[q].input.shape        = convertCVToMatFloat( self + memory_segments[q], pools[q], hack.shape );
         result[q].input.m_patchSize  = hack.m_classifiers[q].m_patchSize;
         result[q].input.m_wIn        = convertCVToMatFloat( self + memory_segments[q], pools[q], hack.m_classifiers[q].m_wIn );

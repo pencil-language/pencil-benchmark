@@ -35,6 +35,11 @@ calculateMaps(
     );
     
     
+    void printMatFloat( void * self, clMat /*float*/mat, char * name );
+
+    void printMatChar( void * self, clMat /*uint8_t*/ mat, char * name );
+    
+
         
 #endif /* __MLP_IMPL__H__ */
 
