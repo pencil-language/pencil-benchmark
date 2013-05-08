@@ -718,7 +718,7 @@ calculateMaps(
     assert(memory_segments);
     assert(packages);    
     
-    printf("calculateMaps started\n");
+    // printf("calculateMaps started\n");
     int q;
     for (q=0; q<m_visibleLandmarks_size; q++ )
     {

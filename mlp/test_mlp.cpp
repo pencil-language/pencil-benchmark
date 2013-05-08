@@ -103,7 +103,7 @@ int main()
             for (int q=0; q<conductor.hack.m_visibleLandmarks_size; q++)
             {
                 cv::Mat_<double> nextResult;
-                nextResult = convertMatFloatToCV( self, calcpackages[q].output.responseMap );
+                nextResult = convertMatFloatToCV( self + segments[q], calcpackages[q].output.responseMap );
                 calculatedResults.push_back(nextResult);                
             }
             
@@ -112,8 +112,8 @@ int main()
             {
                 // std::cout << "cv::norm( conductor.hack.responseMaps[" << q << "] - calculatedResults[" << q << "] ) = "
                 //             << cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) << std::endl;
-                PRINT(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ));
-//                assert(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) < 0.00001);
+//                PRINT(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ));
+                assert(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) < 0.00001);
             }
             
             // releasing the outputs
