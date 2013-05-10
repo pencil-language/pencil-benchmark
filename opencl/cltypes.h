@@ -24,9 +24,11 @@ extern "C" {
         int m_patchSize;
         clMat /* uint8_t */ alignedImage;
         clMat /* int32_t */ shape;        
-        clMat /* float */ m_wIn;
+//        clMat /* float */ m_wIn;
         clMat /* float */ m_wOut;
-        clMat /* float */ m_U;
+//        clMat /* float */ m_U;
+        clMat /* float */ wIn;
+        clMat /* float */ bIn;        
     } calcinput; // struct 
 
     typedef struct {
@@ -36,7 +38,6 @@ extern "C" {
 
     typedef struct {
         // temporaries
-        clMat /* float */ wIn;
         clVector /* clMat[] */ patches;
         clVector /* clMat[] */ xOuts;
         clVector /* clMat[] */ es;        

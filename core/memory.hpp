@@ -64,7 +64,7 @@ namespace carp {
         typedef std::bitset<8*sizeof(int64_t)> position_t;
                 
         int64_t m_size;
-        // int64_t m_net_allocated;
+        int64_t m_net_allocated;
         int64_t m_gross_allocated;
         
         // three statuses:
@@ -214,7 +214,7 @@ namespace carp {
         template <class MT0>
         memory ( const int64_t & numel, MT0 )
             : m_size( sizeof(MT0) * numel ),
-              // m_net_allocated(0),
+              m_net_allocated(0),
               m_gross_allocated(0),
               pool( log2ceil( numel * sizeof(MT0) ) - log2granularity ) {
             // only sizes which divide 128bits are supported
@@ -228,7 +228,11 @@ namespace carp {
         int64_t
         grossallocated() const {
             return m_gross_allocated;
-         }
+        }
+
+        int64_t netallocated() const {
+            return m_net_allocated;            
+        }
 
         template <class MT0>
         int64_t
@@ -247,8 +251,8 @@ namespace carp {
 
             // PRINT(memsize * node.second / sizeof(value_type));
 
-            // m_net_allocated += numel;
-            m_gross_allocated += (1<<level) * granularity / sizeof(MT0);
+            m_net_allocated += size; // numel;
+            m_gross_allocated += (1<<level) * granularity; // / sizeof(MT0);
             
             return granularity * node.second / sizeof(MT0);
         } // allocate
@@ -256,6 +260,7 @@ namespace carp {
         template <class MT0>
         void
         release( int64_t elpos ) throw ( carp::exception& ) {
+            assert(false);            
             // int64_t size = elpos * sizeof(value_type);
 
             if ( elpos * sizeof(MT0) % granularity != 0 )
@@ -267,7 +272,7 @@ namespace carp {
             
             auto released = pool.release(pos);
 
-            m_gross_allocated -= (1<<released) * granularity / sizeof(MT0);
+            m_gross_allocated -= (1<<released) * granularity; // / sizeof(MT0);
 
             return;
         } // release

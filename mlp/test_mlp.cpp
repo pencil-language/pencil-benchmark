@@ -21,13 +21,16 @@
 const int KiB=1024;
 const int MiB=1024*KiB;
 // const int memsize = 1.1 * MiB;
-const int local_memsize = 8 * 64 * KiB;
+const int local_memsize = 2 * 64 * KiB;
 
 int main()
 {
     conductor_t conductor;
     int fail = 0;
     long int elapsed_time = 0;
+    int64_t maxnetallocated = 0;
+    int64_t maxgrossallocated = 0;
+    
     
     for ( conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id);
           ((conductor.id != -1) and (conductor.id != 25));
@@ -68,7 +71,15 @@ int main()
             // cMat /*float*/ * responseMaps;
             
 //            std::vector<clMat /*float*/> responseMaps = allocateResponseMaps( self, pools, conductor.hack.m_mapSize, conductor.hack.m_visibleLandmarks_size );
-            
+
+            for ( auto & pool : pools ) {
+//                PRINT(pool.grossallocated());
+//                PRINT(pool.netallocated());
+                maxgrossallocated = std::max( maxgrossallocated, pool.grossallocated() );
+                maxnetallocated = std::max( maxnetallocated, pool.netallocated() );
+                
+            }
+                                    
             auto start = std::chrono::high_resolution_clock::now();
             calculateMaps(
                 self,
@@ -85,7 +96,7 @@ int main()
                 // responseMaps
                 );
             auto end = std::chrono::high_resolution_clock::now();
-            elapsed_time = microseconds(end - start);
+            elapsed_time += microseconds(end - start);
 
             // inputs will be released automatically, when the pool is destroyed
             // // releasing the inputs
@@ -126,6 +137,10 @@ int main()
     
     std::cout << "total elapsed time = " << elapsed_time / 1000000. << " s." << std::endl;    
     //conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.hack);
+
+    PRINT(maxnetallocated);
+    PRINT(maxgrossallocated);
+    
     
     return EXIT_SUCCESS;
 } // int main

@@ -589,12 +589,13 @@ generateResponseMap(
     const Point2i center,
     int mapSize, 
     int m_patchSize,
-    clMat /*float*/m_wIn,
+    // clMat /*float*/m_wIn,
     clMat /*float*/m_wOut,
-    clMat /*float*/m_U,
-
-    // temporary variables
+    // clMat /*float*/m_U,
     clMat wIn,
+    clMat bIn,
+    
+    // temporary variables
     clVector /*cMat float*/ patches,
     clVector /*cMat float*/ xOuts,
     clVector /*cMat float*/ es,
@@ -606,19 +607,20 @@ generateResponseMap(
   assert( result.rows == 2 * mapSize + 1 );
   assert( result.cols == 2 * mapSize + 1 );
 
-  clMat /*float*/wIn_A = GetBlockFloat( self, m_wIn, 0, m_wIn.rows, 0, m_wIn.cols - 1 );
+//  clMat /*float*/wIn_A = GetBlockFloat( self, m_wIn, 0, m_wIn.rows, 0, m_wIn.cols - 1 );
   // clMat /*float*/wIn = CreateMatFloat( self, allocator, wIn_A.rows, m_U.rows );
   
-  assert(wIn.rows == wIn_A.rows);
-  assert(wIn.cols == m_U.rows);
-  clMat /*float*/bIn = GetBlockFloat( self, m_wIn, 0, m_wIn.rows, m_wIn.cols - 1, m_wIn.cols );
+//  assert(wIn.rows == wIn_A.rows);
+//  assert(wIn.cols == m_U.rows);
+  
+  // clMat /*float*/bIn = GetBlockFloat( self, m_wIn, 0, m_wIn.rows, m_wIn.cols - 1, m_wIn.cols );
   clMat /*float*/wOut_tmp = GetBlockFloat( self, m_wOut, 0, m_wOut.rows, 0, m_wOut.cols - 1 );
 
-  {
-      int localid = 0;
-      for ( localid=0; localid<gangsize; localid++ )           
-          gemmFloatDirTransDirGang( self, wIn_A, m_U, 1.0, wIn, 0.0, localid, wIn );
-  }
+  // {
+  //     int localid = 0;
+  //     for ( localid=0; localid<gangsize; localid++ )           
+  //         gemmFloatDirTransDirGang( self, wIn_A, m_U, 1.0, wIn, 0.0, localid, wIn );
+  // }
 
   {
       int localid = 0;
@@ -761,12 +763,13 @@ calculateMaps(
             center,
             m_mapSize,
             packages[idx].input.m_patchSize,
-            packages[idx].input.m_wIn,
+//            packages[idx].input.m_wIn,
             packages[idx].input.m_wOut,
-            packages[idx].input.m_U,
+//            packages[idx].input.m_U,
+            packages[idx].input.wIn,
+            packages[idx].input.bIn,
 
             // temporary
-            packages[idx].tmp.wIn,
             packages[idx].tmp.patches,
             packages[idx].tmp.xOuts,
             packages[idx].tmp.es,
