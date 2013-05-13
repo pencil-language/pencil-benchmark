@@ -22,25 +22,25 @@ typedef struct {
     // NormalizationMethod postSVDNormalizationMethod;
 } mlp; // struct 
 
-clMat /*float*/CreateMatFloat( carp::memory & pool, int rows, int cols );
+clMat /*float*/CreateMatFloat( carp::memory::allocator & pool, int rows, int cols );
 
-clMat /*uint8_t*/CreateMatChar /*uint8_t*/ ( carp::memory & pool, int rows, int cols );
+clMat /*uint8_t*/CreateMatChar /*uint8_t*/ ( carp::memory::allocator & pool, int rows, int cols );
 
-clVector createVectorMatFloat( carp::memory & pool, int size, int rows, int cols );    
+clVector createVectorMatFloat( carp::memory::allocator & pool, int size, int rows, int cols );    
 
-void freeMatFloat( carp::memory & pool, clMat /*float*/* mat );
+void freeMatFloat( carp::memory::allocator & pool, clMat /*float*/* mat );
 
-void freeMatChar( carp::memory & pool, clMat /*float*/* mat );
+void freeMatChar( carp::memory::allocator & pool, clMat /*float*/* mat );
     
-void freeclMat /*uint8_t*/ ( carp::memory & pool, clMat /*uint8_t*/  * mat );
+void freeclMat /*uint8_t*/ ( carp::memory::allocator & pool, clMat /*uint8_t*/  * mat );
 
-void freeMLP( carp::memory & pool, mlp * classifier );
+void freeMLP( carp::memory::allocator & pool, mlp * classifier );
 
-void freeVector( carp::memory & pool, clVector * vec );
+void freeVector( carp::memory::allocator & pool, clVector * vec );
 
-clVector /* <clMat> */ CreateVectorMat( carp::memory & pool, int nb_elements );
+clVector /* <clMat> */ CreateVectorMat( carp::memory::allocator & pool, int nb_elements );
 
-void freeVectorMat( carp::memory & pool, clVector * vec );
+void freeVectorMat( carp::memory::allocator & pool, clVector * vec );
 
 
 #endif /* __ALLOCATOR__H__ */

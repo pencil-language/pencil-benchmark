@@ -24,8 +24,8 @@ struct chunk_t {
 
 int main()
 {
-    
-    carp::memory pool( numel, float() );
+    carp::memory::buddy bpool = carp::memory::buddy({numel, float()});
+    carp::memory::allocator & pool = bpool;
     
     // std::ifstream input("/dev/urandom");
     uint64_t seed = 0;
@@ -48,11 +48,11 @@ int main()
             int64_t size = dice();
             int64_t pointer;        
             try {
-                pointer = pool.allocate<float>(size);
+                pointer = pool.allocate({size, float()});
             }
-            catch ( carp::exception & exception )
+            catch ( carp::memory::exception & exception )
             {
-                if (exception.error == carp::INSUFFICIENT_MEMORY ) {
+                if (exception.error == carp::memory::INSUFFICIENT_MEMORY ) {
                     if (debug) {                        
                         std::cout << "insufficient memory at " << pool.grossallocated() << "/" << numel
                                   << " (requested size: " << size << ")" << std::endl;
@@ -78,7 +78,7 @@ int main()
 
         for ( auto & q : arrays )
         {        
-            pool.release<float>(q.pointer);
+            pool.release({q.pointer, float()});
 
             real_allocated -= q.size;
 

@@ -7,44 +7,11 @@
 #include <map>
 #include <string>
 #include <CL/cl.h>
-#include <iostream>
-#include <opencv2/core/core.hpp>
-#include <boost/preprocessor.hpp>
-
-#define PRINT(var)  std::cout << "debug: " << BOOST_PP_STRINGIZE(var) << " = " << var << std::endl
-
-template<class T0>
-void
-print_image( cv::Mat_<T0> input, std::string name )
-{
-    std::cout << name << " = [" << std::endl;
-    
-    for (int q=0; q<input.rows; q++)
-    {
-        std::cout << "[ ";        
-        for (int w=0; w<input.cols; w++)
-        {
-            std::cout << input(q,w);
-            if (w<input.cols-1)
-                std::cout << ", ";
-            else
-                std::cout << " ";
-        }
-
-        if (q<input.rows-1)
-            std::cout << "], " << std::endl;
-        else
-            std::cout << "] " << std::endl;
-    }
-
-    std::cout << "]" << std::endl;    
-} // print_image
-
 
 namespace carp {
 
     namespace opencl {
-    
+        
         std::map<int, std::string> errors {
             {CL_SUCCESS, "CL_SUCCESS"},
             {CL_DEVICE_NOT_FOUND, "CL_DEVICE_NOT_FOUND"},

@@ -4,6 +4,7 @@
 #include <opencv2/core/core.hpp>
 
 #include "opencl.hpp"
+#include "utility.hpp"
 
 const int rows = 10;
 const int cols = 15;
