@@ -14,6 +14,7 @@
 
 #include "cltypes.h"
 #include "errors.hpp"
+#include "utility.hpp"
 
 
 namespace carp {
@@ -120,7 +121,7 @@ namespace carp {
                 size_t m_size;
                 
             public:
-                preparator( MT0 & mt0 ) : m_ptr(reinterpret_cast<void*>(&mt0)), m_size(sizeof(mt0)) { }                
+                preparator( MT0 & mt0 ) : m_ptr(reinterpret_cast<void*>(&mt0)), m_size(sizeof(mt0)) { }
                 void * ptr() { return m_ptr; } // ptr
                 size_t size() { return m_size; } // size                 
             }; // class preparator
@@ -173,6 +174,9 @@ namespace carp {
                 assert(cqKernel);
                 assert(cqCommandQueue);
                 std::vector<size_t> kernelsize = utility::roundup(groupsize, worksize);
+                PRINT("ici01");
+                PRINT(kernelsize[0]);                
+                PRINT(reinterpret_cast<void*>(cqCommandQueue));
                 utility::checkerror(clEnqueueNDRangeKernel( cqCommandQueue, cqKernel, worksize.size(), NULL, &(kernelsize[0]), &(groupsize[0]), 0, NULL, NULL ), __FILE__, __LINE__ );
                 utility::checkerror(clFinish(cqCommandQueue), __FILE__, __LINE__ );
             } // groupsize 
@@ -295,7 +299,7 @@ namespace carp {
         }; // class device
 
 
-        template <class T0>
+        template <class T0 = uint8_t >
         class array {
         private:
             cl_mem cl_ptr;
@@ -314,7 +318,7 @@ namespace carp {
                 ) : m_size(size), cqContext(cqContext), cqCommandQueue(cqCommandQueue) {
                 assert( (flags & CL_MEM_USE_HOST_PTR) == 0 );
                 cl_int err;                
-                cl_ptr = clCreateBuffer( cqContext, flags, size * sizeof(T0), NULL, &err );
+                cl_ptr = clCreateBuffer( cqContext, flags, m_size * sizeof(T0), NULL, &err );
                 utility::checkerror( err, __FILE__, __LINE__ );              
             } // array
 
@@ -322,12 +326,41 @@ namespace carp {
                    const cl_command_queue & cqCommandQueue,
                    std::vector<T0> & input,
                    cl_mem_flags flags = CL_MEM_READ_WRITE
-                ) : m_size(input.size()) {
-                cl_int err;
-                cl_ptr = clCreateBuffer( cqContext, flags | CL_MEM_COPY_HOST_PTR, size * sizeof(T0), reinterpret_cast<void*>(input[0]), &err );
-                utility::checkerror( err, __FILE__, __LINE__ );
-            } // array
+                ) : m_size(input.size()),
+                    cqContext(cqContext),
+                    cqCommandQueue(cqCommandQueue)
+                {
+                    cl_int err;
+                    cl_ptr = clCreateBuffer( cqContext, flags | CL_MEM_COPY_HOST_PTR, m_size * sizeof(T0), reinterpret_cast<void*>((&input[0])), &err );
+                    utility::checkerror( err, __FILE__, __LINE__ );
+                } // array
 
+            array( opencl::device & device,
+                   std::vector<T0> & input,
+                   cl_mem_flags flags = CL_MEM_READ_WRITE
+                ) : m_size(input.size()),
+                    cqContext(device.get_context()),
+                    cqCommandQueue(device.get_queue())
+                {
+                    cl_int err;
+                    cl_ptr = clCreateBuffer( cqContext, flags | CL_MEM_COPY_HOST_PTR, m_size * sizeof(T0), reinterpret_cast<void*>((&input[0])), &err );
+                    utility::checkerror( err, __FILE__, __LINE__ );                    
+                }
+                        
+            template <class MT0>
+            array( opencl::device & device,
+                   size_t size,
+                   MT0 * ptr,
+                   cl_mem_flags flags = CL_MEM_READ_WRITE )
+                : m_size(size),
+                  cqContext(device.get_context()),
+                  cqCommandQueue(device.get_queue())
+                {
+                    cl_int err;
+                    cl_ptr = clCreateBuffer( cqContext, flags | CL_MEM_COPY_HOST_PTR, size * sizeof(T0), reinterpret_cast<void*>(ptr), &err );
+                    utility::checkerror( err, __FILE__, __LINE__ );
+                }            
+            
             cl_mem cl() {
                 return cl_ptr;
             } // cl
@@ -385,7 +418,19 @@ namespace carp {
                 m_cols(cols),
                 buf(cqContext, cqCommandQueue, rows * cols )
                 { }
+            
+            image( opencl::device & device,
+                   cv::Mat_<T0> input ) :
+                cqContext(device.get_context()),
+                cqCommandQueue(device.get_queue()),
+                m_rows(input.rows),
+                m_cols(input.cols),
+                buf(cqContext, cqCommandQueue, input.rows * input.cols )
+                {
+                    this->set(input);                    
+                } // image
 
+            
             int rows() const { return m_rows; };
 
             int cols() const { return m_cols; };
@@ -415,7 +460,7 @@ namespace carp {
                 return result;
             } // get
 
-            void set( cv::Mat_<value_type> & image ) {
+            void set( cv::Mat_<value_type> image ) {
                 assert(image.isContinuous());
 
                 utility::checkerror(
@@ -424,7 +469,17 @@ namespace carp {
                                 
                 return;                
             } // set
-            
+
+            image<T0> & operator= ( cv::Mat_<value_type> & image ) {
+                assert(image.isContinuous());
+
+                utility::checkerror(
+                    clEnqueueWriteBuffer(
+                        cqCommandQueue, ptr(), CL_TRUE, 0, buf.size() * sizeof(value_type), reinterpret_cast<void*>(&image(0,0)), 0, NULL, NULL ) );
+                                
+                return *this;                
+            } // operator = 
+
                 
         }; // class image
         

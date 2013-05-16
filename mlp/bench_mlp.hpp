@@ -191,9 +191,9 @@ clMat /*float*/convertCVToMatFloat /*float*/( void * self, carp::memory::allocat
 } // convertCVToMatFloat
 
 
-cv::Mat_<double> convertMatFloatToCV( void * self, clMat /*float*/input )
+cv::Mat_<float> convertMatFloatToCV( void * self, clMat /*float*/input )
 {
-    cv::Mat_<double> result( input.rows, input.cols );
+    cv::Mat_<float> result( input.rows, input.cols );
     
     for ( int q=0; q<input.rows; q++)
         for ( int w=0; w<input.cols; w++ )

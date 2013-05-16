@@ -17,8 +17,6 @@ const int false = (1!=1);
 const int gangsize = 32;
 
 // const int NULL=0
-float GetValueFloat( void * self, clMat /*float*/smat, int row, int col );
-uint8_t GetValueChar( void * self, clMat /* uint8_t*/ smat, int row, int col );
 
 clMat GetMatFromVector( void * self, clVector /*clMat*/ vec, int idx )
 {
@@ -421,10 +419,11 @@ expFloat( void * self, clMat /*float*/input, clMat /*float*/ output )
 
     int q, w;
     for ( q=0; q<input.rows; q++ )
-        for ( w=0; w<input.cols; w++ )
+        for ( w=0; w<input.cols; w++ ) {
             ((float*)self)[ q * output.step + w + output.start ] = 
         	exp(((float*)self)[ q * input.step + w + input.start ]);
-
+        }
+    
     return;
 }
 

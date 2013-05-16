@@ -18,10 +18,6 @@
 #include "memory.hpp"
 #include "bench_mlp.hpp"
 
-const int KiB=1024;
-const int MiB=1024*KiB;
-// const int memsize = 1.1 * MiB;
-const int local_memsize = 64 * KiB;
 
 int main()
 {
@@ -80,7 +76,7 @@ int main()
             {
                 cv::Mat_<double> nextResult;
                 nextResult = convertMatFloatToCV( self + segments[q], calcpackages[q].output.responseMap );
-                calculatedResults.push_back(nextResult);                
+                calculatedResults.push_back(nextResult);
             }
             
             // testing the output

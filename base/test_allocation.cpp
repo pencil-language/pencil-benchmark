@@ -12,9 +12,7 @@
 #include "errors.hpp"
 #include "memory.hpp"
 
-const int KiB = 1024;
-const int memsize = 64 * KiB;
-const int numel = memsize / sizeof(float);
+const int numel = local_memsize / sizeof(float);
 const bool debug = false;
 
 struct chunk_t {
