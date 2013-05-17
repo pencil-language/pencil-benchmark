@@ -25,4 +25,4 @@ test_operators.o: test_operators.cpp allocator.gch $(BASEDIR)/core/memory.gch be
 test_operators: test_operators.o mlp_impl.o allocator.o
 
 clean:
-	-rm -f *.o test_mlp opencl_mlp *.gch
+	-rm -f *.o test_mlp opencl_mlp *.gch test_operators
