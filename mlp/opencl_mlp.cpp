@@ -79,10 +79,10 @@ int main()
             PRINT("la bas-2");
             // calculateMaps(
             //     self,
-            //     &(segments[0]),
+            //     segments.data(),
             //     conductor.hack.m_visibleLandmarks_size,
             //     conductor.hack.m_mapSize,
-            //     &(calcpackages[0]) // ,
+            //     calcpackages.data() // ,
             //     );
             auto end = std::chrono::high_resolution_clock::now();
             elapsed_time += microseconds(end - start);

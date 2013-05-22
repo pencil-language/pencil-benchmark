@@ -63,7 +63,7 @@ clMat GetMatFromVector( __global void * self, clVector /*clMat*/ vec, int idx )
 //    assert(idx>=0);
 //    assert(idx<vec.size);
     
-    return ((clMat*)self)[ vec.start + vec.step * idx ];
+    return ((__global clMat*)self)[ vec.start + vec.step * idx ];
 } // GetMatFromVector
 
 
@@ -92,7 +92,7 @@ transposeFloat( __global void * self, clMat /*float*/input, clMat /*float*/ outp
     // assert(output.cols == input.rows);
     for (q=0; q<input.rows; q++)
         for (w=0; w<input.cols; w++)
-            ((__global float*)self)[ w * output.step + q + output.start ] 
+            ((__global float*)self)[ w * output.step + q + output.start ]
         	= ((__global float*)self)[ q * input.step + w + input.start ];
 
     return;
@@ -130,7 +130,7 @@ meanChar( __global void * self, clMat /*uint8_t*/  input )
     for ( q=0; q<input.rows; q++ )
       for ( w=0; w<input.cols; w++ )
       {
-        float y = ((uchar*)self)[ q * input.step + w + input.start ] - c;
+        float y = ((__global uchar*)self)[ q * input.step + w + input.start ] - c;
         float t = sum + y;
         c = (t - sum) - y;        
         sum = t;        
@@ -147,7 +147,7 @@ minChar( __global void * self, clMat /*uint8_t*/  input )
 
     for ( q=0; q<input.rows; q++ )
         for ( w=0; w<input.cols; w++ )
-            minvalue = min( minvalue, ((uchar*)self)[ q * input.step + w + input.start ] );
+            minvalue = min( minvalue, ((__global uchar*)self)[ q * input.step + w + input.start ] );
     
     return minvalue;
 } // minFloat
@@ -160,7 +160,7 @@ maxChar( __global void * self, clMat /*uint8_t*/  input )
 
     for ( q=0; q<input.rows; q++ )
         for ( w=0; w<input.cols; w++ )
-            maxvalue = max( maxvalue, ((uchar*)self)[ q * input.step + w + input.start ] );
+            maxvalue = max( maxvalue, ((__global uchar*)self)[ q * input.step + w + input.start ] );
     
     return maxvalue;
 } // maxFloat
@@ -215,7 +215,7 @@ convertFromCharToFloat( __global void * self, clMat /*uint8_t*/  from, float quo
     for ( q=0; q<from.rows; q++ )
         for ( w=0; w<from.cols; w++ )
             ((__global float*)self)[ q * to.step + w + to.start ] = 
-        	quotient * ((uchar*)self)[ q * from.step + w + from.start ] + shift;
+        	quotient * ((__global uchar*)self)[ q * from.step + w + from.start ] + shift;
     return;
 }
 
@@ -423,11 +423,26 @@ expFloat( __global void * self, clMat /*float*/input, clMat /*float*/ output )
     int q, w;
     for ( q=0; q<input.rows; q++ )
         for ( w=0; w<input.cols; w++ )
-            ((__global float*)self)[ q * output.step + w + output.start ] =
-                exp(((__global float*)self)[ q * input.step + w + input.start ]);    
+            ((__global float*)self)[ q * output.step + w + output.start ] =     
+                exp(((__global float*)self)[ q * input.step + w + input.start ]);
 
     return;
 }
+
+__kernel
+void
+expVecFloat( __global void * self, clMat sample, clVector outputs )
+{
+
+    for (int q=0; q<33; q++ ) {       
+        clMat buf = GetMatFromVector( self, outputs, q );
+
+        expFloat( self, sample, buf );        
+    }
+        
+    return;    
+}
+
 
 __kernel
 void

@@ -63,7 +63,7 @@ clMat GetMatFromVector( __global void * self, clVector /*clMat*/ vec, int idx )
 //    assert(idx>=0);
 //    assert(idx<vec.size);
     
-    return ((clMat*)self)[ vec.start + vec.step * idx ];
+    return ((__global clMat*)self)[ vec.start + vec.step * idx ];
 } // GetMatFromVector
 
 

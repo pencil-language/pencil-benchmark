@@ -37,7 +37,7 @@ private:
     
 public:
     
-    generateRandomMat() : rng( generateRandomMat::fetchRandomSeed() ), allocsize(0, 10), dice(rng, allocsize) { }
+    generateRandomMat() : rng( generateRandomMat::fetchRandomSeed() ), allocsize(1, 10000), dice(rng, allocsize) { }
 
     clMat operator() ( void * self, carp::memory::allocator & pool, int64_t rows, int64_t cols ) {
         clMat result = CreateMatFloat( pool, rows, cols );
@@ -45,7 +45,7 @@ public:
         int q, w;
         for ( q=0; q<result.rows; q++ )
             for ( w=0; w<result.cols; w++ )
-                ((float*)self)[ q * result.step + w + result.start ] = dice();        
+                ((float*)self)[ q * result.step + w + result.start ] = 1.0f/dice();        
         
         return result;
     } // operator()
@@ -61,7 +61,7 @@ int main()
 
     // opencl initalization
     carp::opencl::device device;
-    device.compile( {"operators.cl"}, {"transposeFloat", "expFloat"} );
+    device.compile( {"operators.cl"}, {"transposeFloat", "expFloat", "expVecFloat"} );
     carp::memory::dense pool({local_memsize, uint8_t()});
 
     boost::shared_array<uint8_t> buffer( new uint8_t[local_memsize] );    
@@ -70,26 +70,63 @@ int main()
     // random variable initialization
     generateRandomMat generator;
 
+    clMat /* float */ exper     = generator( self, pool, rows, cols );
+    clMat /* float */ transper  = generator( self, pool, cols, rows );
+    clMat /* float */ sample    = generator( self, pool, rows, cols );
+
+    clVector mats = CreateVectorMat( pool, 33 );
+
+    for ( int q=0; q<mats.size; q++) {
+        clMat buf = generator( self, pool, rows, cols );
+        SetMatToVector( self, mats, q, buf );
+    }
     
-    clMat /* float */ sample = generator( self, pool, rows, cols );
-    clMat /* float */ exper  = generator( self, pool, rows, cols );
-
+    printMatFloat(self, sample, "sample" );
+    
     carp::opencl::array<uint8_t> clSelf( device, local_memsize, self );
-        
-    expFloat( clSelf, sample, exper );
 
+    // expFloat
+    expFloat( self, sample, exper );
     device["expFloat"]( clSelf.cl(), sample, exper ).groupsize({1},{1});
+
+    // transposeFloat
+    transposeFloat( self, sample, transper );
+    device["transposeFloat"]( clSelf.cl(), sample, transper ).groupsize({1},{1});
+
+    // repeated expFloat
+    for (int q = 0; q<33; q++ ) {
+        clMat buf = GetMatFromVector( self, mats, q );
+        expFloat( self, sample, buf );
+    }
+
+    device["expVecFloat"]( clSelf.cl(), sample, mats ).groupsize({1}, {1});
     
     auto processed = clSelf.get();
-    void * results = reinterpret_cast<void*>(processed.data);
-        
-    cv::Mat_<float> clExperVerify = convertMatFloatToCV( results, expert );
+    void * results = reinterpret_cast<void*>(processed.data());
+    
+    cv::Mat_<float> clExperVerify = convertMatFloatToCV( results, exper );
+    cv::Mat_<float> clTransposeVerify = convertMatFloatToCV( results, transper );
     
     PRINT( cv::norm( clExperVerify - convertMatFloatToCV( self, exper)));
-    assert( cv::norm( clExperVerify - convertMatFloatToCV( self, exper)) < 0.0001 );
+//    assert( cv::norm( clExperVerify - convertMatFloatToCV( self, exper)) < 0.0001 );
+
+    PRINT( cv::norm( clTransposeVerify - convertMatFloatToCV( self, transper)));
+//    assert( cv::norm( clTransposeVerify - convertMatFloatToCV( self, transper)) < 0.0001 );
     
-        
-    return EXIT_SUCCESS;    
+    for (int q=0; q<33; q++) {
+        clMat buf = GetMatFromVector( self, mats, q );
+        clMat clBuf = GetMatFromVector( results, mats, q );
+        assert( buf.rows  == clBuf.rows );
+        assert( buf.cols  == clBuf.cols );
+        assert( buf.step  == clBuf.step );
+        assert( buf.start == clBuf.start );
+        cv::Mat_<float> mat = convertMatFloatToCV( self, buf );
+        cv::Mat_<float> clmat = convertMatFloatToCV( results, buf );
+
+        assert(cv::norm( mat - clmat ) < 0.0001);
+    }
+    
+    return EXIT_SUCCESS;
 } // main
 
 

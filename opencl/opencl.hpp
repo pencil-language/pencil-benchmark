@@ -177,7 +177,7 @@ namespace carp {
                 PRINT("ici01");
                 PRINT(kernelsize[0]);                
                 PRINT(reinterpret_cast<void*>(cqCommandQueue));
-                utility::checkerror(clEnqueueNDRangeKernel( cqCommandQueue, cqKernel, worksize.size(), NULL, &(kernelsize[0]), &(groupsize[0]), 0, NULL, NULL ), __FILE__, __LINE__ );
+                utility::checkerror(clEnqueueNDRangeKernel( cqCommandQueue, cqKernel, worksize.size(), NULL, kernelsize.data(), groupsize.data(), 0, NULL, NULL ), __FILE__, __LINE__ );
                 utility::checkerror(clFinish(cqCommandQueue), __FILE__, __LINE__ );
             } // groupsize 
             
@@ -254,7 +254,7 @@ namespace carp {
                     lengths.push_back(sources.back().size());                    
                 }
                                 
-                cpProgram = clCreateProgramWithSource( cxGPUContext, sources.size(), &(c_strs[0]), &(lengths[0]), &err );
+                cpProgram = clCreateProgramWithSource( cxGPUContext, sources.size(), &(c_strs[0]), lengths.data(), &err );
                 utility::checkerror(err, __FILE__, __LINE__ );
 
                 // building the OpenCL source code
@@ -331,7 +331,7 @@ namespace carp {
                     cqCommandQueue(cqCommandQueue)
                 {
                     cl_int err;
-                    cl_ptr = clCreateBuffer( cqContext, flags | CL_MEM_COPY_HOST_PTR, m_size * sizeof(T0), reinterpret_cast<void*>((&input[0])), &err );
+                    cl_ptr = clCreateBuffer( cqContext, flags | CL_MEM_COPY_HOST_PTR, m_size * sizeof(T0), reinterpret_cast<void*>(input.data()), &err );
                     utility::checkerror( err, __FILE__, __LINE__ );
                 } // array
 
@@ -343,7 +343,7 @@ namespace carp {
                     cqCommandQueue(device.get_queue())
                 {
                     cl_int err;
-                    cl_ptr = clCreateBuffer( cqContext, flags | CL_MEM_COPY_HOST_PTR, m_size * sizeof(T0), reinterpret_cast<void*>((&input[0])), &err );
+                    cl_ptr = clCreateBuffer( cqContext, flags | CL_MEM_COPY_HOST_PTR, m_size * sizeof(T0), reinterpret_cast<void*>(input.data()), &err );
                     utility::checkerror( err, __FILE__, __LINE__ );                    
                 }
                         
@@ -374,8 +374,8 @@ namespace carp {
             } // size
             
             std::vector<T0> get( ) {
-                std::vector<T0> result(size);                
-                utility::checkerror( clEnqueueReadBuffer( cqCommandQueue, cl_ptr, CL_TRUE, 0, sizeof(T0) * size, &(result[0]), 0, NULL, NULL), __FILE__, __LINE__ );
+                std::vector<T0> result(m_size);                
+                utility::checkerror( clEnqueueReadBuffer( cqCommandQueue, cl_ptr, CL_TRUE, 0, sizeof(T0) * m_size, result.data(), 0, NULL, NULL), __FILE__, __LINE__ );
 
                 return result;                
             } // extract

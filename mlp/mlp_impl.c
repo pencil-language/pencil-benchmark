@@ -418,12 +418,13 @@ expFloat( void * self, clMat /*float*/input, clMat /*float*/ output )
     assert(input.cols == output.cols);
 
     int q, w;
+
     for ( q=0; q<input.rows; q++ )
         for ( w=0; w<input.cols; w++ ) {
             ((float*)self)[ q * output.step + w + output.start ] = 
         	exp(((float*)self)[ q * input.step + w + input.start ]);
         }
-    
+
     return;
 }
 
