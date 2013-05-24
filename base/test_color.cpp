@@ -17,7 +17,7 @@ int main()
     
     carp::opencl::image<int> cl_image(device, 10, 25);
     
-    device["color"]( cl_image.cl(), cl_image.ptr() )        
+    device["color"]( cl_image.cl(), cl_image.ptr() )
         .groupsize({16,16}, {cl_image.rows(), cl_image.cols()});
 
     cv::Mat_<int> image = cl_image.get();
