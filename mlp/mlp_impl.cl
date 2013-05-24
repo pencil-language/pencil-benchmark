@@ -67,6 +67,19 @@ clMat GetMatFromVector( __global void * self, clVector /*clMat*/ vec, int idx )
 } // GetMatFromVector
 
 
+
+void SetMatToVector( __global void * self, clVector /*clMat*/ vec, int idx, clMat val )
+{
+//    assert(self);
+//    assert(idx>=0);
+//    assert(idx<vec.size);
+    
+    ((__global clMat*)self)[ vec.start + vec.step * idx ] = val;
+    return;
+} // GetMatFromVector
+
+
+
 void
 copyToFloat( __global void * self, clMat /*float*/input, clMat /*float*/ output )
 {
@@ -127,7 +140,7 @@ meanChar( __global void * self, clMat /*uint8_t*/  input )
     for ( q=0; q<input.rows; q++ )
       for ( w=0; w<input.cols; w++ )
       {
-        float y = ((uchar*)self)[ q * input.step + w + input.start ] - c;
+        float y = ((__global uchar*)self)[ q * input.step + w + input.start ] - c;
         float t = sum + y;
         c = (t - sum) - y;        
         sum = t;        
@@ -144,7 +157,7 @@ minChar( __global void * self, clMat /*uint8_t*/  input )
 
     for ( q=0; q<input.rows; q++ )
         for ( w=0; w<input.cols; w++ )
-            minvalue = min( minvalue, ((uchar*)self)[ q * input.step + w + input.start ] );
+            minvalue = min( minvalue, ((__global uchar*)self)[ q * input.step + w + input.start ] );
     
     return minvalue;
 } // minFloat
@@ -157,7 +170,7 @@ maxChar( __global void * self, clMat /*uint8_t*/  input )
 
     for ( q=0; q<input.rows; q++ )
         for ( w=0; w<input.cols; w++ )
-            maxvalue = max( maxvalue, ((uchar*)self)[ q * input.step + w + input.start ] );
+            maxvalue = max( maxvalue, ((__global uchar*)self)[ q * input.step + w + input.start ] );
     
     return maxvalue;
 } // maxFloat
@@ -211,7 +224,7 @@ convertFromCharToFloat( __global void * self, clMat /*uint8_t*/  from, float quo
     for ( q=0; q<from.rows; q++ )
         for ( w=0; w<from.cols; w++ )
             ((__global float*)self)[ q * to.step + w + to.start ] = 
-        	quotient * ((uchar*)self)[ q * from.step + w + from.start ] + shift;
+        	quotient * ((__global uchar*)self)[ q * from.step + w + from.start ] + shift;
     return;
 }
 
@@ -477,10 +490,6 @@ GetValueFloat( __global void * self, clMat /*float*/smat, int row, int col )
     // assert(smat.step >= smat.cols);
     // assert(smat.step % smat.cols == 0);
 
-    ((__global float*)self)[0]=11.;
-    
-
-
     return ((__global float*)self)[ row * smat.step + col + smat.start ];
     // return -1231.;
 }
@@ -495,7 +504,7 @@ GetValueChar( __global void * self, clMat /* uint8_t*/ smat, int row, int col )
     // assert(col < smat.cols);
     // assert(smat.step >= smat.cols);
     
-    return ((uchar*)self)[ row * smat.step + col + smat.start ];
+    return ((__global uchar*)self)[ row * smat.step + col + smat.start ];
     // return -1231.;
 }
 
@@ -511,6 +520,21 @@ SetValueFloat( __global void * self, clMat /*float*/ smat, int row, int col, flo
     // assert(smat.step % smat.cols == 0);
 
     ((__global float*)self)[ row * smat.step + col + smat.start ] = value;
+    return;    
+}
+
+void
+SetValueChar( __global void * self, clMat /*float*/ smat, int row, int col, uchar value )
+{
+    // assert(self);
+    // assert(row >= 0);
+    // assert(col >= 0);
+    // assert(row < smat.rows);
+    // assert(col < smat.cols);
+    // assert(smat.step >= smat.cols);
+    // assert(smat.step % smat.cols == 0);
+
+    ((__global uchar*)self)[ row * smat.step + col + smat.start ] = value;
     return;    
 }
 
@@ -561,20 +585,20 @@ void normalizeSample( __global void * self, clMat /*uint8_t*/  image, clMat /*fl
   // assert(result->cols == image.cols);
   // assert(result->rows == image.rows);
     
-  float sampleMean = meanChar(self, image);
-  float sampleMin  = minChar(self, image);
-  float sampleMax  = maxChar(self, image);
+    float sampleMean = meanChar(self, image);
+    float sampleMin  = minChar(self, image);
+    float sampleMax  = maxChar(self, image);
 
-  sampleMax -= sampleMean;
-  sampleMin -= sampleMean;
+     sampleMax -= sampleMean;
+     sampleMin -= sampleMean;
 
-  sampleMax = fmax( fabs(sampleMin), fabs(sampleMax));
+     sampleMax = fmax( fabs(sampleMin), fabs(sampleMax));
 
-  if (sampleMax == 0.0) sampleMax = 1.0;
+     if (sampleMax == 0.0) sampleMax = 1.0;
 
-  convertFromCharToFloat( self, image, 1.0/sampleMax, -(1.0/sampleMax)*sampleMean, *result );
+     convertFromCharToFloat( self, image, 1.0/sampleMax, -(1.0/sampleMax)*sampleMean, *result );
 
-  *result = reshapeFloat( self, *result, image.rows * image.cols );
+     *result = reshapeFloat( self, *result, image.rows * image.cols );
  
   return;
 } // normalizeSample
@@ -600,15 +624,12 @@ generateResponseMap(
     clMat /*float*/ result
     )
 {
-
+    
   // assert( result.rows == 2 * mapSize + 1 );
   // assert( result.cols == 2 * mapSize + 1 );
 
   //  assert(wIn.rows == wIn_A.rows);
   //  assert(wIn.cols == m_U.rows);
-    ((__global float*)self)[0]=11.;
-    
-
 
     clMat /*float*/wOut_tmp = GetBlockFloat( self, m_wOut, 0, m_wOut.rows, 0, m_wOut.cols - 1 );
 
@@ -620,12 +641,6 @@ generateResponseMap(
             int worksize = (2 * mapSize + 1) * (2 * mapSize + 1);
           
             float bOut = GetValueFloat( self, m_wOut, 0, m_wOut.cols - 1 );
-
-            int ncy=0; 
-            int cy=0;
-            int ncx=0;
-            int cx=0;
-            ((__global float*)self)[0]=11.;
             
             for ( work=0; work < (worksize / gangsize) + 1; work++ )
             {
@@ -640,23 +655,21 @@ generateResponseMap(
 
               clMat patch = GetMatFromVector( self, patches, localid );
                             
-              // normalizeSample( self, imagePatch, &patch );
-          
+              normalizeSample( self, imagePatch, &patch );
+
               clMat xOut = GetMatFromVector( self, xOuts, localid );
 
-              // gemmFloatDirDirDir( self, wIn, patch, -1.0, bIn, -1.0, xOut );
-              
+              gemmFloatDirDirDir( self, wIn, patch, -1.0, bIn, -1.0, xOut );
+
               clMat e = GetMatFromVector( self, es, localid );
               
-              ((__global float*)self)[0]=11.;
               expFloat( self, xOut, e );
-          
-              // addFloat( self, e, 1.0, xOut );
-              // divideFloat( self, 2.0, xOut, e);
-              // addFloat( self, e, -1.0, xOut);
-              
-              // SetValueFloat( self, result, ncy, ncx, 1./( 1. + exp(- dotProductTransDir( self, wOut_tmp, xOut) - bOut ) ) );
-          
+
+              addFloat( self, e, 1.0, xOut );
+              divideFloat( self, 2.0, xOut, e);
+              addFloat( self, e, -1.0, xOut);
+
+              SetValueFloat( self, result, ncy, ncx, 1./( 1. + exp(- dotProductTransDir( self, wOut_tmp, xOut) - bOut ) ) );
             } // for gangsize
         } // for localid
     } // localid block
@@ -691,10 +704,8 @@ calculateMaps(
 {
     if (get_global_id(0)>0) return;
 
-    ((__global float*)self)[0]=11.;
-    
     int q;
-    for (q=0; q<1 /*m_visibleLandmarks_size*/; q++ )
+    for (q=0; q<2 /*m_visibleLandmarks_size*/; q++ )
     {
         int idx = q;
 
@@ -725,6 +736,8 @@ calculateMaps(
             // result
             packages[idx].output.responseMap );
 
+        return;
+        
     } // for q in visiblelandmarks_size
 
     return;
