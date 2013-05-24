@@ -174,9 +174,6 @@ namespace carp {
                 assert(cqKernel);
                 assert(cqCommandQueue);
                 std::vector<size_t> kernelsize = utility::roundup(groupsize, worksize);
-                PRINT("ici01");
-                PRINT(kernelsize[0]);                
-                PRINT(reinterpret_cast<void*>(cqCommandQueue));
                 utility::checkerror(clEnqueueNDRangeKernel( cqCommandQueue, cqKernel, worksize.size(), NULL, kernelsize.data(), groupsize.data(), 0, NULL, NULL ), __FILE__, __LINE__ );
                 utility::checkerror(clFinish(cqCommandQueue), __FILE__, __LINE__ );
             } // groupsize 

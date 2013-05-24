@@ -67,7 +67,6 @@ int main()
             carp::opencl::array<calcpackage> clCalcpackages( device, calcpackages );
             
             auto start = std::chrono::high_resolution_clock::now();
-            PRINT("la bas-1");            
             device["calculateMaps"](
                 clSelf.cl(),
                 clSegments.cl(),
@@ -76,23 +75,31 @@ int main()
                 clCalcpackages.cl(),
                 carp::opencl::buffer(48 * KiB)
                 ).groupsize({1},{1});
-            PRINT("la bas-2");
-            // calculateMaps(
-            //     self,
-            //     segments.data(),
-            //     conductor.hack.m_visibleLandmarks_size,
-            //     conductor.hack.m_mapSize,
-            //     calcpackages.data() // ,
-            //     );
             auto end = std::chrono::high_resolution_clock::now();
             elapsed_time += microseconds(end - start);
 
-            // converting the outputs
+            // copying the data back to the CPU
+            auto processed = clSelf.get();
+            void * results = reinterpret_cast<void*>(processed.data());
+
+            clMat patch = GetMatFromVector( results, calcpackages[0].tmp.patches, 0 );
+            clMat imagePatch = GetBlockChar( results, calcpackages[0].input.alignedImage, 5, 16, 2, 13 );
+            clMat xOuts = GetMatFromVector( results, calcpackages[0].tmp.xOuts, 0 );
+            clMat e = GetMatFromVector( results, calcpackages[0].tmp.es, 0 );
+//            clMat result = GetMatFromVector( results, calcpackages[0].output.responseMap, 0 );
+            
+//            printMatFloat( results, patch, "patch");
+//            printMatChar( results, imagePatch, "imagePatch" );
+//            printMatFloat( results, calcpackages[0].output.responseMap, "calcpackages[0].output.responseMap");
+            
+//            assert(false);
+            
+            // converting the outputs            
             std::vector< cv::Mat_<double> > calculatedResults;
             for (int q=0; q<conductor.hack.m_visibleLandmarks_size; q++)
             {
                 cv::Mat_<double> nextResult;
-                nextResult = convertMatFloatToCV( self + segments[q], calcpackages[q].output.responseMap );
+                nextResult = convertMatFloatToCV( results + segments[q], calcpackages[q].output.responseMap );
                 calculatedResults.push_back(nextResult);                
             }
             
@@ -100,8 +107,8 @@ int main()
             for (int q=0; q<conductor.hack.m_visibleLandmarks_size; q++)
             {
                 // std::cout << "cv::norm( conductor.hack.responseMaps[" << q << "] - calculatedResults[" << q << "] ) = "
-                //             << cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) << std::endl;
-//                PRINT(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ));
+                //             << cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) << std::endl;                
+                PRINT(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ));
                 assert(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) < 0.00001);
             }
             
