@@ -482,7 +482,6 @@ GetValueFloat( void * self, clMat /*float*/smat, int row, int col )
     assert(row < smat.rows);
     assert(col < smat.cols);
     assert(smat.step >= smat.cols);
-    assert(smat.step % smat.cols == 0);
     
     return ((float*)self)[ row * smat.step + col + smat.start ];
     // return -1231.;
@@ -654,7 +653,7 @@ generateResponseMap(
               assert( patch.cols == imagePatch.cols );
 
               normalizeSample( self, imagePatch, &patch );
-          
+              
               // clMat /*float*/xOut = CreateMatFloat( self, allocator, bIn.rows, bIn.cols );
               clMat xOut = GetMatFromVector( self, xOuts, localid );
 
@@ -673,9 +672,9 @@ generateResponseMap(
               addFloat( self, e, 1.0, xOut );
               divideFloat( self, 2.0, xOut, e);
               addFloat( self, e, -1.0, xOut);
-              
+        
               SetValueFloat( self, result, ncy, ncx, 1./( 1. + exp(- dotProductTransDir( self, wOut_tmp, xOut) - bOut ) ) );
-          
+
               // freeMatFloat( self, allocator, &e);
               // freeMatFloat( self, allocator, &xOut);
               // freeMatFloat( self, allocator, &patch);
@@ -739,7 +738,7 @@ calculateMaps(
 
         center.x = cvRound(shape_x);
         center.y = cvRound(shape_y);
-        
+
         // clMat wIn = CreateMatFloat( self, allocator, m_wIns[idx].rows, m_Us[idx].rows );
 
         // clMat patches[gangsize];
@@ -775,6 +774,7 @@ calculateMaps(
             packages[idx].tmp.es,
             // result
             packages[idx].output.responseMap );
+
 
         // freeMatFloat(self, allocator, &wIn);
         // {
