@@ -705,7 +705,7 @@ calculateMaps(
     if (get_global_id(0)>0) return;
 
     int q;
-    for (q=0; q<2 /*m_visibleLandmarks_size*/; q++ )
+    for (q=0; q < m_visibleLandmarks_size; q++ )
     {
         int idx = q;
 
@@ -736,8 +736,6 @@ calculateMaps(
             // result
             packages[idx].output.responseMap );
 
-        return;
-        
     } // for q in visiblelandmarks_size
 
     return;
