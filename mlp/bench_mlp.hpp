@@ -6,6 +6,7 @@
 #include <tuple>
 #include <chrono>
 #include <string>
+#include <iomanip>
 #include <stdlib.h>
 #include <opencv2/core/core.hpp>
 #include <boost/preprocessor.hpp>
@@ -23,6 +24,32 @@ namespace { struct hack_t; }
 
 clMat /*float*/convertCVToMatFloat /*float*/( void * self, carp::memory::allocator & pool, const cv::Mat_<double> & input );
 clMat /*uint8_t*/  convertCVToMatChar /*uint8_t*/  ( void * self, carp::memory::allocator & pool, const cv::Mat_<uint8_t> & input );
+
+template <class T0>
+void
+printMatCV( cv::Mat_<T0> & mat, std::string name )
+{
+    std::cout << std::setprecision(6) << std::fixed;
+    
+    std::cout << name << " = [\n";
+
+    int q,w;
+
+    for (q=0; q<mat.rows; q++)
+    {
+        std::cout << "[ ";
+        for( w=0; w<mat.cols; w++)
+        {
+            std::cout << static_cast<float>(mat(q,w)) << ", ";
+        }
+        std::cout << " ]\n";
+    }
+    
+    std::cout << "]\n";
+    
+    return;
+} // printMatFloat
+
 
 namespace {
     
@@ -191,9 +218,9 @@ clMat /*float*/convertCVToMatFloat /*float*/( void * self, carp::memory::allocat
 } // convertCVToMatFloat
 
 
-cv::Mat_<float> convertMatFloatToCV( void * self, clMat /*float*/input )
+cv::Mat_<double> convertMatFloatToCV( void * self, clMat /*float*/input )
 {
-    cv::Mat_<float> result( input.rows, input.cols );
+    cv::Mat_<double> result( input.rows, input.cols );
     
     for ( int q=0; q<input.rows; q++)
         for ( int w=0; w<input.cols; w++ )

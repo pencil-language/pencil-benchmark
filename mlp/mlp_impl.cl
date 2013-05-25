@@ -634,7 +634,7 @@ generateResponseMap(
     clMat /*float*/wOut_tmp = GetBlockFloat( self, m_wOut, 0, m_wOut.rows, 0, m_wOut.cols - 1 );
 
     {
-        int localid = 0;
+        int localid = get_local_id(0);
         for ( localid=0; localid<gangsize; localid++ ) {
           
             int work = 0;      
@@ -654,7 +654,7 @@ generateResponseMap(
               clMat /*uint8_t*/   imagePatch = GetBlockChar( self, image, cy - m_patchSize, cy + m_patchSize + 1, cx - m_patchSize, cx + m_patchSize + 1 );
 
               clMat patch = GetMatFromVector( self, patches, localid );
-                            
+
               normalizeSample( self, imagePatch, &patch );
 
               clMat xOut = GetMatFromVector( self, xOuts, localid );
@@ -670,8 +670,9 @@ generateResponseMap(
               addFloat( self, e, -1.0, xOut);
 
               SetValueFloat( self, result, ncy, ncx, 1./( 1. + exp(- dotProductTransDir( self, wOut_tmp, xOut) - bOut ) ) );
+
             } // for gangsize
-        } // for localid
+         } // for localid
     } // localid block
   
 //  // assert(false);
@@ -702,20 +703,28 @@ calculateMaps(
     __local void * buffer
     )
 {
-    if (get_global_id(0)>0) return;
 
-    int q;
-    for (q=0; q < m_visibleLandmarks_size; q++ )
-    {
+    // int q = get_group_id(0);
+    // if (q >= m_visibleLandmarks_size) return;
+    // int localid = get_local_id(0);
+    // if (localid > 0) return;    
+
+    int q = get_group_id(0);
+//    if (q > 0) return;
+    int localid = get_local_id(0);
+    if (localid > 0) return;    
+
+//    for (q=0; q<m_visibleLandmarks_size; q++) {
+            
         int idx = q;
 
         Point2i center;
-
+        
         float shape_x;
         float shape_y;
         shape_x = GetValueFloat( self + memory_segments[q], packages[q].input.shape, 2*idx, 0 );
         shape_y = GetValueFloat( self + memory_segments[q], packages[q].input.shape, 2*idx+1, 0 );
-
+        
         center.x = cvRound(shape_x);
         center.y = cvRound(shape_y);
         
@@ -728,7 +737,7 @@ calculateMaps(
             packages[idx].input.m_wOut,
             packages[idx].input.wIn,
             packages[idx].input.bIn,
-
+            
             // temporary
             packages[idx].tmp.patches,
             packages[idx].tmp.xOuts,
@@ -736,8 +745,8 @@ calculateMaps(
             // result
             packages[idx].output.responseMap );
 
-    } // for q in visiblelandmarks_size
-
+//    } // for q in m_visibleLandmarks
+    
     return;
 } // calculateMaps
 

@@ -646,6 +646,13 @@ generateResponseMap(
 
               clMat /*uint8_t*/   imagePatch = GetBlockChar( self, image, cy - m_patchSize, cy + m_patchSize + 1, cx - m_patchSize, cx + m_patchSize + 1 );
 
+              // printf("cy - m_patchSize = %d\n", cy - m_patchSize );
+              // printf("cy + m_patchSize + 1 = %d\n", cy + m_patchSize + 1 );
+              // printf("cx - m_patchSize = %d\n", cx - m_patchSize );
+              // printf("cx + m_patchSize + 1 = %d\n", cx + m_patchSize + 1);
+              
+              // printMatChar( self, imagePatch, "imagePatch");
+              
               // clMat /*float*/patch = CreateMatFloat( self, allocator, imagePatch.rows, imagePatch.cols );
               clMat patch = GetMatFromVector( self, patches, localid );
                             
@@ -653,7 +660,8 @@ generateResponseMap(
               assert( patch.cols == imagePatch.cols );
 
               normalizeSample( self, imagePatch, &patch );
-              
+              // printMatFloat(self, patch, "patch");
+                            
               // clMat /*float*/xOut = CreateMatFloat( self, allocator, bIn.rows, bIn.cols );
               clMat xOut = GetMatFromVector( self, xOuts, localid );
 
@@ -661,6 +669,8 @@ generateResponseMap(
               assert( xOut.cols == bIn.cols );
           
               gemmFloatDirDirDir( self, wIn, patch, -1.0, bIn, -1.0, xOut );
+
+              // printMatFloat(self, xOut, "xOut");
               
               // clMat /*float*/e = CreateMatFloat( self, allocator, xOut.rows, xOut.cols);
               clMat e = GetMatFromVector( self, es, localid );
@@ -668,11 +678,15 @@ generateResponseMap(
               assert( e.cols == xOut.cols );              
           
               expFloat( self, xOut, e );
-          
+
+              // printMatFloat( self, e, "e");
+              
               addFloat( self, e, 1.0, xOut );
               divideFloat( self, 2.0, xOut, e);
               addFloat( self, e, -1.0, xOut);
-        
+
+              // printMatFloat( self, xOut, "xOut" );
+              
               SetValueFloat( self, result, ncy, ncx, 1./( 1. + exp(- dotProductTransDir( self, wOut_tmp, xOut) - bOut ) ) );
 
               // freeMatFloat( self, allocator, &e);
@@ -721,8 +735,14 @@ calculateMaps(
     
     // printf("calculateMaps started\n");
     int q;
-    for (q=0; q<m_visibleLandmarks_size; q++ )
+    for (q=9; q<10 /*m_visibleLandmarks_size*/; q++ )
     {
+        printf("***********************************************************\n");
+        printf("***********************************************************\n");
+        printf("************* iteration %d *********************************\n", q );
+        printf("***********************************************************\n");
+        printf("***********************************************************\n");
+        
 	// printf("processing patch %d/%d\n", q, m_visibleLandmarks_size );
         /* const int idx = m_visibleLandmarks[q]; */
         /* assert(idx==q); */
@@ -775,6 +795,8 @@ calculateMaps(
             // result
             packages[idx].output.responseMap );
 
+        printMatFloat( self + memory_segments[idx], packages[idx].output.responseMap, "packages[idx].output.responseMap");
+        
 
         // freeMatFloat(self, allocator, &wIn);
         // {
