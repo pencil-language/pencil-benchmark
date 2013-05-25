@@ -735,13 +735,13 @@ calculateMaps(
     
     // printf("calculateMaps started\n");
     int q;
-    for (q=9; q<10 /*m_visibleLandmarks_size*/; q++ )
+    for (q=0; q<m_visibleLandmarks_size; q++ )
     {
-        printf("***********************************************************\n");
-        printf("***********************************************************\n");
-        printf("************* iteration %d *********************************\n", q );
-        printf("***********************************************************\n");
-        printf("***********************************************************\n");
+        // printf("***********************************************************\n");
+        // printf("***********************************************************\n");
+        // printf("************* iteration %d *********************************\n", q );
+        // printf("***********************************************************\n");
+        // printf("***********************************************************\n");
         
 	// printf("processing patch %d/%d\n", q, m_visibleLandmarks_size );
         /* const int idx = m_visibleLandmarks[q]; */
@@ -795,7 +795,7 @@ calculateMaps(
             // result
             packages[idx].output.responseMap );
 
-        printMatFloat( self + memory_segments[idx], packages[idx].output.responseMap, "packages[idx].output.responseMap");
+        //       printMatFloat( self + memory_segments[idx], packages[idx].output.responseMap, "packages[idx].output.responseMap");
         
 
         // freeMatFloat(self, allocator, &wIn);

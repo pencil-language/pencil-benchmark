@@ -18,6 +18,7 @@
 #include "memory.hpp"
 #include "bench_mlp.hpp"
 
+const int processed_frames = 100;
 
 int main()
 {
@@ -29,7 +30,7 @@ int main()
     
     
     for ( conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id);
-          ((conductor.id != -1) and (conductor.id != 1));
+          ((conductor.id != -1) and (conductor.id != processed_frames));
           // conductor.id != -1;
           conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id)
         )
@@ -80,18 +81,21 @@ int main()
             }
             
             // testing the output
-            for (int q=9; q<10/*conductor.hack.m_visibleLandmarks_size*/; q++)
+            for (int q=0; q<conductor.hack.m_visibleLandmarks_size; q++)
             {
                 // std::cout << "cv::norm( conductor.hack.responseMaps[" << q << "] - calculatedResults[" << q << "] ) = "
                 //             << cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) << std::endl;
-                PRINT(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ));
-//                assert(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) < 0.00001);
+//                PRINT(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ));
+                assert(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) < 0.00001);
             }
             
         }
     }
     
-    std::cout << "total elapsed time = " << elapsed_time / 1000000. << " s." << std::endl;    
+    std::cout << "total elapsed time = " << elapsed_time / 1000000. << " s." << std::endl;
+    std::cout << std::setprecision(2) << std::fixed;
+    std::cout << "processing speed   = " << 1000000. * processed_frames / elapsed_time << "fps" << std::endl;
+
     //conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.hack);
 
     PRINT(maxnetallocated);

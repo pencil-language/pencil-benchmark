@@ -635,7 +635,7 @@ generateResponseMap(
 
     {
         int localid = get_local_id(0);
-        for ( localid=0; localid<gangsize; localid++ ) {
+//        for ( localid=0; localid<gangsize; localid++ ) {
           
             int work = 0;      
             int worksize = (2 * mapSize + 1) * (2 * mapSize + 1);
@@ -672,7 +672,7 @@ generateResponseMap(
               SetValueFloat( self, result, ncy, ncx, 1./( 1. + exp(- dotProductTransDir( self, wOut_tmp, xOut) - bOut ) ) );
 
             } // for gangsize
-         } // for localid
+            //       } // for localid
     } // localid block
   
 //  // assert(false);
@@ -712,7 +712,7 @@ calculateMaps(
     int q = get_group_id(0);
 //    if (q > 0) return;
     int localid = get_local_id(0);
-    if (localid > 0) return;    
+//    if (localid > 0) return;    
 
 //    for (q=0; q<m_visibleLandmarks_size; q++) {
             

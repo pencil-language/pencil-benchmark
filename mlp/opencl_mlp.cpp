@@ -19,7 +19,7 @@
 #include "memory.hpp"
 #include "bench_mlp.hpp"
 
-const int processed_frames = 25;
+const int processed_frames = 100;
 
 int main()
 {
