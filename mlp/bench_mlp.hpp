@@ -11,6 +11,7 @@
 #include <opencv2/core/core.hpp>
 #include <boost/preprocessor.hpp>
 #include <boost/serialization/vector.hpp>
+#include <boost/archive/xml_iarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 
 #include "cast.h"
@@ -79,11 +80,11 @@ namespace {
         int id;
         hack_t hack;
         std::ifstream dumpStream;
-        boost::archive::binary_iarchive importer;
+        boost::archive::xml_iarchive importer;
 
     public:
         
-        conductor_t() : id(0), dumpStream("response_dumps.bin", std::ios::in | std::ios::binary ), importer(dumpStream) {
+        conductor_t() : id(0), dumpStream("response_dumps.xml", std::ios::in | std::ios::binary ), importer(dumpStream) {
             
         }; // conductor_t
         
