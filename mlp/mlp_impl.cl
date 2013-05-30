@@ -135,7 +135,7 @@ meanChar( __global void * self, clMat /*uint8_t*/  input )
 {    
     int q,w;
     float sum=0;
-    float c = 0; // kahan summation
+    float c = 0.0f; // kahan summation
     
     for ( q=0; q<input.rows; q++ )
       for ( w=0; w<input.cols; w++ )
@@ -255,10 +255,10 @@ gemmFloatDirDirDir( __global void * self, clMat /*float*/A, clMat /*float*/B, fl
     // assert(C.cols == result.cols);
 
     int q, w, e;
-    float sum=0.;
-    float c;
+    float sum=0.0f;
+    float c=0.0f;
 
-    if ( fabs(beta) > 0.000001 ) {
+    if ( fabs(beta) > 0.000001f ) {
         for ( q=0; q<C.rows; q++ )
             for ( w=0; w<C.cols; w++ )
             {	    
@@ -305,9 +305,9 @@ gemmFloatDirDirDirGang( __global void * self, clMat /*float*/A, clMat /*float*/B
     // assert(C.cols == result.cols);
 
     int q, w, e;
-    float sum=0.;
-    float c;    
-    if ( fabs(beta) > 0.000001 ) {
+    float sum=0.0f;
+    float c=0.0f;   
+    if ( fabs(beta) > 0.000001f ) {
         int worksize = C.rows * C.cols;
         int work = 0;
         
@@ -329,7 +329,7 @@ gemmFloatDirDirDirGang( __global void * self, clMat /*float*/A, clMat /*float*/B
             ((__global float*)self)[ q * result.step + w + result.start ] = alpha * sum  + beta * ((__global float*)self)[ q * C.step + w + C.start ];
         }
     }
-    else // NOT fabs(beta) > 0.000001
+    else // NOT fabs(beta) > 0.000001f
     {
         int worksize = C.rows * C.cols;
         int work = 0;
@@ -367,9 +367,9 @@ gemmFloatDirTransDirGang( __global void * self, clMat /*float*/A, clMat /*float*
     // assert(C.cols == result.cols);
 
     int q, w, e;
-    float sum=0.;
-    float c;    
-    if ( fabs(beta) > 0.000001 ) {
+    float sum=0.0f;
+    float c=0.0f;
+    if ( fabs(beta) > 0.000001f ) {
         int worksize = C.rows * C.cols;
         int work = 0;
         
@@ -391,7 +391,7 @@ gemmFloatDirTransDirGang( __global void * self, clMat /*float*/A, clMat /*float*
             ((__global float*)self)[ q * result.step + w + result.start ] = alpha * sum  + beta * ((__global float*)self)[ q * C.step + w + C.start ];
         }
     }
-    else // NOT fabs(beta) > 0.000001
+    else // NOT fabs(beta) > 0.000001f
     {
         int worksize = C.rows * C.cols;
         int work = 0;
@@ -546,8 +546,8 @@ float dotProductDirDir( __global void * self, clMat /*float*/A, clMat /*float*/B
   // assert( B.cols == 1 );
   // assert( A.rows == B.rows );
 
-  float result = 0.;
-  float c = 0.;  
+  float result = 0.0f;
+  float c = 0.0f;  
 
   int q;
   for (q=0; q<A.rows; q++) {
@@ -566,8 +566,8 @@ float dotProductTransDir( __global void * self, clMat /*float*/A, clMat /*float*
   // assert( B.cols == 1 );
   // assert( A.cols == B.rows );
 
-  float result = 0.;
-  float c = 0.;  
+  float result = 0.0f;
+  float c = 0.0f;  
 
   int q;
   for (q=0; q<A.cols; q++) {
@@ -594,9 +594,9 @@ void normalizeSample( __global void * self, clMat /*uint8_t*/  image, clMat /*fl
 
      sampleMax = fmax( fabs(sampleMin), fabs(sampleMax));
 
-     if (sampleMax == 0.0) sampleMax = 1.0;
+     if (sampleMax == 0.0f) sampleMax = 1.0f;
 
-     convertFromCharToFloat( self, image, 1.0/sampleMax, -(1.0/sampleMax)*sampleMean, *result );
+     convertFromCharToFloat( self, image, 1.0f/sampleMax, -(1.0f/sampleMax)*sampleMean, *result );
 
      *result = reshapeFloat( self, *result, image.rows * image.cols );
  
@@ -659,17 +659,17 @@ generateResponseMap(
 
               clMat xOut = GetMatFromVector( self, xOuts, localid );
 
-              gemmFloatDirDirDir( self, wIn, patch, -1.0, bIn, -1.0, xOut );
+              gemmFloatDirDirDir( self, wIn, patch, -1.0f, bIn, -1.0f, xOut );
 
               clMat e = GetMatFromVector( self, es, localid );
               
               expFloat( self, xOut, e );
 
-              addFloat( self, e, 1.0, xOut );
-              divideFloat( self, 2.0, xOut, e);
-              addFloat( self, e, -1.0, xOut);
+              addFloat( self, e, 1.0f, xOut );
+              divideFloat( self, 2.0f, xOut, e);
+              addFloat( self, e, -1.0f, xOut);
 
-              SetValueFloat( self, result, ncy, ncx, 1./( 1. + exp(- dotProductTransDir( self, wOut_tmp, xOut) - bOut ) ) );
+              SetValueFloat( self, result, ncy, ncx, 1.0f/( 1.0f + exp(- dotProductTransDir( self, wOut_tmp, xOut) - bOut ) ) );
 
             } // for gangsize
             //       } // for localid
@@ -685,7 +685,7 @@ generateResponseMap(
 int 
 cvRound( float value )
 {
-    return (int)(value + (value >= 0 ? 0.5 : -0.5));
+    return (int)(value + (value >= 0 ? 0.5f : -0.5f));
 } // cvRound
 
 
@@ -722,28 +722,29 @@ calculateMaps(
         
         float shape_x;
         float shape_y;
-        shape_x = GetValueFloat( self + memory_segments[q], packages[q].input.shape, 2*idx, 0 );
-        shape_y = GetValueFloat( self + memory_segments[q], packages[q].input.shape, 2*idx+1, 0 );
+        calcpackage package = packages[q];
+        shape_x = GetValueFloat( self + memory_segments[q], package.input.shape, 2*idx, 0 );
+        shape_y = GetValueFloat( self + memory_segments[q], package.input.shape, 2*idx+1, 0 );
         
         center.x = cvRound(shape_x);
         center.y = cvRound(shape_y);
-        
+
         generateResponseMap(
             self + memory_segments[idx],
-            packages[idx].input.alignedImage,
+            package.input.alignedImage,
             center,
             m_mapSize,
-            packages[idx].input.m_patchSize,
-            packages[idx].input.m_wOut,
-            packages[idx].input.wIn,
-            packages[idx].input.bIn,
+            package.input.m_patchSize,
+            package.input.m_wOut,
+            package.input.wIn,
+            package.input.bIn,
             
             // temporary
-            packages[idx].tmp.patches,
-            packages[idx].tmp.xOuts,
-            packages[idx].tmp.es,
+            package.tmp.patches,
+            package.tmp.xOuts,
+            package.tmp.es,
             // result
-            packages[idx].output.responseMap );
+            package.output.responseMap );
 
 //    } // for q in m_visibleLandmarks
     

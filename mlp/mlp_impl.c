@@ -126,8 +126,8 @@ float
 meanChar( void * self, clMat /*uint8_t*/  input )
 {    
     int q,w;
-    float sum=0;
-    float c = 0; // kahan summation
+    float sum=0.0f;
+    float c = 0.0f; // kahan summation
     
     for ( q=0; q<input.rows; q++ )
       for ( w=0; w<input.cols; w++ )
@@ -247,8 +247,8 @@ gemmFloatDirDirDir( void * self, clMat /*float*/A, clMat /*float*/B, float alpha
     assert(C.cols == result.cols);
 
     int q, w, e;
-    float sum=0.;
-    float c;
+    float sum=0.0f;
+    float c=0.0f;
 
     if ( fabs(beta) > 0.000001 ) {
         for ( q=0; q<C.rows; q++ )
@@ -297,8 +297,8 @@ gemmFloatDirDirDirGang( void * self, clMat /*float*/A, clMat /*float*/B, float a
     assert(C.cols == result.cols);
 
     int q, w, e;
-    float sum=0.;
-    float c;    
+    float sum=0.0f;
+    float c=0.0f;    
     if ( fabs(beta) > 0.000001 ) {
         int worksize = C.rows * C.cols;
         int work = 0;
@@ -359,8 +359,8 @@ gemmFloatDirTransDirGang( void * self, clMat /*float*/A, clMat /*float*/B, float
     assert(C.cols == result.cols);
 
     int q, w, e;
-    float sum=0.;
-    float c;    
+    float sum=0.0f;
+    float c=0.0f;    
     if ( fabs(beta) > 0.000001 ) {
         int worksize = C.rows * C.cols;
         int work = 0;
@@ -524,8 +524,8 @@ float dotProductDirDir( void * self, clMat /*float*/A, clMat /*float*/B )
   assert( B.cols == 1 );
   assert( A.rows == B.rows );
 
-  float result = 0.;
-  float c = 0.;  
+  float result = 0.0f;
+  float c = 0.0f;  
 
   int q;
   for (q=0; q<A.rows; q++) {
@@ -712,7 +712,7 @@ cvRound( float value )
 
 void
 calculateMaps(
-    void * self,
+    char * self,
     int memory_segments[], // representing the start of the gang's memory segment
     int m_visibleLandmarks_size,
     int m_mapSize,
@@ -743,18 +743,18 @@ calculateMaps(
         // printf("***********************************************************\n");
         // printf("***********************************************************\n");
         
-	// printf("processing patch %d/%d\n", q, m_visibleLandmarks_size );
+	    // printf("processing patch %d/%d\n", q, m_visibleLandmarks_size );
         /* const int idx = m_visibleLandmarks[q]; */
         /* assert(idx==q); */
 
-	int idx = q;
+	    int idx = q;
 
         Point2i center;
 
         float shape_x;
-	float shape_y;
-	shape_x = GetValueFloat( self + memory_segments[q], packages[q].input.shape, 2*idx, 0 );
-	shape_y = GetValueFloat( self + memory_segments[q], packages[q].input.shape, 2*idx+1, 0 );
+	    float shape_y;
+	    shape_x = GetValueFloat( self + memory_segments[q], packages[q].input.shape, 2*idx, 0 );
+	    shape_y = GetValueFloat( self + memory_segments[q], packages[q].input.shape, 2*idx+1, 0 );
 
         center.x = cvRound(shape_x);
         center.y = cvRound(shape_y);
