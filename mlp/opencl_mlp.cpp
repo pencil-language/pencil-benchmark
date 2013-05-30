@@ -128,8 +128,7 @@ int main()
                 //             PRINT(calculatedResults[q](row,col));
                 //         }
                                 
-                PRINT(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ));
-                assert(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) < 0.08);
+                assert(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) < 0.0001);
             }
             
         }
