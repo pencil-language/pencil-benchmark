@@ -1,5 +1,6 @@
 # UjoImro, 2013
 
+
 all: errors.gch opencl.gch
 
 errors.gch: errors.hpp

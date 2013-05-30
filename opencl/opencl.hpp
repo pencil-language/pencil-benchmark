@@ -204,7 +204,7 @@ namespace carp {
                 assert(num_platforms==1);  // there is only one supported platform at the time
                 
                 utility::checkerror(clGetDeviceIDs(cpPlatform, CL_DEVICE_TYPE_GPU, 1, &cdDevice, &num_devices), __FILE__, __LINE__ );
-                assert(num_devices==1);
+//                assert(num_devices==1);
 
                 cxGPUContext = clCreateContext( NULL, 1, &cdDevice, NULL, NULL, &err );
                 utility::checkerror( err, __FILE__, __LINE__ );

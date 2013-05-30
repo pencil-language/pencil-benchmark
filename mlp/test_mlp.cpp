@@ -62,7 +62,7 @@ int main()
                                     
             auto start = std::chrono::high_resolution_clock::now();
             calculateMaps(
-                self,
+                reinterpret_cast<char*>(self),
                 segments.data(),
                 conductor.hack.m_visibleLandmarks_size,
                 conductor.hack.m_mapSize,
