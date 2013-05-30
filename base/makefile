@@ -1,6 +1,5 @@
 # UjoImro, 2013
 
-
 all: test_color expand test_nesting test_local test_allocation
 
 test_color: test_color.o 
