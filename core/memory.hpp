@@ -185,7 +185,7 @@ namespace carp {
                     return std::make_pair(false, 0);
                 } // allocate
 
-                bool split() {
+                void split() {
                     // PRINT("block_t::split");
                     assert( m_level > 0 );
                     assert( m_status == free );
@@ -197,8 +197,8 @@ namespace carp {
                 void merge() {
                     // PRINT("block_t::merge");
                 
-                    if ( ( m_status == broken ) and
-                         ( m_left->m_status  == free ) and
+                    if ( ( m_status == broken ) &&
+                         ( m_left->m_status  == free ) &&
                          ( m_right->m_status == free ) ) {
                         m_left.reset();
                         m_right.reset();
@@ -225,7 +225,7 @@ namespace carp {
 
                     auto released_size = 0;
                 
-                    if (not pos.test(m_level-1)) {
+                    if (! pos.test(m_level-1)) {
 //                    PRINT("went left");
                     
                         released_size = m_left->release(pos);

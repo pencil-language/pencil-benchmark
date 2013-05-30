@@ -26,21 +26,10 @@ namespace carp {
             std::string
             readfile( const std::string & filename )
             {
-                std::ifstream input( filename, std::ifstream::binary );
-    
-                if (!input) throw std::runtime_error("error: Couldn't open file `" + filename + "'" );
-        
-                input.seekg(0, input.end);
-                int length = input.tellg();
-                input.seekg(0, input.beg);
-
-                boost::scoped_array<char> result_c_str(new char[length+1]);            
-                input.read(result_c_str.get(), length);
-                if (!input) throw std::runtime_error("error: Could not read file `" + filename + "'");
-            
-                std::string result(result_c_str.get());
-
-                return result;
+                std::ifstream input(filename);
+                std::stringstream buffer;
+                buffer << input.rdbuf();
+                return buffer.str();
             } // readfile
 
 
@@ -80,13 +69,10 @@ namespace carp {
                 
                 std::vector<T0> result(group_sizes.size());
 
-                for (
-                    auto group = group_sizes.begin(),
-                        glob = global_sizes.begin(),
-                        rup = result.begin();
-                    group!= group_sizes.end();
-                    group++, glob++, rup++
-                    )
+                auto group = group_sizes.begin();
+                auto glob = global_sizes.begin();
+                auto rup = result.begin();
+                for (; group!= group_sizes.end(); group++, glob++, rup++ )
                     *rup = roundup( *group, *glob );
                 
                 return result;
@@ -163,7 +149,7 @@ namespace carp {
             kernel & operator() ( MT ... mt ) {
                 assert(m_set);
                 int pos=0; // the position of the parameters
-                std::vector<bool> err { setparameter(pos, mt)... };
+                bool err[] = { setparameter(pos, mt)... };
 
                 return *this;
             } // operator ()
@@ -259,11 +245,11 @@ namespace carp {
                 if ( err!=CL_SUCCESS )
                 {
                     size_t len;
-                    std::string buffer(1048576, 0);
+                    std::vector<char> buffer(1048576);
 
-                    utility::checkerror( clGetProgramBuildInfo( cpProgram, cdDevice, CL_PROGRAM_BUILD_LOG, buffer.size(), reinterpret_cast<void*>(&buffer[0]), &len ), __FILE__, __LINE__ );
-
-                    std::cerr << buffer << std::endl;
+                    utility::checkerror( clGetProgramBuildInfo( cpProgram, cdDevice, CL_PROGRAM_BUILD_LOG, buffer.size(), buffer.data(), &len ), __FILE__, __LINE__ );
+                    
+                    std::cerr << buffer.data() << std::endl;
                     throw std::runtime_error("error: OpenCL: The compilation has failed.");                    
                 }
 
