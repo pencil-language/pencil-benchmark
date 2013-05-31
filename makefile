@@ -3,17 +3,18 @@
 # ## absolute directory for the subprojects
 BASEDIR=$(shell pwd)
 
-CXX=g++-4.8.0
-CC=gcc-4.8.0
-LD=ld2.23.2
+CXX=g++
+CC=gcc
+LD=ld
 CXXFLAGS=-std=c++0x -I$(BASEDIR)/opencl -I$(BASEDIR)/core
-LDFLAGS=-lstdc++ -lOpenCL -lm
+CFLAGS=-lOpenCL -lm
+LDFLAGS=-lstdc++ -lOpenCL -lm -lboost_serialization -L/home/ujoimro/Inst/opencv/build/OpenCV-2.4.2/optimized/install/lib -lopencv_core -lstdc++ -lm
 
 # optimization flags
 CXXFLAGS+=-O0 -g 
 
 # includes 
-CXXFLAGS+=-I/opt/local/include
+CXXFLAGS+=-I/home/ujoimro/Inst/opencv/build/OpenCV-2.4.2/optimized/install/include
 
 CFLAGS+=-Wimplicit -Werror=implicit-function-declaration -Werror=int-to-pointer-cast -I$(BASEDIR)/opencl -I$(BASEDIR)/core
 
@@ -22,11 +23,12 @@ CXXFLAGS+=-std=c++0x
 
 ## Memory Debug Mode
 #LDFLAGS=-lboost_serialization -L/home/ujoimro/Inst/opencv/build/OpenCV-2.4.2/optimized/install/lib -lopencv_core -lstdc++ -lm -lefenc
-LDFLAGS+=-lboost_serialization -L/opt/local/lib64 -lopencv_core 
+# LDFLAGS+=-lboost_serialization -L/opt/local/lib64 -lopencv_core 
 
 export CXX
 export CC
 export LD
+export CFLAGS
 export BASEDIR
 export LDFLAGS
 export CXXFLAGS
