@@ -60,6 +60,7 @@ typedef struct {
 __constant const int MAX_INT = ~(1 << (8*sizeof(int) - 1));
 // __constant const int false = (1!=1);
 __constant const int gangsize = 128;
+__constant const bool precise = false;
 
 
 clMat GetMatFromVector( __local void * self, clVector /*clMat*/ vec, int idx )
@@ -154,10 +155,16 @@ gemmFloatDirDirDir(
                 int b_row = e / B.rows;                    
                 int b_col = e % B.cols;                    
                 float b = ((__local uchar*)self)[ b_row * B.step + b_col + B.start ];
-                float y = a * (norm.shift + norm.stride * b) - c;
-                float t = sum + y;
-                c = (t - sum) - y;
-                sum = t;              
+                if (precise) {
+                    float y = a * (norm.shift + norm.stride * b) - c;
+                    float t = sum + y;
+                    c = (t - sum) - y;
+                    sum = t;
+                }
+                else // NOT precise
+                {
+                    sum += a * (norm.shift + norm.stride * b);
+                }
             }
                 
             ((__local float*)self)[ q * result.step + w + result.start ] = alpha * sum  + beta * ((__local float*)self)[ q * C.step + w + C.start ];
@@ -302,10 +309,16 @@ normalizeSample( __local void * self, clMat /*uint8_t*/  image ) // , clMat /*fl
 	    uchar pixel = ((__local uchar*)self)[ q * image.step + w + image.start ];
 	    minvalue = min( minvalue, pixel );
 	    maxvalue = max( maxvalue, pixel );
-            float y = pixel - c;
-            float t = sum + y;
-            c = (t - sum) - y;        
-            sum = t;        
+            if (precise) {
+                float y = pixel - c;
+                float t = sum + y;
+                c = (t - sum) - y;        
+                sum = t;
+            }
+            else
+            {                
+                sum += pixel;                
+            }            
         }
     
     normalization nresult;
