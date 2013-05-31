@@ -87,87 +87,6 @@ copyToFloat( void * self, clMat /*float*/input, clMat /*float*/ output )
     return;
 } // copyTo
 
-void
-transposeFloat( void * self, clMat /*float*/input, clMat /*float*/ output )
-{
-    int q,w;
-    assert(output.rows == input.cols);
-    assert(output.cols == input.rows);
-    for (q=0; q<input.rows; q++)
-        for (w=0; w<input.cols; w++)
-            ((float*)self)[ w * output.step + q + output.start ] 
-        	= ((float*)self)[ q * input.step + w + input.start ];
-
-    return;
-} // transposeFloat
-
-void
-transposeFloatGang( void * self, clMat /*float*/input, int localid, clMat /*float*/ output )
-{
-    assert(output.rows == input.cols);
-    assert(output.cols == input.rows);
-    
-    int worksize = input.cols * input.rows;
-    int work = 0;
-            
-    for ( work=0; work < (worksize/gangsize) + 1; work++) {
-        int index = work * gangsize + localid;
-        if (index>=worksize) continue;
-        int q = index / input.cols;
-        int w = index % input.cols;
-              
-        ((float*)self)[ w * output.step + q + output.start ] 
-            = ((float*)self)[ q * input.step + w + input.start ];
-    }
-} // transposeFloatGang
-
-
-float
-meanChar( void * self, clMat /*uint8_t*/  input )
-{    
-    int q,w;
-    float sum=0.0f;
-    float c = 0.0f; // kahan summation
-    
-    for ( q=0; q<input.rows; q++ )
-      for ( w=0; w<input.cols; w++ )
-      {
-        float y = ((uint8_t*)self)[ q * input.step + w + input.start ] - c;
-        float t = sum + y;
-        c = (t - sum) - y;        
-        sum = t;        
-      }
-    
-    return sum / ( input.rows * input.cols );
-} // meanFloat
-
-uint8_t
-minChar( void * self, clMat /*uint8_t*/  input )
-{    
-    int q,w;
-    uint8_t minvalue = 255;
-
-    for ( q=0; q<input.rows; q++ )
-        for ( w=0; w<input.cols; w++ )
-            minvalue = fmin( minvalue, ((uint8_t*)self)[ q * input.step + w + input.start ] );
-    
-    return minvalue;
-} // minFloat
-
-uint8_t
-maxChar( void * self, clMat /*uint8_t*/  input )
-{
-    int q,w;
-    uint8_t maxvalue = 0;
-
-    for ( q=0; q<input.rows; q++ )
-        for ( w=0; w<input.cols; w++ )
-            maxvalue = fmax( maxvalue, ((uint8_t*)self)[ q * input.step + w + input.start ] );
-    
-    return maxvalue;
-} // maxFloat
-
-
 clMat /*uint8_t*/ 
 GetBlockChar( void * self, clMat /*uint8_t*/  smat, int row_from, int row_to, int col_from, int col_to )
 {    
@@ -517,23 +436,42 @@ normalizeSample( void * self, clMat /*uint8_t*/  image ) // , clMat /*float*/ * 
   // assert(result->cols == image.cols);
   // assert(result->rows == image.rows);
 
-  normalization nresult;
+    int q,w;
+    float sum=0.0f;
+    float c = 0.0f; // kahan summation
+    uint8_t minvalue = 255;
+    uint8_t maxvalue = 0;
     
-  float sampleMean = meanChar(self, image);
-  float sampleMin  = minChar(self, image);
-  float sampleMax  = maxChar(self, image);
-
-  sampleMax -= sampleMean;
-  sampleMin -= sampleMean;
-
-  sampleMax = fmax( fabs(sampleMin), fabs(sampleMax));
-
-  if (sampleMax == 0.0) sampleMax = 1.0;
-
-  nresult.shift  = -(1.0/sampleMax)*sampleMean;
-  nresult.stride = 1.0/sampleMax;
-  
-  return nresult;
+    for ( q=0; q<image.rows; q++ )
+        for ( w=0; w<image.cols; w++ )
+        {
+	    uint8_t pixel = ((uint8_t*)self)[ q * image.step + w + image.start ];
+	    minvalue = fmin( minvalue, pixel );
+	    maxvalue = fmax( maxvalue, pixel );
+            float y = pixel - c;
+            float t = sum + y;
+            c = (t - sum) - y;        
+            sum = t;        
+        }
+    
+    
+    normalization nresult;
+    
+    float sampleMean = sum / (image.rows * image.cols);
+    float sampleMin  = minvalue; 
+    float sampleMax  = maxvalue;
+    
+    sampleMax -= sampleMean;
+    sampleMin -= sampleMean;
+    
+    sampleMax = fmax( fabs(sampleMin), fabs(sampleMax));
+    
+    if (sampleMax == 0.0) sampleMax = 1.0;
+    
+    nresult.shift  = -(1.0/sampleMax)*sampleMean;
+    nresult.stride = 1.0/sampleMax;
+    
+    return nresult;
 } // normalizeSample
 
 void
@@ -656,17 +594,10 @@ calculateMaps(
     int q;
     for (q=0; q<m_visibleLandmarks_size; q++ )
     {
-        // printf("***********************************************************\n");
-        // printf("***********************************************************\n");
-        // printf("************* iteration %d *********************************\n", q );
-        // printf("***********************************************************\n");
-        // printf("***********************************************************\n");
-        
-	    // printf("processing patch %d/%d\n", q, m_visibleLandmarks_size );
         /* const int idx = m_visibleLandmarks[q]; */
         /* assert(idx==q); */
 
-	    int idx = q;
+	int idx = q;
 
         Point2i center;
 
@@ -677,23 +608,6 @@ calculateMaps(
 
         center.x = cvRound(shape_x);
         center.y = cvRound(shape_y);
-
-        // clMat wIn = CreateMatFloat( self, allocator, m_wIns[idx].rows, m_Us[idx].rows );
-
-        // clMat patches[gangsize];
-        // clMat xOuts[gangsize];
-        // clMat es[gangsize];
-        
-        // {
-        //   int w;
-        //   for (w=0; w<gangsize; w++) {
-        //     patches[w] = CreateMatFloat( self, allocator, 2 * m_patchSizes[idx] + 1, 2 * m_patchSizes[idx] + 1 );
-        //     xOuts[w] = CreateMatFloat( self, allocator, m_wIns[idx].rows, 1 );
-        //     es[w] = CreateMatFloat( self, allocator, xOuts[w].rows, xOuts[w].cols );
-        //   }
-        // }
-        
-	// responseMaps[q] = m_classifiers[idx].generateResponseMap( alignedImage, center, m_mapSize );
         
 	generateResponseMap(
             self + memory_segments[idx],
@@ -713,19 +627,6 @@ calculateMaps(
 //            packages[idx].tmp.es,
             // result
             packages[idx].output.responseMap );
-
-        //       printMatFloat( self + memory_segments[idx], packages[idx].output.responseMap, "packages[idx].output.responseMap");
-        
-
-        // freeMatFloat(self, allocator, &wIn);
-        // {
-        //   int w;
-        //   for (w=0; w<gangsize; w++) {
-        //     freeMatFloat( self, allocator, &(patches[w]) );
-        //     freeMatFloat( self, allocator, &(xOuts[w]) );
-        //     freeMatFloat( self, allocator, &(es[w]) );
-        //   }
-        // }
         
     } // for q in visiblelandmarks_size
 

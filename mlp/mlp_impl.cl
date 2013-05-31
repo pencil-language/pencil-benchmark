@@ -51,6 +51,11 @@ typedef struct {
     calcoutput output;
 } calcpackage;
 
+typedef struct {
+    float shift;
+    float stride;        
+} normalization;
+    
 
 __constant const int MAX_INT = ~(1 << (8*sizeof(int) - 1));
 // __constant const int false = (1!=1);
@@ -134,8 +139,8 @@ float
 meanChar( __global void * self, clMat /*uint8_t*/  input )
 {    
     int q,w;
-    float sum=0;
-    float c = 0.0f; // kahan summation
+    float sum = 0.0f;
+    float c   = 0.0f; // kahan summation
     
     for ( q=0; q<input.rows; q++ )
       for ( w=0; w<input.cols; w++ )
