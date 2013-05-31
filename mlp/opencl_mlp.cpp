@@ -74,6 +74,7 @@ int main()
                 conductor.hack.m_visibleLandmarks_size,
                 conductor.hack.m_mapSize,
                 clCalcpackages.cl(),
+                32 * KiB,
                 carp::opencl::buffer(48 * KiB)
                 ).groupsize({32},{32*conductor.hack.m_visibleLandmarks_size});
             auto end = std::chrono::high_resolution_clock::now();
