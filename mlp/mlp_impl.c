@@ -14,7 +14,6 @@
 
 const int MAX_INT = ~(1 << (8*sizeof(int) - 1));
 const int false = (1!=1);
-const int gangsize = 32;
 
 // const int NULL=0
 

@@ -74,9 +74,9 @@ int main()
                 conductor.hack.m_visibleLandmarks_size,
                 conductor.hack.m_mapSize,
                 clCalcpackages.cl(),
-                32 * KiB,
-                carp::opencl::buffer(48 * KiB)
-                ).groupsize({32},{32*conductor.hack.m_visibleLandmarks_size});
+                local_memsize - 1*KiB,
+                carp::opencl::buffer(local_memsize)
+                ).groupsize({gangsize},{gangsize*conductor.hack.m_visibleLandmarks_size});
             auto end = std::chrono::high_resolution_clock::now();
             elapsed_time += microseconds(end - start);
 
@@ -98,7 +98,6 @@ int main()
             {
                 assert(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) < 0.0001);
             }
-            
         }
     }
     

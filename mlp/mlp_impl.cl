@@ -59,7 +59,7 @@ typedef struct {
 
 __constant const int MAX_INT = ~(1 << (8*sizeof(int) - 1));
 // __constant const int false = (1!=1);
-__constant const int gangsize = 32;
+__constant const int gangsize = 128;
 
 
 clMat GetMatFromVector( __local void * self, clVector /*clMat*/ vec, int idx )
@@ -437,10 +437,9 @@ calculateMaps(
             loc[index]=glob[index];        
         }
     }    
-    // barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
     barrier(CLK_LOCAL_MEM_FENCE);
-    // Calculating
-    
+
+    // Calculating    
     Point2i center;
     
     float shape_x;

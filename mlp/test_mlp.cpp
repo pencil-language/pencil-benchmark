@@ -83,9 +83,6 @@ int main()
             // testing the output
             for (int q=0; q<conductor.hack.m_visibleLandmarks_size; q++)
             {
-                // std::cout << "cv::norm( conductor.hack.responseMaps[" << q << "] - calculatedResults[" << q << "] ) = "
-                //             << cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) << std::endl;
-//                PRINT(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ));
                 assert(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) < 0.00001);
             }
             

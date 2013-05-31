@@ -143,8 +143,8 @@ convertHackToMlp ( void * self, std::vector<allocator> & pools, std::vector<int>
         result[q].input.bIn = convertCVToMatFloat( self + memory_segments[q], pools[q],
                                                    hack.m_classifiers[q].m_wIn( cv::Range(0, hack.m_classifiers[q].m_wIn.rows), cv::Range(hack.m_classifiers[q].m_wIn.cols - 1, hack.m_classifiers[q].m_wIn.cols )));
         
-        result[q].tmp.xOuts          = CreateVectorMat( pools[q], size );
-        for ( int w = 0; w<size; w++ )
+        result[q].tmp.xOuts          = CreateVectorMat( pools[q], gangsize );
+        for ( int w = 0; w<gangsize; w++ )
         {
             clMat xOut = CreateMatFloat( pools[q], hack.m_classifiers[q].m_wIn.rows, 1 );
             ::SetMatToVector( self + memory_segments[q], result[q].tmp.xOuts, w, xOut );
