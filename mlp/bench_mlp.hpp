@@ -132,14 +132,8 @@ convertHackToMlp ( void * self, std::vector<allocator> & pools, std::vector<int>
     {
         result[q].input.alignedImage = convertCVToMatChar( self + memory_segments[q], pools[q], hack.alignedImage );
         result[q].input.shape        = convertCVToMatFloat( self + memory_segments[q], pools[q], hack.shape );
-//        PRINT(result[q].input.alignedImage.rows * result[q].input.alignedImage.cols );
-//        PRINT(result[q].input.shape.rows * result[q].input.shape.cols * 4 );
         
         result[q].input.m_patchSize  = hack.m_classifiers[q].m_patchSize;
-//        result[q].input.m_wIn        = convertCVToMatFloat( self + memory_segments[q], pools[q], hack.m_classifiers[q].m_wIn );
-//        PRINT(result[q].input.m_wIn.rows * result[q].input.m_wIn.cols * 4 );
-//        result[q].input.m_U          = convertCVToMatFloat( self + memory_segments[q], pools[q], hack.m_classifiers[q].m_U );
-//        PRINT(result[q].input.m_U.rows * result[q].input.m_U.cols * 4 );
 
         result[q].input.wIn = convertCVToMatFloat( self + memory_segments[q], pools[q],
                                                    hack.m_classifiers[q].m_wIn( cv::Range(0, hack.m_classifiers[q].m_wIn.rows ), cv::Range(0, hack.m_classifiers[q].m_wIn.cols -1 ) )
@@ -148,13 +142,6 @@ convertHackToMlp ( void * self, std::vector<allocator> & pools, std::vector<int>
         result[q].input.m_wOut = convertCVToMatFloat( self + memory_segments[q], pools[q], hack.m_classifiers[q].m_wOut );
         result[q].input.bIn = convertCVToMatFloat( self + memory_segments[q], pools[q],
                                                    hack.m_classifiers[q].m_wIn( cv::Range(0, hack.m_classifiers[q].m_wIn.rows), cv::Range(hack.m_classifiers[q].m_wIn.cols - 1, hack.m_classifiers[q].m_wIn.cols )));
-        // result[q].tmp.wIn            = CreateMatFloat ( pools[q], result[q].input.m_wIn.rows, result[q].input.m_U.rows );
-        result[q].tmp.patches        = CreateVectorMat( pools[q], size );
-        for ( int w = 0; w<size; w++ )
-        {
-            clMat patch = CreateMatFloat( pools[q], 2 * hack.m_classifiers[q].m_patchSize + 1, 2 * hack.m_classifiers[q].m_patchSize + 1 );
-            ::SetMatToVector( self + memory_segments[q], result[q].tmp.patches, w, patch );
-        }
         
         result[q].tmp.xOuts          = CreateVectorMat( pools[q], size );
         for ( int w = 0; w<size; w++ )
@@ -168,12 +155,6 @@ convertHackToMlp ( void * self, std::vector<allocator> & pools, std::vector<int>
             assert(test.start == xOut.start );
         }
 
-        result[q].tmp.es             = CreateVectorMat( pools[q], size );
-        for ( int w = 0; w<size; w++ )
-        {
-            clMat e = CreateMatFloat( pools[q], hack.m_classifiers[q].m_wIn.rows, 1 );
-            ::SetMatToVector( self + memory_segments[q], result[q].tmp.es, w, e );
-        }
         
         result[q].output.responseMap = CreateMatFloat( pools[q], 2 * hack.m_mapSize + 1, 2 * hack.m_mapSize + 1 );
     } // for q in m_visibleLandmarks_size
@@ -181,19 +162,6 @@ convertHackToMlp ( void * self, std::vector<allocator> & pools, std::vector<int>
     return result;
     
 } // convertHackToMlp
-
-// void
-// freeClassifiers( void * self, carp::memory::allocator & pool, mlp * classifiers[], int size )
-// {
-//     mlp * result = *classifiers;    
-//     for (int q=0; q<size; q++ )
-//         freeMLP( self, pool[q], &(result[q]) );
-
-//     free(*classifiers);
-//     *classifiers=NULL;
-
-//     return;    
-// } // freeClassifiers
 
 
 clMat /*uint8_t*/  convertCVToMatChar /*uint8_t*/  ( void * self, carp::memory::allocator & pool, const cv::Mat_<uint8_t> & input )

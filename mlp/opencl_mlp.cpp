@@ -58,8 +58,6 @@ int main()
             auto calcpackages = convertHackToMlp( self, pools, segments, conductor.hack );
 
             for ( auto & pool : pools ) {
-//                PRINT(pool.grossallocated());
-//                PRINT(pool.netallocated());
                 maxgrossallocated = std::max( maxgrossallocated, pool.grossallocated() );
                 maxnetallocated = std::max( maxnetallocated, pool.netallocated() );
             }
@@ -84,24 +82,6 @@ int main()
             // copying the data back to the CPU
             auto processed = clSelf.get();
             void * results = reinterpret_cast<void*>(processed.data());
-
-            clMat patch = GetMatFromVector( results + segments[9], calcpackages[9].tmp.patches, 0 );
-            patch.rows = patch.rows * patch.cols;
-            patch.cols = 1;
-            patch.step = 1;
-            
-            clMat imagePatch = GetBlockChar( results + segments[9], calcpackages[9].input.alignedImage, 5, 16, 52, 63 );
-            clMat xOuts = GetMatFromVector( results + segments[9], calcpackages[9].tmp.xOuts, 0 );
-            clMat e = GetMatFromVector( results + segments[9], calcpackages[9].tmp.es, 0 );
-            
-            // printMatChar( results + segments[9], imagePatch, "imagePatch" );
-            // printMatFloat( results + segments[9], patch, "patch");
-            // printMatFloat( results + segments[9], e, "e");            
-            // printMatFloat( results + segments[9], xOuts, "xOuts");
-
-            // printMatFloat( results + segments[9], calcpackages[9].output.responseMap, "calcpackages[9].output.responseMap");
-            
-//            assert(false);
             
             // converting the outputs            
             std::vector< cv::Mat_<double> > calculatedResults;
@@ -115,19 +95,6 @@ int main()
             // testing the output
             for (int q=0; q<conductor.hack.m_visibleLandmarks_size; q++)
             {
-                // std::cout << "cv::norm( conductor.hack.responseMaps[" << q << "] - calculatedResults[" << q << "] ) = "
-                //             << cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) << std::endl;
-
-                // for (int row=0; row<calculatedResults[q].rows; row++ )
-                //     for (int col=0; col<calculatedResults[q].cols; col++ )
-                //         if ( (conductor.hack.responseMaps[q](row,col) - calculatedResults[q](row,col)) > 0.0001 )
-                //         {
-                //             PRINT(row);
-                //             PRINT(col);
-                //             PRINT(conductor.hack.responseMaps[q](row,col));
-                //             PRINT(calculatedResults[q](row,col));
-                //         }
-                                
                 assert(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) < 0.0001);
             }
             

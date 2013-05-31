@@ -238,11 +238,19 @@ reshapeFloat( void * self, clMat /*float*/smat, int new_rows )
 
 // returns alpha*A*B + beta * C
 void 
-gemmFloatDirDirDir( void * self, clMat /*float*/A, clMat /*float*/B, float alpha, clMat /*float*/C, float beta, clMat /*float*/ result )
+gemmFloatDirDirDir(
+    void * self,
+    clMat /*float*/A,
+    clMat /*uint8_t*/B,
+    float alpha,
+    clMat /*float*/C,
+    float beta,
+    normalization norm,
+    clMat /*float*/ result
+    )
 {
     assert(A.rows == C.rows);
-    assert(A.cols == B.rows); 
-    assert(B.cols == C.cols);
+    assert(A.cols == B.rows * B.cols ); 
     assert(C.rows == result.rows);
     assert(C.cols == result.cols);
 
@@ -253,14 +261,18 @@ gemmFloatDirDirDir( void * self, clMat /*float*/A, clMat /*float*/B, float alpha
     if ( fabs(beta) > 0.000001 ) {
         for ( q=0; q<C.rows; q++ )
             for ( w=0; w<C.cols; w++ )
-            {	    
+            {
                 sum = 0;
                 for ( e=0; e<A.cols; e++ )
-                {              
-                    float y = ((float*)self)[ q * A.step + e + A.start ] * ((float*)self)[ e * B.step + w + B.start ] - c;
+                {
+                    float a = ((float*)self)[ q * A.step + e + A.start ];
+                    int b_row = e / B.rows;                    
+                    int b_col = e % B.cols;                    
+                    float b = ((uint8_t*)self)[ b_row * B.step + b_col + B.start ];
+                    float y = a * (norm.shift + norm.stride * b) - c;
                     float t = sum + y;
                     c = (t - sum) - y;
-                    sum = t;              
+                    sum = t;
                 }
                 
                 ((float*)self)[ q * result.step + w + result.start ] = alpha * sum  + beta * ((float*)self)[ q * C.step + w + C.start ];
@@ -268,21 +280,10 @@ gemmFloatDirDirDir( void * self, clMat /*float*/A, clMat /*float*/B, float alpha
     }
     else // NOT fabs(beta) > 0.000001
     {
-        for ( q=0; q<C.rows; q++ )
-            for ( w=0; w<C.cols; w++ )
-            {	    
-                sum = 0;
-                for ( e=0; e<A.cols; e++ )
-                {              
-                    float y = ((float*)self)[ q * A.step + e + A.start ] * ((float*)self)[ e * B.step + w + B.start ] - c;
-                    float t = sum + y;
-                    c = (t - sum) - y;
-                    sum = t;              
-                }
-                
-                ((float*)self)[ q * result.step + w + result.start ] = alpha * sum;
-            }        
+        assert(false);        
     }
+
+//    assert(false);
     
     return;
 } // gemmFloatDirDirDir
@@ -429,6 +430,22 @@ expFloat( void * self, clMat /*float*/input, clMat /*float*/ output )
 }
 
 void
+activateOutput( void * self, clMat /*float*/input )
+{
+    int q, w;
+
+    for ( q=0; q<input.rows; q++ )
+        for ( w=0; w<input.cols; w++ ) {
+            float val = ((float*)self)[ q * input.step + w + input.start ];
+            float result = 2.0f/(exp(val) + 1) - 1;
+            ((float*)self)[ q * input.step + w + input.start ] = result;
+        }
+
+    return;
+} // activateOutput
+
+
+void
 addFloat( void * self, clMat /*float*/input, float val, clMat /*float*/ output )
 {
     assert(input.rows == output.rows);
@@ -558,10 +575,13 @@ float dotProductTransDir( void * self, clMat /*float*/A, clMat /*float*/B )
   return result;
 }
 
-void normalizeSample( void * self, clMat /*uint8_t*/  image, clMat /*float*/ * result )
+normalization
+normalizeSample( void * self, clMat /*uint8_t*/  image ) // , clMat /*float*/ * result )
 {
-  assert(result->cols == image.cols);
-  assert(result->rows == image.rows);
+  // assert(result->cols == image.cols);
+  // assert(result->rows == image.rows);
+
+  normalization nresult;
     
   float sampleMean = meanChar(self, image);
   float sampleMin  = minChar(self, image);
@@ -574,11 +594,10 @@ void normalizeSample( void * self, clMat /*uint8_t*/  image, clMat /*float*/ * r
 
   if (sampleMax == 0.0) sampleMax = 1.0;
 
-  convertFromCharToFloat( self, image, 1.0/sampleMax, -(1.0/sampleMax)*sampleMean, *result );
-
-  *result = reshapeFloat( self, *result, image.rows * image.cols );
- 
-  return;
+  nresult.shift  = -(1.0/sampleMax)*sampleMean;
+  nresult.stride = 1.0/sampleMax;
+  
+  return nresult;
 } // normalizeSample
 
 void
@@ -595,9 +614,9 @@ generateResponseMap(
     clMat bIn,
     
     // temporary variables
-    clVector /*cMat float*/ patches,
+//    clVector /*cMat float*/ patches,
     clVector /*cMat float*/ xOuts,
-    clVector /*cMat float*/ es,
+//    clVector /*cMat float*/ es,
     // result
     clMat /*float*/ result
     )
@@ -606,13 +625,6 @@ generateResponseMap(
   assert( result.rows == 2 * mapSize + 1 );
   assert( result.cols == 2 * mapSize + 1 );
 
-//  clMat /*float*/wIn_A = GetBlockFloat( self, m_wIn, 0, m_wIn.rows, 0, m_wIn.cols - 1 );
-  // clMat /*float*/wIn = CreateMatFloat( self, allocator, wIn_A.rows, m_U.rows );
-  
-//  assert(wIn.rows == wIn_A.rows);
-//  assert(wIn.cols == m_U.rows);
-  
-  // clMat /*float*/bIn = GetBlockFloat( self, m_wIn, 0, m_wIn.rows, m_wIn.cols - 1, m_wIn.cols );
   clMat /*float*/wOut_tmp = GetBlockFloat( self, m_wOut, 0, m_wOut.rows, 0, m_wOut.cols - 1 );
 
   // {
@@ -646,59 +658,30 @@ generateResponseMap(
 
               clMat /*uint8_t*/   imagePatch = GetBlockChar( self, image, cy - m_patchSize, cy + m_patchSize + 1, cx - m_patchSize, cx + m_patchSize + 1 );
 
-              // printf("cy - m_patchSize = %d\n", cy - m_patchSize );
-              // printf("cy + m_patchSize + 1 = %d\n", cy + m_patchSize + 1 );
-              // printf("cx - m_patchSize = %d\n", cx - m_patchSize );
-              // printf("cx + m_patchSize + 1 = %d\n", cx + m_patchSize + 1);
-              
-              // printMatChar( self, imagePatch, "imagePatch");
-              
-              // clMat /*float*/patch = CreateMatFloat( self, allocator, imagePatch.rows, imagePatch.cols );
-              clMat patch = GetMatFromVector( self, patches, localid );
+              // clMat patch = GetMatFromVector( self, patches, localid );
                             
-              assert( patch.rows == imagePatch.rows );
-              assert( patch.cols == imagePatch.cols );
+              // assert( patch.rows == imagePatch.rows );
+              // assert( patch.cols == imagePatch.cols );
 
-              normalizeSample( self, imagePatch, &patch );
-              // printMatFloat(self, patch, "patch");
-                            
-              // clMat /*float*/xOut = CreateMatFloat( self, allocator, bIn.rows, bIn.cols );
+              normalization norm = normalizeSample( self, imagePatch );
+
               clMat xOut = GetMatFromVector( self, xOuts, localid );
 
               assert( xOut.rows == bIn.rows );
               assert( xOut.cols == bIn.cols );
           
-              gemmFloatDirDirDir( self, wIn, patch, -1.0, bIn, -1.0, xOut );
+              gemmFloatDirDirDir( self, wIn, imagePatch /*patch*/, -1.0, bIn, -1.0, norm, xOut );
 
-              // printMatFloat(self, xOut, "xOut");
-              
-              // clMat /*float*/e = CreateMatFloat( self, allocator, xOut.rows, xOut.cols);
-              clMat e = GetMatFromVector( self, es, localid );
-              assert( e.rows == xOut.rows );
-              assert( e.cols == xOut.cols );              
-          
-              expFloat( self, xOut, e );
-
-              // printMatFloat( self, e, "e");
-              
-              addFloat( self, e, 1.0, xOut );
-              divideFloat( self, 2.0, xOut, e);
-              addFloat( self, e, -1.0, xOut);
-
-              // printMatFloat( self, xOut, "xOut" );
+              activateOutput( self, xOut );
               
               SetValueFloat( self, result, ncy, ncx, 1./( 1. + exp(- dotProductTransDir( self, wOut_tmp, xOut) - bOut ) ) );
 
-              // freeMatFloat( self, allocator, &e);
-              // freeMatFloat( self, allocator, &xOut);
-              // freeMatFloat( self, allocator, &patch);
           } // for localid 
       } // for gangsize
   } // localid block
   
 //  assert(false);
   
-  // freeMatFloat( self, allocator, &wIn);
   // end of classic impl
     return;
 } // generateResponseMap
@@ -789,9 +772,9 @@ calculateMaps(
             packages[idx].input.bIn,
 
             // temporary
-            packages[idx].tmp.patches,
+//            packages[idx].tmp.patches,
             packages[idx].tmp.xOuts,
-            packages[idx].tmp.es,
+//            packages[idx].tmp.es,
             // result
             packages[idx].output.responseMap );
 

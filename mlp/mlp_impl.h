@@ -44,7 +44,7 @@ extern "C" {
 
     clMat reshapeFloat( void * self, clMat /*float*/smat, int new_rows );
 
-    void gemmFloatDirDirDir( void * self, clMat /*float*/A, clMat /*float*/B, float alpha, clMat /*float*/C, float beta, clMat /*float*/ result );
+//    void gemmFloatDirDirDir( void * self, clMat /*float*/A, clMat /*float*/B, float alpha, clMat /*float*/C, float beta, clMat /*float*/ result );
     
     void gemmFloatDirDirDirGang( void * self, clMat /*float*/A, clMat /*float*/B, float alpha, clMat /*float*/C, float beta, int localid, clMat /*float*/ result );
     
@@ -68,9 +68,9 @@ extern "C" {
     
     float dotProductTransDir( void * self, clMat /*float*/A, clMat /*float*/B );
         
-    void normalizeSample( void * self, clMat /*uint8_t*/  image, clMat /*float*/ * result );
+//    void normalizeSample( void * self, clMat /*uint8_t*/  image, clMat /*float*/ * result );
     
-    void generateResponseMap( void * self, const clMat /*uint8_t*/  image, const Point2i center, int mapSize, int m_patchSize, clMat /*float*/m_wOut, clMat wIn, clMat bIn, clVector /*cMat float*/ patches, clVector /*cMat float*/ xOuts, clVector /*cMat float*/ es, clMat /*float*/ result );
+//    void generateResponseMap( void * self, const clMat /*uint8_t*/  image, const Point2i center, int mapSize, int m_patchSize, clMat /*float*/m_wOut, clMat wIn, clMat bIn, clVector /*cMat float*/ patches, clVector /*cMat float*/ xOuts, clVector /*cMat float*/ es, clMat /*float*/ result );
 
     int cvRound( float value );
     
