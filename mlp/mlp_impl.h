@@ -50,14 +50,6 @@ extern "C" {
     
     void gemmFloatDirTransDirGang( void * self, clMat /*float*/A, clMat /*float*/B, float alpha, clMat /*float*/C, float beta, int localid, clMat /*float*/ result );
     
-    void expFloat( void * self, clMat /*float*/input, clMat /*float*/ output );
-    
-    void addFloat( void * self, clMat /*float*/input, float val, clMat /*float*/ output );
-    
-    void divideFloat( void * self, float val, clMat /*float*/input, clMat /*float*/ output );
-    
-    void subtractFloat( void * self, clMat /*float*/input, float val, clMat /*float*/ output );
-    
     float GetValueFloat( void * self, clMat /*float*/smat, int row, int col );
     
     uint8_t GetValueChar( void * self, clMat /* uint8_t*/ smat, int row, int col );

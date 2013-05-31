@@ -411,24 +411,6 @@ gemmFloatDirTransDirGang( void * self, clMat /*float*/A, clMat /*float*/B, float
     return;
 } // gemmFloatDirTransDirGang
 
-
-void
-expFloat( void * self, clMat /*float*/input, clMat /*float*/ output )
-{
-    assert(input.rows == output.rows);
-    assert(input.cols == output.cols);
-
-    int q, w;
-
-    for ( q=0; q<input.rows; q++ )
-        for ( w=0; w<input.cols; w++ ) {
-            ((float*)self)[ q * output.step + w + output.start ] = 
-        	exp(((float*)self)[ q * input.step + w + input.start ]);
-        }
-
-    return;
-}
-
 void
 activateOutput( void * self, clMat /*float*/input )
 {
@@ -443,52 +425,6 @@ activateOutput( void * self, clMat /*float*/input )
 
     return;
 } // activateOutput
-
-
-void
-addFloat( void * self, clMat /*float*/input, float val, clMat /*float*/ output )
-{
-    assert(input.rows == output.rows);
-    assert(input.cols == output.cols);
-
-    int q, w;
-    for ( q=0; q<input.rows; q++ )
-        for ( w=0; w<input.cols; w++ )
-            ((float*)self)[ q * output.step + w + output.start ] = 
-        	val + ((float*)self)[ q * input.step + w + input.start ];
-
-    return;
-}
-
-void 
-divideFloat( void * self, float val, clMat /*float*/input, clMat /*float*/ output )
-{
-    assert(input.rows == output.rows);
-    assert(input.cols == output.cols);
-
-    int q, w;
-    for ( q=0; q<input.rows; q++ )
-        for ( w=0; w<input.cols; w++ )
-            ((float*)self)[ q * output.step + w + output.start ] = 
-        	val / ((float*)self)[ q * input.step + w + input.start ];
-
-    return;
-}
-
-void
-subtractFloat( void * self, clMat /*float*/input, float val, clMat /*float*/ output )
-{
-    assert(input.rows == output.rows);
-    assert(input.cols == output.cols);
-
-    int q, w;
-    for ( q=0; q<input.rows; q++ )
-        for ( w=0; w<input.cols; w++ )
-            ((float*)self)[ q * output.step + w + output.start ] = 
-        	((float*)self)[ q * input.step + w + input.start ] - val;
-    
-    return;
-}
 
 float
 GetValueFloat( void * self, clMat /*float*/smat, int row, int col )

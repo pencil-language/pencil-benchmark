@@ -86,18 +86,18 @@ int main()
     carp::opencl::array<uint8_t> clSelf( device, local_memsize, self );
 
     // expFloat
-    expFloat( self, sample, exper );
+//    expFloat( self, sample, exper );
     device["expFloat"]( clSelf.cl(), sample, exper ).groupsize({1},{1});
 
     // transposeFloat
     transposeFloat( self, sample, transper );
     device["transposeFloat"]( clSelf.cl(), sample, transper ).groupsize({1},{1});
 
-    // repeated expFloat
-    for (int q = 0; q<33; q++ ) {
-        clMat buf = GetMatFromVector( self, mats, q );
-        expFloat( self, sample, buf );
-    }
+    // // repeated expFloat
+    // for (int q = 0; q<33; q++ ) {
+    //     clMat buf = GetMatFromVector( self, mats, q );
+    //     expFloat( self, sample, buf );
+    // }
 
     device["expVecFloat"]( clSelf.cl(), sample, mats ).groupsize({1}, {1});
     
