@@ -125,36 +125,6 @@ GetBlockFloat( void * self, clMat /*float*/smat, int row_from, int row_to, int c
     return result;
 }
 
-void
-convertFromCharToFloat( void * self, clMat /*uint8_t*/  from, float quotient, float shift, clMat /*float*/ to )
-{
-    assert(from.rows == to.rows);
-    assert(from.cols == to.cols);
-    
-    int q, w;
-    for ( q=0; q<from.rows; q++ )
-        for ( w=0; w<from.cols; w++ )
-            ((float*)self)[ q * to.step + w + to.start ] = 
-        	quotient * ((uint8_t*)self)[ q * from.step + w + from.start ] + shift;
-    return;
-}
-
-clMat
-reshapeFloat( void * self, clMat /*float*/smat, int new_rows )
-{
-
-    assert(smat.cols == smat.step);
-    assert( (smat.cols * smat.rows) % new_rows == 0 );
-
-    clMat /*float*/result;
-    result.rows = new_rows;
-    result.cols = smat.cols * smat.rows / new_rows;
-    result.step = result.cols;
-    result.start = smat.start;
-
-    return result;
-} // reshapeFloat
-
 // returns alpha*A*B + beta * C
 void 
 gemmFloatDirDirDir(
