@@ -11,7 +11,7 @@ CFLAGS=-lOpenCL -lm
 LDFLAGS=-lstdc++ -lOpenCL -lm -lboost_serialization -L/home/ujoimro/Inst/opencv/build/OpenCV-2.4.2/optimized/install/lib -lopencv_core -lstdc++ -lm
 
 # optimization flags
-CXXFLAGS+=-O0 -g 
+CXXFLAGS+=-O3 -mtune=native
 
 # includes 
 CXXFLAGS+=-I/home/ujoimro/Inst/opencv/build/OpenCV-2.4.2/optimized/install/include
