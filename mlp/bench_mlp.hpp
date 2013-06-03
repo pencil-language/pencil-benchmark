@@ -119,7 +119,7 @@ namespace {
 // patchsize, m_wIn, m_wOut, m_U, hidden_num, rho2
 template <class allocator>
 std::vector<calcpackage>
-convertHackToMlp ( void * self, std::vector<allocator> & pools, std::vector<int> & memory_segments, const hack_t & hack )
+convertHackToMlp ( char * self, std::vector<allocator> & pools, std::vector<int> & memory_segments, const hack_t & hack )
 {
     assert(hack.m_visibleLandmarks_size==hack.m_classifiers.size());
     assert(hack.m_visibleLandmarks_size==hack.responseMaps.size());
@@ -220,8 +220,8 @@ void freeResponseMaps( void * self, std::vector<allocator> pools, std::vector<cl
 }
 
 template <class T0>
-auto
-microseconds( T0 t0 ) -> decltype(std::chrono::duration_cast<std::chrono::microseconds>(t0).count())
+std::chrono::microseconds::rep
+microseconds( T0 t0 )
 {
     return std::chrono::duration_cast<std::chrono::microseconds>(t0).count();
 }
