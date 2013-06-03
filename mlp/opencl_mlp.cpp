@@ -50,7 +50,7 @@ int main()
         std::vector<carp::memory::dense> pools( groupsize, carp::memory::dense({local_memsize, uint8_t()}));
         carp::memory::local_memory_manager locmm( groupsize * local_memsize, groupsize, local_memsize );
         
-        void * self = buffer.get();
+        char * self = buffer.get();
         std::vector<int> segments = locmm.get_segments();
        
         // here comes the function call
@@ -96,7 +96,7 @@ int main()
             // testing the output
             for (int q=0; q<conductor.hack.m_visibleLandmarks_size; q++)
             {
-                assert(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) < 0.0001);
+                if (cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) > 0.0001) throw std::runtime_error("conductor.hack.responseMaps[q] - calculatedResults[q] ) < 0.0001 failed");                
             }
         }
     }
