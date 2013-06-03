@@ -30,7 +30,7 @@ int main()
     
     
     for ( conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id);
-          ((conductor.id != -1) and (conductor.id != processed_frames));
+          ((conductor.id != -1) && (conductor.id != processed_frames));
           // conductor.id != -1;
           conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id)
         )
@@ -46,7 +46,7 @@ int main()
         std::vector<carp::memory::dense> pools( groupsize, carp::memory::dense({local_memsize, uint8_t()}));
         carp::memory::local_memory_manager locmm( groupsize * local_memsize, groupsize, local_memsize );
         
-        void * self = buffer.get();
+        char * self = buffer.get();
         std::vector<int> segments = locmm.get_segments();
        
         // here comes the function call
@@ -62,7 +62,7 @@ int main()
                                     
             auto start = std::chrono::high_resolution_clock::now();
             calculateMaps(
-                reinterpret_cast<char*>(self),
+                self,
                 segments.data(),
                 conductor.hack.m_visibleLandmarks_size,
                 conductor.hack.m_mapSize,

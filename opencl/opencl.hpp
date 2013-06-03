@@ -41,7 +41,7 @@ namespace carp {
                 ) throw (std::exception&) {
                 if ( error != CL_SUCCESS )
                     throw std::runtime_error( std::string("error: OpenCL: ") +
-                                              carp::opencl::errors[error] +
+                                              carp::opencl::errors.at(error) +
                                               "; line: " + std::to_string(line) + " in file " + filename );
             } // checkerror
 
