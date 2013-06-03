@@ -11,9 +11,9 @@ test_mlp.o: test_mlp.cpp bench_mlp.gch $(BASEDIR)/core/memory.gch
 
 opencl_mlp.o: opencl_mlp.cpp bench_mlp.gch $(BASEDIR)/core/memory.gch
 
-test_mlp: test_mlp.o mlp_impl.o allocator.o 
+test_mlp: test_mlp.o mlp_impl.o allocator.o $(BASEDIR)/opencl/errors.o
 
-opencl_mlp: opencl_mlp.o mlp_impl.o allocator.o
+opencl_mlp: opencl_mlp.o mlp_impl.o allocator.o  $(BASEDIR)/opencl/errors.o
 
 allocator.gch: allocator.hpp $(BASEDIR)/core/memory.gch
 	$(CXX) $(CXXFLAGS) -c allocator.hpp -o allocator.gch

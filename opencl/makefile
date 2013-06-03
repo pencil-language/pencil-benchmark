@@ -1,7 +1,9 @@
 # UjoImro, 2013
 
 
-all: errors.gch opencl.gch
+all: errors.o opencl.gch
+
+errors.o: errors.cpp errors.hpp
 
 errors.gch: errors.hpp
 	$(CXX) $(CXXFLAGS) -c errors.hpp -o errors.gch
