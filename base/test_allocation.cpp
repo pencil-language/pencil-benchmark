@@ -16,13 +16,15 @@ const int numel = local_memsize / sizeof(float);
 const bool debug = false;
 
 struct chunk_t {
+    chunk_t( int64_t & size, int64_t & pointer ) : size(size), pointer(pointer) { }
+    
     int64_t size;
     int64_t pointer;    
 }; // chunk_t
 
 int main()
 {
-    carp::memory::buddy bpool = carp::memory::buddy({numel, float()});
+    carp::memory::buddy bpool( carp::memory::allocator::sizer(numel, float()));
     carp::memory::allocator & pool = bpool;
     
     // std::ifstream input("/dev/urandom");
@@ -46,7 +48,7 @@ int main()
             int64_t size = dice();
             int64_t pointer;        
             try {
-                pointer = pool.allocate({size, float()});
+                pointer = pool.allocate( carp::memory::allocator::sizer(size, float()));
             }
             catch ( carp::memory::exception & exception )
             {
@@ -63,7 +65,7 @@ int main()
                 continue;            
             }
 
-            arrays.push_back({size, pointer});
+            arrays.push_back( chunk_t(size, pointer) );
             real_allocated += size;
 
             if (debug) std::cout << "allocated: " << size << " (size); " << real_allocated << " (net_size); "  << pool.grossallocated() << " (gross_size); " << pointer << " (pointer)" << std::endl;        
@@ -76,7 +78,7 @@ int main()
 
         for ( auto & q : arrays )
         {        
-            pool.release({q.pointer, float()});
+            pool.release( carp::memory::allocator::sizer(q.pointer, float()));
 
             real_allocated -= q.size;
 

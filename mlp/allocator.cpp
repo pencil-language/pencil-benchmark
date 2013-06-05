@@ -27,7 +27,7 @@ CreateMatFloat( carp::memory::allocator & pool, int rows, int cols )
     result.rows  = rows;
     result.cols  = cols;
     result.step  = cols;
-    result.start = pool.allocate({rows * cols, float()});
+    result.start = pool.allocate(carp::memory::allocator::sizer(rows * cols, float()));
 
     return result;
 } // CreateMatFloat
@@ -45,7 +45,7 @@ CreateMatChar /*uint8_t*/ ( carp::memory::allocator & pool, int rows, int cols )
     result.rows  = rows;
     result.cols  = cols;
     result.step  = cols;
-    result.start = pool.allocate({rows * cols, uint8_t()});
+    result.start = pool.allocate( carp::memory::allocator::sizer(rows * cols, uint8_t()));
 
     return result;
 }
@@ -58,7 +58,7 @@ CreateVectorMat( carp::memory::allocator & pool, int nb_elements )
 
     result.size = nb_elements;
     result.step = 1;
-    result.start = pool.allocate({nb_elements, clMat()});
+    result.start = pool.allocate(carp::memory::allocator::sizer(nb_elements, clMat()));
 
     return result;        
 } // CreateVectorMat
@@ -67,7 +67,7 @@ CreateVectorMat( carp::memory::allocator & pool, int nb_elements )
 void
 freeMatFloat( carp::memory::allocator & pool, clMat /*float*/* mat )
 {
-    pool.release({mat->start, float()});
+    pool.release(carp::memory::allocator::sizer(mat->start, float()));
     
     mat->rows  = 0;
     mat->cols  = 0;
@@ -79,7 +79,7 @@ freeMatFloat( carp::memory::allocator & pool, clMat /*float*/* mat )
 void 
 freeMatChar /*uint8_t*/ ( carp::memory::allocator & pool, clMat /*uint8_t*/  * mat )
 {
-    pool.release({mat->start, uint8_t()});
+    pool.release(carp::memory::allocator::sizer(mat->start, uint8_t()));
     
     mat->rows  = 0;
     mat->cols  = 0;
@@ -91,7 +91,7 @@ freeMatChar /*uint8_t*/ ( carp::memory::allocator & pool, clMat /*uint8_t*/  * m
 void 
 freeVectorMat( carp::memory::allocator & pool, clVector * vec )
 {
-    pool.release({vec->start, clMat()});
+    pool.release(carp::memory::allocator::sizer(vec->start, clMat()));
     vec->size  = 0;        
     vec->step  = 0;        
     vec->start = 0;

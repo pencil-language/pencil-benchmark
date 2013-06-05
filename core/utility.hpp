@@ -43,6 +43,37 @@ print_image( cv::Mat_<T0> input, std::string name )
     std::cout << "]" << std::endl;    
 } // print_image
 
+template <class T0>
+bool
+push( std::vector<T0> & self, T0 t0 )
+{
+    self.push_back(t0);
+    return true;
+} // push
+
+namespace carp {
+
+    template<class T0, class... Types>
+    std::vector<T0>
+    make_vector( T0 t0, Types... inputs )
+    {
+        std::vector<T0> result;
+        result.push_back(t0);     
+        
+        bool err[] = { ::push( result, static_cast<T0>(inputs) )... };
+        
+        return result;        
+    } // make_vector
+
+
+    template <class... Types>
+    std::vector<std::string>
+    string_vector( Types... inputs)
+    {
+        return make_vector<std::string>(inputs...);        
+    } // string_vector
+    
+} // namespace carp
 
 
 #endif /* __CARP__UTILITY__HPP__ */

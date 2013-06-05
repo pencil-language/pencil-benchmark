@@ -43,7 +43,7 @@ int main()
         boost::shared_array<char> buffer( new char[groupsize * local_memsize] );
         
         // std::vector<carp::memory::buddy> pools( groupsize, carp::memory::buddy({local_memsize, uint8_t()}));
-        std::vector<carp::memory::dense> pools( groupsize, carp::memory::dense({local_memsize, uint8_t()}));
+        std::vector<carp::memory::dense> pools( groupsize, carp::memory::dense( carp::memory::allocator::sizer(local_memsize, uint8_t())));
         carp::memory::local_memory_manager locmm( groupsize * local_memsize, groupsize, local_memsize );
         
         char * self = buffer.get();

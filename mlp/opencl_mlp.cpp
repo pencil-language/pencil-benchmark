@@ -25,7 +25,7 @@ int main()
 {
     conductor_t conductor; // the class for importing the input from the clm
     carp::opencl::device device;
-    device.compile( {"mlp_impl.cl"}, {"calculateMaps"} );
+    device.compile( carp::string_vector("mlp_impl.cl"), carp::string_vector("calculateMaps") );
         
     int fail = 0;
     long int elapsed_time = 0;
@@ -47,7 +47,7 @@ int main()
         boost::shared_array<char> buffer( new char[groupsize * local_memsize] );
         
         // std::vector<carp::memory::buddy> pools( groupsize, carp::memory::buddy({local_memsize, uint8_t()}));
-        std::vector<carp::memory::dense> pools( groupsize, carp::memory::dense({local_memsize, uint8_t()}));
+        std::vector<carp::memory::dense> pools( groupsize, carp::memory::dense(carp::memory::allocator::sizer(local_memsize, uint8_t())));
         carp::memory::local_memory_manager locmm( groupsize * local_memsize, groupsize, local_memsize );
         
         char * self = buffer.get();
@@ -76,7 +76,7 @@ int main()
                 clCalcpackages.cl(),
                 local_memsize - 1*KiB,
                 carp::opencl::buffer(local_memsize)
-                ).groupsize({gangsize},{gangsize*conductor.hack.m_visibleLandmarks_size});
+                ).groupsize( carp::make_vector<ulong>(gangsize),carp::make_vector<ulong>(gangsize*conductor.hack.m_visibleLandmarks_size));
             auto end = std::chrono::high_resolution_clock::now();
             elapsed_time += microseconds(end - start);
 
