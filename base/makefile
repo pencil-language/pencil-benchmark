@@ -4,19 +4,19 @@ all: test_color expand test_nesting test_local test_allocation
 
 test_color: test_color.o $(BASEDIR)/opencl/errors.o
 
-test_color.o: test_color.cpp $(BASEDIR)/opencl/opencl.gch $(BASEDIR)/core/utility.gch 
+test_color.o: test_color.cpp $(BASEDIR)/opencl/opencl.hpp $(BASEDIR)/core/utility.hpp 
 
 test_nesting: test_nesting.o $(BASEDIR)/opencl/errors.o
 
-test_nesting.o: test_nesting.cpp $(BASEDIR)/opencl/opencl.gch $(BASEDIR)/core/utility.gch
+test_nesting.o: test_nesting.cpp $(BASEDIR)/opencl/opencl.hpp $(BASEDIR)/core/utility.hpp
 
 test_local: test_local.o $(BASEDIR)/opencl/errors.o
 
-test_local.o: test_local.cpp $(BASEDIR)/opencl/opencl.gch $(BASEDIR)/core/utility.gch
+test_local.o: test_local.cpp $(BASEDIR)/opencl/opencl.hpp $(BASEDIR)/core/utility.hpp
 
 test_allocation: test_allocation.o $(BASEDIR)/opencl/errors.o
 
-test_allocation.o: test_allocation.cpp $(BASEDIR)/core/memory.gch $(BASEDIR)/core/utility.gch
+test_allocation.o: test_allocation.cpp $(BASEDIR)/core/memory.hpp $(BASEDIR)/core/utility.hpp
 
 expand: expand.o
 
