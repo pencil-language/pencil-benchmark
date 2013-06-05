@@ -34,7 +34,7 @@ int main()
     
     
     for ( conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id);
-          ((conductor.id != -1) and (conductor.id != processed_frames));
+          ((conductor.id != -1) && (conductor.id != processed_frames));
           // conductor.id != -1;
           conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id)
         )
@@ -76,13 +76,13 @@ int main()
                 clCalcpackages.cl(),
                 local_memsize - 1*KiB,
                 carp::opencl::buffer(local_memsize)
-                ).groupsize( carp::make_vector<ulong>(gangsize),carp::make_vector<ulong>(gangsize*conductor.hack.m_visibleLandmarks_size));
+                ).groupsize( carp::make_vector<size_t>(gangsize),carp::make_vector<size_t>(gangsize*conductor.hack.m_visibleLandmarks_size));
             auto end = std::chrono::high_resolution_clock::now();
             elapsed_time += microseconds(end - start);
 
             // copying the data back to the CPU
             auto processed = clSelf.get();
-            void * results = reinterpret_cast<void*>(processed.data());
+            char * results = reinterpret_cast<char*>(processed.data());
             
             // converting the outputs            
             std::vector< cv::Mat_<double> > calculatedResults;

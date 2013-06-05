@@ -51,17 +51,20 @@ push( std::vector<T0> & self, T0 t0 )
     return true;
 } // push
 
+template <typename T0, typename... Types>
+struct last_type {
+    typedef T0 type;
+};
+
 namespace carp {
 
-    template<class T0, class... Types>
-    std::vector<T0>
-    make_vector( T0 t0, Types... inputs )
+    template<class... Types>
+    std::vector<typename last_type<Types...>::type>
+    make_vector( Types... inputs )
     {
+        typedef typename last_type<Types...>::type T0;
         std::vector<T0> result;
-        result.push_back(t0);     
-        
         bool err[] = { ::push( result, static_cast<T0>(inputs) )... };
-        
         return result;        
     } // make_vector
 
