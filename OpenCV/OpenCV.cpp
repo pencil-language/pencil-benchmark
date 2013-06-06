@@ -68,8 +68,12 @@ Timing time_boxFilter(const cv::Mat& host_img, size_t iterations)
 Timing time_integral(const cv::Mat& img, size_t iterations)
 {
     cv::Mat host_img;
-    cv::cvtColor(img, host_img, CV_RGB2GRAY);
-    cv::Mat host_integral;//(host_img.size()+cv::Size(1,1), CV_64F);
+    {
+        cv::Mat img_gray;
+        cv::cvtColor(img, img_gray, CV_RGB2GRAY);
+        cv::resize(img_gray, host_img, cv::Size(500, 500));
+    }
+    cv::Mat host_integral;
 
     const auto cpu_start = std::chrono::high_resolution_clock::now();
     for(int i = 1; i <= iterations; ++i)
@@ -77,7 +81,7 @@ Timing time_integral(const cv::Mat& img, size_t iterations)
     const auto cpu_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - cpu_start);
 
     const cv::ocl::oclMat gpu_img(host_img);
-    cv::ocl::oclMat gpu_integral;//(gpu_img.size()+cv::Size(1,1), CV_64F);
+    cv::ocl::oclMat gpu_integral;
 
     const auto gpu_start = std::chrono::high_resolution_clock::now();
     for(int i = 1; i <= iterations; ++i)
@@ -156,8 +160,10 @@ Timing time_convolve(const cv::Mat& img, size_t iterations)
     return Timing(cpu_time, gpu_time);
 }
 
-Timing time_gaussian(const cv::Mat& host_img, size_t iterations)
+Timing time_gaussian(const cv::Mat& img, size_t iterations)
 {
+    cv::Mat host_img;
+    cv::resize(img, host_img, cv::Size(500, 500));
     cv::Mat host_gaussian;
 
     const auto cpu_start = std::chrono::high_resolution_clock::now();
@@ -245,9 +251,9 @@ int main()
 #ifdef _DEBUG
     size_t num_iterations = 1;
 #else
-    size_t num_iterations = 1000;
+    size_t num_iterations = 100;
 #endif
-    std::cout << "Algorithm - CPU_time - GPU_time" << std::endl;
+    std::cout << "  Operator - CPU_time - GPU_time" << std::endl;
 
     const auto boxFilter_times = time_boxFilter (img, num_iterations);
     std::cout << " boxFilter - " << std::setw(6) << boxFilter_times.cpu.count() << "ms - " << std::setw(6) << boxFilter_times.gpu.count() << "ms" << std::endl;
