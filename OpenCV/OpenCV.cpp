@@ -46,10 +46,8 @@ Timing time_cvtColor(const cv::Mat& host_img, size_t iterations)
         cv::ocl::cvtColor(gpu_img, gpu_gray, CV_RGB2GRAY);
     const auto gpu_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - gpu_start);
 
-#ifdef _DEBUG
     cv::Mat difference = host_gray - gpu_gray;
-    assert( cv::norm(difference, cv::NORM_INF) <.01 );
-#endif
+    if( cv::norm(difference, cv::NORM_INF) > .01 ) throw std::logic_error("cvtColor: CPU and GPU result differs too much");
     
     return Timing("cvtColor", cpu_time, gpu_time);
 }
@@ -71,10 +69,8 @@ Timing time_boxFilter(const cv::Mat& host_img, size_t iterations)
         cv::ocl::boxFilter(gpu_img, gpu_filtered, -1, cv::Size(5,5));
     const auto gpu_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - gpu_start);
 
-#ifdef _DEBUG
     cv::Mat difference = host_filtered - gpu_filtered;
-    assert( cv::norm(difference, cv::NORM_INF) <= 1.0 );
-#endif
+    if( cv::norm(difference, cv::NORM_INF) > 1.0 ) throw std::logic_error("boxFilter: CPU and GPU result differs too much");
 
     return Timing("boxFilter", cpu_time, gpu_time);
 }
@@ -91,7 +87,7 @@ Timing time_integral(const cv::Mat& img, size_t iterations)
 
     const auto cpu_start = std::chrono::high_resolution_clock::now();
     for(int i = 1; i <= iterations; ++i)
-        cv::integral(host_img, host_integral, CV_32F);
+        cv::integral(host_img, host_integral, CV_32S);
     const auto cpu_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - cpu_start);
 
     const cv::ocl::oclMat gpu_img(host_img);
@@ -102,10 +98,8 @@ Timing time_integral(const cv::Mat& img, size_t iterations)
         cv::ocl::integral(gpu_img, gpu_integral);
     const auto gpu_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - gpu_start);
 
-#ifdef _DEBUG
     cv::Mat difference = host_integral - gpu_integral;
-    assert( cv::norm(difference, cv::NORM_INF) <= 1e-5 );
-#endif
+    if( cv::norm(difference, cv::NORM_INF) > 1e-5 ) throw std::logic_error("integral: CPU and GPU result differs too much");
 
     return Timing("integral", cpu_time, gpu_time);
 }
@@ -128,10 +122,8 @@ Timing time_dilate(const cv::Mat& host_img, size_t iterations)
         cv::ocl::dilate(gpu_img, gpu_dilate,element);
     const auto gpu_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - gpu_start);
 
-#ifdef _DEBUG
     cv::Mat difference = host_dilate - gpu_dilate;
-    assert( cv::norm(difference, cv::NORM_INF) <= 1e-5 );
-#endif
+    if( cv::norm(difference, cv::NORM_INF) > 1e-5 ) throw std::logic_error("dilate: CPU and GPU result differs too much");
 
     return Timing("dilate", cpu_time, gpu_time);
 }
@@ -166,10 +158,8 @@ Timing time_convolve(const cv::Mat& img, size_t iterations)
         cv::ocl::convolve(gpu_img, kernel_gpu, gpu_convolve);
     const auto gpu_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - gpu_start);
 
-#ifdef _DEBUG
     cv::Mat difference = host_convolve - gpu_convolve;
-    assert( cv::norm(difference, cv::NORM_INF) <= 1e-5 );
-#endif
+    if( cv::norm(difference, cv::NORM_INF) > 1e-5 ) throw std::logic_error("filter2D: CPU and GPU result differs too much");
 
     return Timing("filter2D", cpu_time, gpu_time);
 }
@@ -193,10 +183,8 @@ Timing time_gaussian(const cv::Mat& img, size_t iterations)
         cv::ocl::GaussianBlur(gpu_img, gpu_gaussian, cv::Size(5,5), 0, 0, cv::BORDER_REPLICATE);
     const auto gpu_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - gpu_start);
 
-#ifdef _DEBUG
     cv::Mat difference = host_gaussian - gpu_gaussian;
-    assert( cv::norm(difference, cv::NORM_INF) <= 1 );
-#endif
+    if( cv::norm(difference, cv::NORM_INF) > 1 ) throw std::logic_error("GaussianBlur: CPU and GPU result differs too much");
 
     return Timing("GaussianBlur", cpu_time, gpu_time);
 }
@@ -218,10 +206,8 @@ Timing time_resize(const cv::Mat& host_img, size_t iterations)
         cv::ocl::resize(gpu_img, gpu_resize, cv::Size(1000,1000));
     const auto gpu_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - gpu_start);
 
-#ifdef _DEBUG
     cv::Mat difference = host_resize - gpu_resize;
-    assert( cv::norm(difference, cv::NORM_INF) <= 1 );
-#endif
+    if( cv::norm(difference, cv::NORM_INF) > 1 ) throw std::logic_error("resize: CPU and GPU result differs too much");
 
     return Timing("resize", cpu_time, gpu_time);
 }
@@ -248,10 +234,8 @@ Timing time_warpAffine(const cv::Mat& host_img, size_t iterations)
         cv::ocl::warpAffine(gpu_img, gpu_warp, transform, cv::Size(1000,1000));
     const auto gpu_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - gpu_start);
 
-#ifdef _DEBUG
     cv::Mat difference = host_warp - gpu_warp;
-    assert( cv::norm(difference, cv::NORM_INF) <= 1 );
-#endif
+    if( cv::norm(difference, cv::NORM_INF) > 1 ) throw std::logic_error("warpAffine: CPU and GPU result differs too much");
 
     return Timing("warpAffine", cpu_time, gpu_time);
 }
@@ -268,14 +252,20 @@ int main(int argc, char* argv[])
 
     Timing::printHeader();
 
-    time_boxFilter (img, num_iterations).print();
-    time_integral  (img, num_iterations).print();
-    time_cvtColor  (img, num_iterations).print();
-    time_dilate    (img, num_iterations).print();
-    time_convolve  (img, num_iterations).print();
-    time_gaussian  (img, num_iterations).print();
-    time_resize    (img, num_iterations).print();
-    time_warpAffine(img, num_iterations).print();
+    try{
+        time_boxFilter (img, num_iterations).print();
+        time_integral  (img, num_iterations).print();
+        time_cvtColor  (img, num_iterations).print();
+        time_dilate    (img, num_iterations).print();
+        time_convolve  (img, num_iterations).print();
+        time_gaussian  (img, num_iterations).print();
+        time_resize    (img, num_iterations).print();
+        time_warpAffine(img, num_iterations).print();
+    }
+    catch(const std::logic_error& err)
+    {
+        std::cout << "error: " << err.what();
+    }
 
     int i = 5;
 }
