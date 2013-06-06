@@ -4,15 +4,29 @@
 
 #include <chrono>
 #include <iomanip>
+#include <string>
 
 struct Timing
 {
-    Timing(const std::chrono::milliseconds& cpu, const std::chrono::milliseconds& gpu)
-        : cpu(cpu)
+    Timing(const std::string& name, const std::chrono::milliseconds& cpu, const std::chrono::milliseconds& gpu)
+        : name(name)
+        , cpu(cpu)
         , gpu(gpu)
     {}
+    std::string name;
     std::chrono::milliseconds cpu;
     std::chrono::milliseconds gpu;
+
+    static void printHeader()
+    {
+        std::cout << "    Operator - CPU_time - GPU_time - speedup" << std::endl;
+    }
+
+    void print() const
+    {
+        auto speedup = (double)cpu.count()/(double)gpu.count();
+        std::cout << std::setw(12) << name << " - " << std::setw(6) << cpu.count() << "ms - " << std::setw(6) << gpu.count() << "ms - " << std::setw(7) << std::fixed << std::setprecision(3) << speedup << 'x' << std::endl;
+    }
 };
 
 Timing time_cvtColor(const cv::Mat& host_img, size_t iterations)
@@ -37,7 +51,7 @@ Timing time_cvtColor(const cv::Mat& host_img, size_t iterations)
     assert( cv::norm(difference, cv::NORM_INF) <.01 );
 #endif
     
-    return Timing(cpu_time, gpu_time);
+    return Timing("cvtColor", cpu_time, gpu_time);
 }
 
 Timing time_boxFilter(const cv::Mat& host_img, size_t iterations)
@@ -62,7 +76,7 @@ Timing time_boxFilter(const cv::Mat& host_img, size_t iterations)
     assert( cv::norm(difference, cv::NORM_INF) <= 1.0 );
 #endif
 
-    return Timing(cpu_time, gpu_time);
+    return Timing("boxFilter", cpu_time, gpu_time);
 }
 
 Timing time_integral(const cv::Mat& img, size_t iterations)
@@ -93,7 +107,7 @@ Timing time_integral(const cv::Mat& img, size_t iterations)
     assert( cv::norm(difference, cv::NORM_INF) <= 1e-5 );
 #endif
 
-    return Timing(cpu_time, gpu_time);
+    return Timing("integral", cpu_time, gpu_time);
 }
 
 Timing time_dilate(const cv::Mat& host_img, size_t iterations)
@@ -119,7 +133,7 @@ Timing time_dilate(const cv::Mat& host_img, size_t iterations)
     assert( cv::norm(difference, cv::NORM_INF) <= 1e-5 );
 #endif
 
-    return Timing(cpu_time, gpu_time);
+    return Timing("dilate", cpu_time, gpu_time);
 }
 
 Timing time_convolve(const cv::Mat& img, size_t iterations)
@@ -157,7 +171,7 @@ Timing time_convolve(const cv::Mat& img, size_t iterations)
     assert( cv::norm(difference, cv::NORM_INF) <= 1e-5 );
 #endif
 
-    return Timing(cpu_time, gpu_time);
+    return Timing("filter2D", cpu_time, gpu_time);
 }
 
 Timing time_gaussian(const cv::Mat& img, size_t iterations)
@@ -184,7 +198,7 @@ Timing time_gaussian(const cv::Mat& img, size_t iterations)
     assert( cv::norm(difference, cv::NORM_INF) <= 1 );
 #endif
 
-    return Timing(cpu_time, gpu_time);
+    return Timing("GaussianBlur", cpu_time, gpu_time);
 }
 
 Timing time_resize(const cv::Mat& host_img, size_t iterations)
@@ -209,7 +223,7 @@ Timing time_resize(const cv::Mat& host_img, size_t iterations)
     assert( cv::norm(difference, cv::NORM_INF) <= 1 );
 #endif
 
-    return Timing(cpu_time, gpu_time);
+    return Timing("resize", cpu_time, gpu_time);
 }
 
 Timing time_warpAffine(const cv::Mat& host_img, size_t iterations)
@@ -239,39 +253,29 @@ Timing time_warpAffine(const cv::Mat& host_img, size_t iterations)
     assert( cv::norm(difference, cv::NORM_INF) <= 1 );
 #endif
 
-    return Timing(cpu_time, gpu_time);
+    return Timing("warpAffine", cpu_time, gpu_time);
 }
 
-int main()
+int main(int argc, char* argv[])
 {
-    const cv::Mat img_large = cv::imread("c:/Work/CARP/test1.jpg");
+    const cv::Mat img_large = cv::imread("test1.jpg");
     cv::Mat img;
     cv::resize(img_large, img, cv::Size(5792, 5792));   //Larger: cv::ocl::cvtColor doesn't work (returns memory garbage on some parts of the picture)
 
-#ifdef _DEBUG
     size_t num_iterations = 1;
-#else
-    size_t num_iterations = 100;
-#endif
-    std::cout << "  Operator - CPU_time - GPU_time" << std::endl;
+    if (argc > 1)
+        num_iterations = std::stoi(argv[1]);
 
-    const auto boxFilter_times = time_boxFilter (img, num_iterations);
-    std::cout << " boxFilter - " << std::setw(6) << boxFilter_times.cpu.count() << "ms - " << std::setw(6) << boxFilter_times.gpu.count() << "ms" << std::endl;
-    const auto integral_times  = time_integral  (img, num_iterations);
-    std::cout << "  integral - " << std::setw(6) <<  integral_times.cpu.count() << "ms - " << std::setw(6) <<  integral_times.gpu.count() << "ms" << std::endl;
-    const auto cvtColor_times  = time_cvtColor  (img, num_iterations);
-    std::cout << "  cvtColor - " << std::setw(6) <<  cvtColor_times.cpu.count() << "ms - " << std::setw(6) <<  cvtColor_times.gpu.count() << "ms" << std::endl;
-    const auto   dilate_times  = time_dilate    (img, num_iterations);
-    std::cout << "    dilate - " << std::setw(6) <<    dilate_times.cpu.count() << "ms - " << std::setw(6) <<    dilate_times.gpu.count() << "ms" << std::endl;
-    const auto convolve_times  = time_convolve  (img, num_iterations);
-    std::cout << "  filter2D - " << std::setw(6) <<  convolve_times.cpu.count() << "ms - " << std::setw(6) <<  convolve_times.gpu.count() << "ms" << std::endl;
-    const auto gaussian_times  = time_gaussian  (img, num_iterations);
-    std::cout << "  gaussian - " << std::setw(6) <<  gaussian_times.cpu.count() << "ms - " << std::setw(6) <<  gaussian_times.gpu.count() << "ms" << std::endl;
-    const auto   resize_times  = time_resize    (img, num_iterations);
-    std::cout << "    resize - " << std::setw(6) <<    resize_times.cpu.count() << "ms - " << std::setw(6) <<    resize_times.gpu.count() << "ms" << std::endl;
-    const auto   affine_times  = time_warpAffine(img, num_iterations);
-    std::cout << "warpAffine - " << std::setw(6) <<    affine_times.cpu.count() << "ms - " << std::setw(6) <<    affine_times.gpu.count() << "ms" << std::endl;
+    Timing::printHeader();
 
+    time_boxFilter (img, num_iterations).print();
+    time_integral  (img, num_iterations).print();
+    time_cvtColor  (img, num_iterations).print();
+    time_dilate    (img, num_iterations).print();
+    time_convolve  (img, num_iterations).print();
+    time_gaussian  (img, num_iterations).print();
+    time_resize    (img, num_iterations).print();
+    time_warpAffine(img, num_iterations).print();
 
     int i = 5;
 }
