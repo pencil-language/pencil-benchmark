@@ -27,6 +27,7 @@
 #include "cast.h"
 
 #include "GEL/histo.h"
+#include "GEL/linalg.h"
 
 
 const int gel_xml_export_version = 1;
@@ -211,8 +212,6 @@ namespace gel
         int hidden_num;
         double rho2;
 
-        enum NormalizationMethod { none, maxAbs, meanStd };
-
     private:
         /*!
            This function updates the mutable variables which are used
@@ -246,9 +245,6 @@ namespace gel
           \return The values
         */
         cv::Mat_<pixel_type> evaluateSamples() const;
-    
-        NormalizationMethod preSVDNormalizationMethod = maxAbs;
-        NormalizationMethod postSVDNormalizationMethod = none;
     
         // we store the data for the response map generation if the
         // mapSize parameter does not change (and there is no reason
@@ -293,7 +289,7 @@ cv::Mat_<typename gel::MLP<T0>::pixel_type> gel::MLP<T0>::generateResponseMap( c
         cv::Mat_<pixel_type> pack_patches = generatePatch(sample, m_patch_line_size);
 
         cv::Mat_<pixel_type> target = m_all_patches( cv::Range::all(), cv::Range( ncy * m_number_of_patches_per_line, (ncy + 1) * m_number_of_patches_per_line ) );
-        pack_patches.copyTo(target);
+        gel::copyTo( pack_patches, target ); // pack_patches.copyTo(target);
     }
 
     cv::Mat_<pixel_type> result = evaluateSamples();
@@ -307,6 +303,9 @@ cv::Mat_<typename gel::MLP<T0>::pixel_type> gel::MLP<T0>::generateResponseMap( c
     return result.cv::Mat::reshape(0,m_number_of_patches_per_line);
 }
 
+#define WITH_IPP
+#define WITH_MKL
+#include "GEL/linalg.h"
 
 template <typename T0>
 void gel::MLP<T0>::update(int newMapSize) const
@@ -320,18 +319,7 @@ void gel::MLP<T0>::update(int newMapSize) const
         m_currentMapSize = newMapSize;
 
         // extract to the creation
-        switch (postSVDNormalizationMethod)
-        {
-        case none:
-            m_wIn_gemm = m_wIn.colRange(0,m_wIn.cols-1)*m_U.t();
-            break;
-        case maxAbs:
-        case meanStd:
-            m_wIn_gemm = m_wIn.colRange(0,m_wIn.cols-1);
-            break;
-        default:
-            assert(false);
-        }
+        m_wIn_gemm = m_wIn.colRange(0,m_wIn.cols-1)*m_U.t();
         cv::Mat_<pixel_type> bIn = m_wIn.col(m_wIn.cols-1);
         m_wOut_gemm = m_wOut.colRange(0,m_wOut.cols-1); ///!!!!!!!!!! NO MORE TRANSPOSE .t();
 
@@ -350,7 +338,7 @@ void gel::MLP<T0>::update(int newMapSize) const
         for (int q=0; q < number_of_all_patches; q++)
         {
             target = m_all_bIns( cv::Range::all(), cv::Range(q, q+1) );
-            bIn.copyTo(target);
+            gel::copyTo(bIn, target); // bIn.copyTo(target);
             m_all_bOuts( 0, q ) = bOut;
         }
     }
@@ -389,23 +377,12 @@ cv::Mat_<typename gel::MLP<T0>::pixel_type> gel::MLP<T0>::generatePatch(const cv
         cv::Mat_<pixel_type> patch_line = normalized_patch.cv::Mat::reshape(0,normalized_patch.rows * normalized_patch.cols);
         cv::Mat_<pixel_type> target = result( cv::Range::all(), cv::Range( col, col + 1) );
 
-        patch_line.copyTo( target );
+        gel::copyTo(patch_line, target);  //patch_line.copyTo( target );
 
         cv::Mat_<uint8_t> patch_line_in  = sample( cv::Range::all(), cv::Range( q, q + 1 ) );
         cv::Mat_<uint8_t> patch_line_out = sample( cv::Range::all(), cv::Range( col, col + 1 ) );
         stat.insert( patch_line_in );
         stat.remove( patch_line_out );
-    }
-
-    //Normally, there should be a 
-    // result = m_U.t() * result;
-    // here, but we optimize a m_wIn * result_of_this => calculating m_wIn_gemm = m_wIn * m_U.t()
-    // That cannot be done if there is a post SVD normalization, so we are doing it here if it is not "none"
-    if(none != postSVDNormalizationMethod)
-    {
-        result = m_U.t() * result;
-
-        //TODO: add normalization of training samples
     }
 
     return result;
@@ -415,25 +392,23 @@ template <typename T0>
 cv::Mat_<typename gel::MLP<T0>::pixel_type> gel::MLP<T0>::evaluateSamples() const
 {
     cv::Mat_<pixel_type> xOut;
-    cv::gemm( m_wIn_gemm, m_all_patches, -1., m_all_bIns, -1., xOut ); // cv::gemm
+    gel::gemm<pixel_type>( m_wIn_gemm, m_all_patches, -1., m_all_bIns, -1., xOut ); // cv::gemm
     cv::Mat_<pixel_type> e;
-    cv::exp( xOut, e ); // cv::exp
+    gel::exp( xOut, e ); // cv::exp
     cv::add( e, 1.0, xOut );
     cv::divide( 2.0, xOut, e );
     cv::subtract( e, 1.0, xOut );
 
     cv::Mat_<pixel_type> dot;
-    cv::gemm( m_wOut_gemm, xOut, -1., m_all_bOuts, -1., dot ); // cv::gemm
+    gel::gemm<pixel_type>( m_wOut_gemm, xOut, -1., m_all_bOuts, -1., dot ); // cv::gemm
 
     cv::Mat_<pixel_type> result;
-    cv::exp( dot, result ); // cv::exp
+    gel::exp( dot, result ); // cv::exp
     cv::add( result, 1.0, dot );
     cv::divide( 1.0, dot, result );
 
     return result;
 }
-
-
 
 
 
