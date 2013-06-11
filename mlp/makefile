@@ -11,7 +11,7 @@ test_mlp.o: test_mlp.cpp bench_mlp.hpp $(BASEDIR)/core/memory.hpp
 
 opencl_mlp.o: opencl_mlp.cpp bench_mlp.hpp $(BASEDIR)/core/memory.hpp
 
-gel_mlp.o: gel_mpl.cpp GEL/histo.h GEL/histo_impl.h GEL/linalg.h GEL/defines.h
+gel_mlp.o: gel_mlp.cpp GEL/histo.h GEL/histo_impl.h GEL/linalg.h GEL/defines.h
 
 test_mlp: test_mlp.o mlp_impl.o allocator.o $(BASEDIR)/opencl/errors.o
 

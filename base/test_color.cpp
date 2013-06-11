@@ -15,12 +15,12 @@ const int cols = 15;
 int main()
 {
     carp::opencl::device device;
-    device.compile( std::vector<std::string>(1,"color.cl"), std::vector<std::string>(1,"color") );
+    device.compile( carp::string_vector("color.cl"), carp::string_vector("color") );
     
     carp::opencl::image<int> cl_image(device, 10, 25);
     
     device["color"]( cl_image.cl(), cl_image.ptr() )
-        .groupsize( carp::make_vector(16ul,16ul), carp::make_vector<size_t>( cl_image.rows(), cl_image.cols()) );
+        .groupsize( carp::make_vector<size_t>(16,16), carp::make_vector<size_t>( cl_image.rows(), cl_image.cols()) );
 
     cv::Mat_<int> image = cl_image.get();
 
