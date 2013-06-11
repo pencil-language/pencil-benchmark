@@ -1,6 +1,9 @@
 
 
-all: test_mlp opencl_mlp gel_mlp
+all: test_mlp opencl_mlp gel_mlp GEL
+
+GEL:
+	+make GEL
 
 #bench_mlp.gch: bench_mlp.hpp $(BASEDIR)/core/memory.gch
 #	$(CXX) $(CXXFLAGS) -c bench_mlp.hpp -o bench_mlp.gch
@@ -17,14 +20,16 @@ test_mlp: test_mlp.o mlp_impl.o allocator.o $(BASEDIR)/opencl/errors.o
 
 opencl_mlp: opencl_mlp.o mlp_impl.o allocator.o  $(BASEDIR)/opencl/errors.o
 
-gel_mlp: gel_mlp.o mlp_impl.o allocator.o $(BASEDIR)/opencl/errors.o linalg.o
+gel_mlp:  gel_mlp.o mlp_impl.o allocator.o $(BASEDIR)/opencl/errors.o GEL/linalg.o 
 
 #allocator.gch: allocator.hpp $(BASEDIR)/core/memory.gch
 #	$(CXX) $(CXXFLAGS) -c allocator.hpp -o allocator.gch
 
 allocator.o: allocator.cpp allocator.hpp $(BASEDIR)/core/memory.hpp
 
-linalg.o GEL/linalg.cpp GEL/linalg.h GEL/defines.h
-
 clean:
 	-rm -f *.o test_mlp opencl_mlp gel_mlp *.gch test_operators
+	make -C GEL clean
+
+
+
