@@ -10,9 +10,9 @@ BASEDIR=$(shell pwd)
 CXX=icc
 CC=icc
 LD=xiar
-CXXFLAGS=-std=c++11 -I$(BASEDIR)/opencl -I$(BASEDIR)/core -gcc-name=gcc-4.6
+CXXFLAGS=-std=c++11 -I$(BASEDIR)/opencl -I$(BASEDIR)/core -gcc-name=gcc-4.6 -I/opt/local/include
 CFLAGS=-lOpenCL
-LDFLAGS=-lirc -lOpenCL -lboost_serialization -L/home/ujoimro/Inst/opencv/build/OpenCV-2.4.2/optimized/install/lib -lopencv_core
+LDFLAGS=-lirc -lOpenCL -lboost_serialization -L/home/ujoimro/Inst/opencv/build/OpenCV-2.4.2/optimized/install/lib -lopencv_core -L/opt/local/lib64
 
 # optimization flags
 #CXXFLAGS+=-O3 -mtune=native
