@@ -27,6 +27,7 @@
 #include "cast.h"
 
 #include "GEL/histo.h"
+#include "GEL/linalg.h"
 
 
 const int gel_xml_export_version = 1;

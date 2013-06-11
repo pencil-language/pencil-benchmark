@@ -25,10 +25,10 @@ int main()
     int64_t maxnetallocated = 0;
     int64_t maxgrossallocated = 0;
     
-    int numberOfThreads =  tbb::tbb_thread::hardware_concurrency();
-    PRINT(numberOfThreads);    
-    tbb::task_scheduler_init init(numberOfThreads);
-
+    // int numberOfThreads =  tbb::tbb_thread::hardware_concurrency();
+    // PRINT(numberOfThreads);    
+    // tbb::task_scheduler_init init(numberOfThreads);
+tbb::task_scheduler_init init(1);
 
     for ( conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id);
           ((conductor.id != -1) && (conductor.id != processed_frames));
@@ -44,22 +44,21 @@ int main()
             gel::MLP<double> mlp;
             tbb::concurrent_vector< cv::Mat_<double> > calculatedResults(conductor.hack.m_visibleLandmarks_size);
             auto start = std::chrono::high_resolution_clock::now();
-            tbb::parallel_for(0,conductor.hack.m_visibleLandmarks_size,[&](int q){
-//            for(int q = 0; q < conductor.hack.m_visibleLandmarks_size; ++q) {
+//            tbb::parallel_for(0,conductor.hack.m_visibleLandmarks_size,[&](int q){
+            for(int q = 0; q < conductor.hack.m_visibleLandmarks_size; ++q) {
                 const cv::Point2i center(cvRound(conductor.hack.shape(2*q,0)),cvRound(conductor.hack.shape(2*q+1,0)));
                 calculatedResults[q] = conductor.hack.m_classifiers[q].generateResponseMap(conductor.hack.alignedImage, center, conductor.hack.m_mapSize);
-            });
+            }
+            // ); // tbb::parallel_for
             auto end = std::chrono::high_resolution_clock::now();
             elapsed_time += microseconds(end - start);
 
             // testing the output
             for (int q=0; q<conductor.hack.m_visibleLandmarks_size; q++)
             {
-                //    PRINT(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ));
+                PRINT(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ));
                 if (cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) > 0.0001) throw std::runtime_error("conductor.hack.responseMaps[q] - calculatedResults[q] ) < 0.0001 failed");
-
             }
-            
         }
     }
     
