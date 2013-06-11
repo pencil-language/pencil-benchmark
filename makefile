@@ -12,14 +12,16 @@ CC=icc
 LD=xiar
 CXXFLAGS=-std=c++11 -I$(BASEDIR)/opencl -I$(BASEDIR)/core -gcc-name=gcc-4.6 -I/opt/local/include
 CFLAGS=-lOpenCL
-LDFLAGS=-lirc -lOpenCL -lboost_serialization -L/home/ujoimro/Inst/opencv/build/OpenCV-2.4.2/optimized/install/lib -lopencv_core -L/opt/local/lib64
+#LDFLAGS=-lirc -lOpenCL -lboost_serialization -L/home/ujoimro/Inst/opencv/build/OpenCV-2.4.2/optimized/install/lib -lopencv_core
+LDFLAGS=-lirc -lOpenCL -lboost_serialization -L/opt/local/lib64 -L/home/ujoimro/Inst/opencv/build/opencv-2.4.5/release/install/lib -lopencv_core -lopencv_ocl -lopencv_imgproc -lopencv_flann -lopencv_highgui -lopencv_features2d -lopencv_objdetect -lopencv_video
 
 # optimization flags
 #CXXFLAGS+=-O3 -mtune=native
 CXXFLAGS+=-O3 -xHOST -ipo
 
 # includes 
-CXXFLAGS+=-I/home/ujoimro/Inst/opencv/build/OpenCV-2.4.2/optimized/install/include
+CXXFLAGS+=-I/home/ujoimro/Inst/opencv/build/opencv-2.4.5/release/install/include
+#CXXFLAGS+=-I/home/ujoimro/Inst/opencv/build/OpenCV-2.4.2/optimized/install/include
 
 CFLAGS+=-Wimplicit -Werror=implicit-function-declaration -Werror=int-to-pointer-cast -I$(BASEDIR)/opencl -I$(BASEDIR)/core
 
@@ -42,11 +44,12 @@ all:
 	+make -C opencl
 	+make -C base
 	+make -C mlp
+	+make -C OpenCV
 
 clean:
 	make -C core clean
 	make -C opencl clean
 	make -C base clean
 	make -C mlp clean
-
+	make -C OpenCV clean
 # LuM end of file

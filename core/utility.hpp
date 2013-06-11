@@ -55,13 +55,11 @@ namespace carp {
 
     template<class T0, class... Types>
     std::vector<T0>
-    make_vector( T0 t0, Types... inputs )
+    make_vector( T0  t0, Types... inputs )
     {
         std::vector<T0> result;
-        result.push_back(t0);     
-        
+        result.push_back(t0);        
         bool err[] = { ::push( result, static_cast<T0>(inputs) )... };
-        
         return result;        
     } // make_vector
 

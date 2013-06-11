@@ -1,6 +1,6 @@
 
 
-all: test_mlp opencl_mlp
+all: test_mlp opencl_mlp gel_mlp
 
 #bench_mlp.gch: bench_mlp.hpp $(BASEDIR)/core/memory.gch
 #	$(CXX) $(CXXFLAGS) -c bench_mlp.hpp -o bench_mlp.gch
@@ -11,9 +11,13 @@ test_mlp.o: test_mlp.cpp bench_mlp.hpp $(BASEDIR)/core/memory.hpp
 
 opencl_mlp.o: opencl_mlp.cpp bench_mlp.hpp $(BASEDIR)/core/memory.hpp
 
+gel_mlp.o: gel_mlp.cpp GEL/histo.h GEL/histo_impl.h
+
 test_mlp: test_mlp.o mlp_impl.o allocator.o $(BASEDIR)/opencl/errors.o
 
 opencl_mlp: opencl_mlp.o mlp_impl.o allocator.o  $(BASEDIR)/opencl/errors.o
+
+gel_mlp: gel_mlp.o mlp_impl.o allocator.o $(BASEDIR)/opencl/errors.o
 
 #allocator.gch: allocator.hpp $(BASEDIR)/core/memory.gch
 #	$(CXX) $(CXXFLAGS) -c allocator.hpp -o allocator.gch
@@ -21,4 +25,4 @@ opencl_mlp: opencl_mlp.o mlp_impl.o allocator.o  $(BASEDIR)/opencl/errors.o
 allocator.o: allocator.cpp allocator.hpp $(BASEDIR)/core/memory.hpp
 
 clean:
-	-rm -f *.o test_mlp opencl_mlp *.gch test_operators
+	-rm -f *.o test_mlp opencl_mlp gel_mlp *.gch test_operators
