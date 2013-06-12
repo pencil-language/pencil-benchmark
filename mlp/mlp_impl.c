@@ -458,7 +458,7 @@ generateResponseMap(
     
     // temporary variables
 //    clVector /*cMat float*/ patches,
-    clVector /*cMat float*/ xOuts,
+//    clVector /*cMat float*/ xOuts,
 //    clVector /*cMat float*/ es,
     // result
     clMat /*float*/ result
@@ -508,16 +508,16 @@ generateResponseMap(
 
               normalization norm = normalizeSample( self, imagePatch );
 
-              clMat xOut = GetMatFromVector( self, xOuts, localid );
+              // clMat xOut = GetMatFromVector( self, xOuts, localid );
 
-              assert( xOut.rows == bIn.rows );
-              assert( xOut.cols == bIn.cols );
+              // assert( xOut.rows == bIn.rows );
+              // assert( xOut.cols == bIn.cols );
           
-              gemmFloatDirDirDir( self, wIn, imagePatch /*patch*/, -1.0, bIn, -1.0, norm, xOut );
+              // gemmFloatDirDirDir( self, wIn, imagePatch /*patch*/, -1.0, bIn, -1.0, norm, xOut );
 
-              activateOutput( self, xOut );
+              // activateOutput( self, xOut );
               
-              SetValueFloat( self, result, ncy, ncx, 1./( 1. + exp(- dotProductTransDir( self, wOut_tmp, xOut) - bOut ) ) );
+              // SetValueFloat( self, result, ncy, ncx, 1./( 1. + exp(- dotProductTransDir( self, wOut_tmp, xOut) - bOut ) ) );
 
           } // for localid 
       } // for gangsize
@@ -592,7 +592,7 @@ calculateMaps(
 
             // temporary
 //            packages[idx].tmp.patches,
-            packages[idx].tmp.xOuts,
+            // packages[idx].tmp.xOuts,
 //            packages[idx].tmp.es,
             // result
             packages[idx].output.responseMap );

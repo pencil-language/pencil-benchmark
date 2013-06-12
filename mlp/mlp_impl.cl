@@ -36,7 +36,7 @@ typedef struct {
 typedef struct {
     // temporaries
 //    clVector /* clMat[] */ patches;
-    clVector /* clMat[] */ xOuts;
+//    clVector /* clMat[] */ xOuts;
 //    clVector /* clMat[] */ es;        
 } calctemp; // struct
     
@@ -47,7 +47,7 @@ typedef struct {
             
 typedef struct {
     calcinput  input;
-    calctemp   tmp;
+//    calctemp   tmp;
     calcoutput output;
 } calcpackage;
 
@@ -59,33 +59,33 @@ typedef struct {
 
 __constant const int MAX_INT = ~(1 << (8*sizeof(int) - 1));
 // __constant const int false = (1!=1);
-__constant const int gangsize = 128;
+__constant const int gangsize = 512;
 __constant const bool precise = false;
 
 
-clMat GetMatFromVector( __local void * self, clVector /*clMat*/ vec, int idx )
+clMat GetMatFromVector( __global void * self, clVector /*clMat*/ vec, int idx )
 {
 //    assert(self);
 //    assert(idx>=0);
 //    assert(idx<vec.size);
     
-    return ((__local clMat*)self)[ vec.start + vec.step * idx ];
+    return ((__global clMat*)self)[ vec.start + vec.step * idx ];
 } // GetMatFromVector
 
 
 
-void SetMatToVector( __local void * self, clVector /*clMat*/ vec, int idx, clMat val )
+void SetMatToVector( __global void * self, clVector /*clMat*/ vec, int idx, clMat val )
 {
 //    assert(self);
 //    assert(idx>=0);
 //    assert(idx<vec.size);
     
-    ((__local clMat*)self)[ vec.start + vec.step * idx ] = val;
+    ((__global clMat*)self)[ vec.start + vec.step * idx ] = val;
     return;
 } // GetMatFromVector
 
 clMat /*uint8_t*/ 
-GetBlockChar( __local void * self, clMat /*uint8_t*/  smat, int row_from, int row_to, int col_from, int col_to )
+GetBlockChar( __global void * self, clMat /*uint8_t*/  smat, int row_from, int row_to, int col_from, int col_to )
 {    
     // assert(row_from>=0);
     // assert(col_from>=0);
@@ -104,7 +104,7 @@ GetBlockChar( __local void * self, clMat /*uint8_t*/  smat, int row_from, int ro
 }
 
 clMat
-GetBlockFloat( __local void * self, clMat /*float*/smat, int row_from, int row_to, int col_from, int col_to )
+GetBlockFloat( __global void * self, clMat /*float*/smat, int row_from, int row_to, int col_from, int col_to )
 {  
     // assert(row_from>=0);
     // assert(col_from>=0);
@@ -123,16 +123,17 @@ GetBlockFloat( __local void * self, clMat /*float*/smat, int row_from, int row_t
 }
 
 // returns alpha*A*B + beta * C
-void 
+float
 gemmFloatDirDirDir(
-    __local void * self,
+    __global void * self,
     clMat /*float*/A,
     clMat /*uint8_t*/B,
     float alpha,
     clMat /*float*/C,
     float beta,
     normalization norm,
-    clMat /*float*/ result
+    clMat /* float */ dotmatrix//,
+//    clMat /*float*/ result
     )
 {
     // assert(A.rows == C.rows);
@@ -141,20 +142,22 @@ gemmFloatDirDirDir(
     // assert(C.rows == result.rows);
     // assert(C.cols == result.cols);
 
-    int q, w, e;
+    int q=0, w=0, e=0;
     float sum=0.0f;
     float c=0.0f;
-
-    for ( q=0; q<C.rows; q++ )
-        for ( w=0; w<C.cols; w++ )
-        {	    
+    float dot = 0.0f;
+    
+    for ( q=0; q<C.rows; q++ ) {
+        
+        //for ( w=0; w<C.cols; w++ )
+        //{	    
             sum = 0;
             for ( e=0; e<A.cols; e++ )
             {              
-                float a = ((__local float*)self)[ q * A.step + e + A.start ];
+                float a = ((__global float*)self)[ q * A.step + e + A.start ];
                 int b_row = e / B.rows;                    
                 int b_col = e % B.cols;                    
-                float b = ((__local uchar*)self)[ b_row * B.step + b_col + B.start ];
+                float b = ((__global uchar*)self)[ b_row * B.step + b_col + B.start ];
                 if (precise) {
                     float y = a * (norm.shift + norm.stride * b) - c;
                     float t = sum + y;
@@ -167,23 +170,30 @@ gemmFloatDirDirDir(
                 }
             }
                 
-            ((__local float*)self)[ q * result.step + w + result.start ] = alpha * sum  + beta * ((__local float*)self)[ q * C.step + w + C.start ];
-        }
+            float val    = alpha * sum  + beta * ((__global float*)self)[ q * C.step + w + C.start ];
+            float resval = 2.0f/(exp(val) + 1) - 1;
+            
+            // ((__global float*)self)[ q * result.step + w + result.start ] = resval;
+            dot += resval * ((__global float*)self)[ q + dotmatrix.start ];     
+            //} // for w
+       
+    } // for q 
     
     
-    return;
+    
+    return dot;
 } // gemmFloatDirDirDir
 
 void
-activateOutput( __local void * self, clMat /*float*/input )
+activateOutput( __global void * self, clMat /*float*/input )
 {
     int q, w;
 
     for ( q=0; q<input.rows; q++ )
         for ( w=0; w<input.cols; w++ ) {
-            float val = ((__local float*)self)[ q * input.step + w + input.start ];
+            float val = ((__global float*)self)[ q * input.step + w + input.start ];
             float result = 2.0f/(exp(val) + 1) - 1;
-            ((__local float*)self)[ q * input.step + w + input.start ] = result;
+            ((__global float*)self)[ q * input.step + w + input.start ] = result;
         }
 
     return;
@@ -191,7 +201,7 @@ activateOutput( __local void * self, clMat /*float*/input )
 
 
 float
-GetValueFloat( __local void * self, clMat /*float*/smat, int row, int col )
+GetValueFloat( __global void * self, clMat /*float*/smat, int row, int col )
 {
     // assert(self);
     // assert(row >= 0);
@@ -201,12 +211,12 @@ GetValueFloat( __local void * self, clMat /*float*/smat, int row, int col )
     // assert(smat.step >= smat.cols);
     // assert(smat.step % smat.cols == 0);
 
-    return ((__local float*)self)[ row * smat.step + col + smat.start ];
+    return ((__global float*)self)[ row * smat.step + col + smat.start ];
     // return -1231.;
 }
 
 uchar
-GetValueChar( __local void * self, clMat /* uint8_t*/ smat, int row, int col )
+GetValueChar( __global void * self, clMat /* uint8_t*/ smat, int row, int col )
 {
     // assert(self);
     // assert(row >= 0);
@@ -215,12 +225,12 @@ GetValueChar( __local void * self, clMat /* uint8_t*/ smat, int row, int col )
     // assert(col < smat.cols);
     // assert(smat.step >= smat.cols);
     
-    return ((__local uchar*)self)[ row * smat.step + col + smat.start ];
+    return ((__global uchar*)self)[ row * smat.step + col + smat.start ];
     // return -1231.;
 }
 
 void
-SetValueFloat( __local void * self, clMat /*float*/ smat, int row, int col, float value )
+SetValueFloat( __global void * self, clMat /*float*/ smat, int row, int col, float value )
 {
     // assert(self);
     // assert(row >= 0);
@@ -230,12 +240,12 @@ SetValueFloat( __local void * self, clMat /*float*/ smat, int row, int col, floa
     // assert(smat.step >= smat.cols);
     // assert(smat.step % smat.cols == 0);
 
-    ((__local float*)self)[ row * smat.step + col + smat.start ] = value;
+    ((__global float*)self)[ row * smat.step + col + smat.start ] = value;
     return;    
 }
 
 void
-SetValueChar( __local void * self, clMat /*float*/ smat, int row, int col, uchar value )
+SetValueChar( __global void * self, clMat /*float*/ smat, int row, int col, uchar value )
 {
     // assert(self);
     // assert(row >= 0);
@@ -245,13 +255,13 @@ SetValueChar( __local void * self, clMat /*float*/ smat, int row, int col, uchar
     // assert(smat.step >= smat.cols);
     // assert(smat.step % smat.cols == 0);
 
-    ((__local uchar*)self)[ row * smat.step + col + smat.start ] = value;
+    ((__global uchar*)self)[ row * smat.step + col + smat.start ] = value;
     return;    
 }
 
 
 
-float dotProductDirDir( __local void * self, clMat /*float*/A, clMat /*float*/B )
+float dotProductDirDir( __global void * self, clMat /*float*/A, clMat /*float*/B )
 {
   // assert( A.cols == 1 );
   // assert( B.cols == 1 );
@@ -262,7 +272,7 @@ float dotProductDirDir( __local void * self, clMat /*float*/A, clMat /*float*/B 
 
   int q;
   for (q=0; q<A.rows; q++) {
-      float y = ((__local float*)self)[ q * A.step + A.start ] * ((__local float*)self)[ q * B.step + B.start ] - c;
+      float y = ((__global float*)self)[ q * A.step + A.start ] * ((__global float*)self)[ q * B.step + B.start ] - c;
       float t = result + y;
       c = (t - result) - y;
       result = t ;
@@ -271,7 +281,7 @@ float dotProductDirDir( __local void * self, clMat /*float*/A, clMat /*float*/B 
   return result;
 }
 
-float dotProductTransDir( __local void * self, clMat /*float*/A, clMat /*float*/B )
+float dotProductTransDir( __global void * self, clMat /*float*/A, clMat /*float*/B )
 {
   // assert( A.rows == 1 );
   // assert( B.cols == 1 );
@@ -282,7 +292,7 @@ float dotProductTransDir( __local void * self, clMat /*float*/A, clMat /*float*/
 
   int q;
   for (q=0; q<A.cols; q++) {
-      float y = ((__local float*)self)[ q + A.start ] * ((__local float*)self)[ q * B.step + B.start ] - c;
+      float y = ((__global float*)self)[ q + A.start ] * ((__global float*)self)[ q * B.step + B.start ] - c;
       float t = result + y;
       c = (t - result) - y;
       result = t ;
@@ -292,7 +302,7 @@ float dotProductTransDir( __local void * self, clMat /*float*/A, clMat /*float*/
 }
 
 normalization
-normalizeSample( __local void * self, clMat /*uint8_t*/  image ) // , clMat /*float*/ * result )
+normalizeSample( __global void * self, clMat /*uint8_t*/  image ) // , clMat /*float*/ * result )
 {
   // assert(result->cols == image.cols);
   // assert(result->rows == image.rows);
@@ -306,7 +316,7 @@ normalizeSample( __local void * self, clMat /*uint8_t*/  image ) // , clMat /*fl
     for ( q=0; q<image.rows; q++ )
         for ( w=0; w<image.cols; w++ )
         {
-	    uchar pixel = ((__local uchar*)self)[ q * image.step + w + image.start ];
+	    uchar pixel = ((__global uchar*)self)[ q * image.step + w + image.start ];
 	    minvalue = min( minvalue, pixel );
 	    maxvalue = max( maxvalue, pixel );
             if (precise) {
@@ -344,7 +354,7 @@ normalizeSample( __local void * self, clMat /*uint8_t*/  image ) // , clMat /*fl
 
 void
 generateResponseMap(
-    __local void * self,
+    __global void * self,
     const clMat /*uint8_t*/  image,
     const Point2i center,
     int mapSize, 
@@ -357,7 +367,7 @@ generateResponseMap(
     
     // temporary variables
 //    clVector /*cMat float*/ patches,
-    clVector /*cMat float*/ xOuts,
+//    clVector /*cMat float*/ xOuts,
 //    clVector /*cMat float*/ es,
     // result
     clMat /*float*/ result
@@ -394,14 +404,15 @@ generateResponseMap(
 
               normalization norm = normalizeSample( self, imagePatch );
 
-              clMat xOut = GetMatFromVector( self, xOuts, localid );
+              // clMat xOut = GetMatFromVector( self, xOuts, localid );
 
-              gemmFloatDirDirDir( self, wIn, imagePatch, -1.0f, bIn, -1.0f, norm, xOut );
+              float dot = gemmFloatDirDirDir( self, wIn, imagePatch, -1.0f, bIn, -1.0f, norm, wOut_tmp /*, xOut */);
 
-              activateOutput( self, xOut );              
+              // activateOutput( self, xOut );              
               
-              SetValueFloat( self, result, ncy, ncx, 1.0f/( 1.0f + exp(- dotProductTransDir( self, wOut_tmp, xOut) - bOut ) ) );
-
+              // SetValueFloat( self, result, ncy, ncx, 1.0f/( 1.0f + exp(- dotProductTransDir( self, wOut_tmp, xOut) - bOut ) ) );
+              SetValueFloat( self, result, ncy, ncx, 1.0f/( 1.0f + exp( - dot - bOut ) ) );
+              
             } // for gangsize
             //       } // for localid
     } // localid block
@@ -439,18 +450,20 @@ calculateMaps(
     int idx = get_group_id(0);
     int localid = get_local_id(0);
 
-    // Copying the calculation into the local memory
-    {        
-        __global int * glob = ((__global int*)(self + memory_segments[idx]));
-        __local  int * loc  = ((__local  int*) buffer);
+    __global void * glob = self + memory_segments[idx];    
+    
+    // // Copying the calculation into the local memory
+    // {        
+    //     __global int * glob = ((__global int*)(self + memory_segments[idx]));
+    //     __local  int * loc  = ((__local  int*) buffer);
 
-        int iter = 0;
-        for ( iter = 0; iter < (buffersize/4) / gangsize + 1; iter++ ) {         
-            int index = gangsize * iter + localid;
-            loc[index]=glob[index];        
-        }
-    }    
-    barrier(CLK_LOCAL_MEM_FENCE);
+    //     int iter = 0;
+    //     for ( iter = 0; iter < (buffersize/4) / gangsize + 1; iter++ ) {         
+    //         int index = gangsize * iter + localid;
+    //         loc[index]=glob[index];        
+    //     }
+    // }    
+    // barrier(CLK_LOCAL_MEM_FENCE);
 
     // Calculating    
     Point2i center;
@@ -458,14 +471,14 @@ calculateMaps(
     float shape_x;
     float shape_y;
     calcpackage package = packages[idx];
-    shape_x = GetValueFloat( buffer, package.input.shape, 2*idx, 0 );
-    shape_y = GetValueFloat( buffer, package.input.shape, 2*idx+1, 0 );
+    shape_x = GetValueFloat( glob, package.input.shape, 2*idx, 0 );
+    shape_y = GetValueFloat( glob, package.input.shape, 2*idx+1, 0 );
     
     center.x = cvRound(shape_x);
     center.y = cvRound(shape_y);
     
     generateResponseMap(
-        buffer,
+        glob,
         package.input.alignedImage,
         center,
         m_mapSize,
@@ -476,26 +489,26 @@ calculateMaps(
         
         // temporary
         // package.tmp.patches,
-        package.tmp.xOuts,
+        // package.tmp.xOuts,
         // package.tmp.es,
         // result
         package.output.responseMap );
 
-    barrier(CLK_LOCAL_MEM_FENCE);
-    // Copying back the result into the global memory
-    {
-        int start = package.output.responseMap.start;
-        int size  = package.output.responseMap.step * package.output.responseMap.rows;
+    // barrier(CLK_LOCAL_MEM_FENCE);
+    // // Copying back the result into the global memory
+    // {
+    //     int start = package.output.responseMap.start;
+    //     int size  = package.output.responseMap.step * package.output.responseMap.rows;
         
-        __global float * glob = ((__global float*)(self + memory_segments[idx]));
-        __local  float * loc  = ((__local  float*) buffer);
+    //     __global float * glob = ((__global float*)(self + memory_segments[idx]));
+    //     __local  float * loc  = ((__local  float*) buffer);
         
-        int iter = 0;
-        for ( iter = 0; iter < size / gangsize + 1; iter++ ) {         
-            int index = start + gangsize * iter + localid;
-            glob[index]=loc[index];        
-        }
-    }
+    //     int iter = 0;
+    //     for ( iter = 0; iter < size / gangsize + 1; iter++ ) {         
+    //         int index = start + gangsize * iter + localid;
+    //         glob[index]=loc[index];        
+    //     }
+    // }
     
     return;
 } // calculateMaps

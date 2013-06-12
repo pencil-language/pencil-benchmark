@@ -39,7 +39,7 @@ extern "C" {
     typedef struct {
         // temporaries
 //        clVector /* clMat[] */ patches;
-        clVector /* clMat[] */ xOuts;
+//        clVector /* clMat[] */ xOuts;
 //        clVector /* clMat[] */ es;        
     } calctemp; // struct
     
@@ -50,7 +50,7 @@ extern "C" {
             
     typedef struct {
         calcinput  input;
-        calctemp   tmp;
+        //      calctemp   tmp;
         calcoutput output;
     } calcpackage;
 

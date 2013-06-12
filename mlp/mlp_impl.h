@@ -13,7 +13,7 @@
 extern "C" {
 #endif // __cplusplus
 
-    const int gangsize = 128;
+    const int gangsize = 512;
     
     void calculateMaps( char * self, int memory_segments[], int m_visibleLandmarks_size, int m_mapSize, calcpackage inputs[] );
     
