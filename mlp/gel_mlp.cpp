@@ -25,10 +25,10 @@ int main()
     int64_t maxnetallocated = 0;
     int64_t maxgrossallocated = 0;
     
-    // int numberOfThreads =  tbb::tbb_thread::hardware_concurrency();
-    // PRINT(numberOfThreads);    
-    // tbb::task_scheduler_init init(numberOfThreads);
-tbb::task_scheduler_init init(1);
+    int numberOfThreads =  tbb::tbb_thread::hardware_concurrency();
+    PRINT(numberOfThreads);    
+    tbb::task_scheduler_init init(numberOfThreads);
+    //tbb::task_scheduler_init init(1);
 
     for ( conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id);
           ((conductor.id != -1) && (conductor.id != processed_frames));
@@ -56,7 +56,7 @@ tbb::task_scheduler_init init(1);
             // testing the output
             for (int q=0; q<conductor.hack.m_visibleLandmarks_size; q++)
             {
-                PRINT(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ));
+                //PRINT(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ));
                 if (cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) > 0.0001) throw std::runtime_error("conductor.hack.responseMaps[q] - calculatedResults[q] ) < 0.0001 failed");
             }
         }
