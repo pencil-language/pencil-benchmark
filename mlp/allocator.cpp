@@ -44,7 +44,11 @@ CreateMatChar /*uint8_t*/ ( carp::memory::allocator & pool, int rows, int cols )
     // assert(result.data);
     result.rows  = rows;
     result.cols  = cols;
-    result.step  = cols;
+    //int r = cols % (4 * 32);
+    //int step = cols - r + 4 * 32 + 4;
+    int step = cols;
+    
+    result.step  = step;
     result.start = pool.allocate( carp::memory::allocator::sizer(rows * cols, uint8_t()));
 
     return result;

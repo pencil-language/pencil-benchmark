@@ -19,7 +19,7 @@
 #include "memory.hpp"
 #include "bench_mlp.hpp"
 
-const int processed_frames = 10;
+const int processed_frames = 100;
 
 int main()
 {
@@ -74,8 +74,8 @@ int main()
                 conductor.hack.m_visibleLandmarks_size,
                 conductor.hack.m_mapSize,
                 clCalcpackages.cl(),
-                1 * KiB, //local_memsize - 1*KiB,
-                carp::opencl::buffer(2 * KiB) //carp::opencl::buffer(local_memsize)
+                local_memsize - 1*KiB,
+                carp::opencl::buffer(local_memsize)
                 ).groupsize( carp::make_vector<size_t>(gangsize),carp::make_vector<size_t>(gangsize*conductor.hack.m_visibleLandmarks_size));
             auto end = std::chrono::high_resolution_clock::now();
             elapsed_time += microseconds(end - start);
