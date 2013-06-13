@@ -13,8 +13,6 @@
 extern "C" {
 #endif // __cplusplus
 
-    const int gangsize = 640;
-    
     void calculateMaps( char * self, int memory_segments[], int m_visibleLandmarks_size, int m_mapSize, calcpackage inputs[] );
     
     void printMatFloat( void * self, clMat /*float*/mat, char * name );

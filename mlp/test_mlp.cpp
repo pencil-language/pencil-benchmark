@@ -19,6 +19,7 @@
 #include "bench_mlp.hpp"
 
 const int processed_frames = 100;
+const int local_memsize = 48 * KiB;
 
 int main()
 {

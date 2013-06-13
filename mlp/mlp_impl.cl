@@ -49,7 +49,6 @@ typedef struct {
 
 __constant const int MAX_INT = ~(1 << (8*sizeof(int) - 1));
 // __constant const int false = (1!=1);
-__constant const int gangsize = 640;
 __constant const bool precise = false;
 
 clMat /*uint8_t*/ 
@@ -222,7 +221,8 @@ generateResponseMap(
     clMat /*float*/ result
     )
 {
-    
+
+    int gangsize = get_local_size(0);    
   // assert( result.rows == 2 * mapSize + 1 );
   // assert( result.cols == 2 * mapSize + 1 );
 
@@ -287,6 +287,7 @@ calculateMaps(
 {
 
     int idx = get_group_id(0);
+    int gangsize = get_local_size(0);    
     int localid = get_local_id(0);
 
     // Copying the calculation into the local memory
@@ -296,6 +297,7 @@ calculateMaps(
 
         for ( int iter = 0; iter < (buffersize/4) / gangsize + 1; iter++ ) {         
             int index = gangsize * iter + localid;
+            if (index > buffersize) continue;            
             loc[index]=glob[index];        
         }
     }    
@@ -339,6 +341,7 @@ calculateMaps(
         
         for ( int iter = 0; iter < size / gangsize + 1; iter++ ) {         
             int index = start + gangsize * iter + localid;
+            if (index > start + size) continue;            
             glob[index]=loc[index];        
         }
     }

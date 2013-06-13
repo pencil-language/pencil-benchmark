@@ -26,7 +26,7 @@ clMat /*float*/CreateMatFloat( carp::memory::allocator & pool, int rows, int col
 
 clMat /*uint8_t*/CreateMatChar /*uint8_t*/ ( carp::memory::allocator & pool, int rows, int cols );
 
-clVector createVectorMatFloat( carp::memory::allocator & pool, int size, int rows, int cols );    
+clVector createVectorMatFloat( carp::memory::allocator & pool, int size, int rows, int cols );
 
 void freeMatFloat( carp::memory::allocator & pool, clMat /*float*/* mat );
 
