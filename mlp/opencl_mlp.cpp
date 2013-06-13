@@ -23,8 +23,8 @@ const int processed_frames = 100;
 //const int local_memsize = 37 * KiB;
 // const int local_memsize = 48 * KiB;
 const int local_memsize = 21 * KiB;
-const int gangsize = 640;
-
+// const int gangsize = 640;
+const int gangsize = 320;
 
 int main()
 {
