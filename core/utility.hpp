@@ -12,7 +12,9 @@ const int KiB=1024;
 const int MiB=1024*KiB;
 const int GiB=1024*KiB;
 
-const int local_memsize = 48 * KiB;
+//const int local_memsize = 37 * KiB;
+ const int local_memsize = 48 * KiB;
+// const int local_memsize = 22 * KiB;
 
 #define PRINT(var)  std::cout << "debug: " << BOOST_PP_STRINGIZE(var) << " = " << var << std::endl
 
@@ -55,12 +57,11 @@ namespace carp {
 
     template<class T0, class... Types>
     std::vector<T0>
-    make_vector( T0  t0, Types... inputs )
+    make_vector( Types... inputs )
     {
         std::vector<T0> result;
-        result.push_back(t0);        
         bool err[] = { ::push( result, static_cast<T0>(inputs) )... };
-        return result;        
+        return result;
     } // make_vector
 
 

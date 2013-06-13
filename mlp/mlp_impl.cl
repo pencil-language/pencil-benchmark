@@ -21,9 +21,7 @@ typedef struct {
     int m_patchSize;
     clMat /* uint8_t */ alignedImage;
     clMat /* int32_t */ shape;        
-//        clMat /* float */ m_wIn;
     clMat /* float */ m_wOut;
-//        clMat /* float */ m_U;
     clMat /* float */ wIn;
     clMat /* float */ bIn;        
 } calcinput; // struct 
@@ -34,20 +32,12 @@ typedef struct {
 } Point2i; // struct Point2i
 
 typedef struct {
-    // temporaries
-//    clVector /* clMat[] */ patches;
-    clVector /* clMat[] */ xOuts;
-//    clVector /* clMat[] */ es;        
-} calctemp; // struct
-    
-typedef struct {
     // results
     clMat /*float*/ responseMap;        
 } calcoutput;
             
 typedef struct {
     calcinput  input;
-    calctemp   tmp;
     calcoutput output;
 } calcpackage;
 
@@ -59,30 +49,8 @@ typedef struct {
 
 __constant const int MAX_INT = ~(1 << (8*sizeof(int) - 1));
 // __constant const int false = (1!=1);
-__constant const int gangsize = 128;
+__constant const int gangsize = 640;
 __constant const bool precise = false;
-
-
-clMat GetMatFromVector( __local void * self, clVector /*clMat*/ vec, int idx )
-{
-//    assert(self);
-//    assert(idx>=0);
-//    assert(idx<vec.size);
-    
-    return ((__local clMat*)self)[ vec.start + vec.step * idx ];
-} // GetMatFromVector
-
-
-
-void SetMatToVector( __local void * self, clVector /*clMat*/ vec, int idx, clMat val )
-{
-//    assert(self);
-//    assert(idx>=0);
-//    assert(idx<vec.size);
-    
-    ((__local clMat*)self)[ vec.start + vec.step * idx ] = val;
-    return;
-} // GetMatFromVector
 
 clMat /*uint8_t*/ 
 GetBlockChar( __local void * self, clMat /*uint8_t*/  smat, int row_from, int row_to, int col_from, int col_to )
@@ -123,7 +91,7 @@ GetBlockFloat( __local void * self, clMat /*float*/smat, int row_from, int row_t
 }
 
 // returns alpha*A*B + beta * C
-void 
+float
 gemmFloatDirDirDir(
     __local void * self,
     clMat /*float*/A,
@@ -132,7 +100,8 @@ gemmFloatDirDirDir(
     clMat /*float*/C,
     float beta,
     normalization norm,
-    clMat /*float*/ result
+    clMat /* float */ dotmatrix//,
+//    clMat /*float*/ result
     )
 {
     // assert(A.rows == C.rows);
@@ -140,55 +109,31 @@ gemmFloatDirDirDir(
     // assert(B.cols == C.cols);
     // assert(C.rows == result.rows);
     // assert(C.cols == result.cols);
-
-    int q, w, e;
+    // assert(C.cols == 1 );
+    
     float sum=0.0f;
     float c=0.0f;
-
-    for ( q=0; q<C.rows; q++ )
-        for ( w=0; w<C.cols; w++ )
-        {	    
-            sum = 0;
-            for ( e=0; e<A.cols; e++ )
-            {              
-                float a = ((__local float*)self)[ q * A.step + e + A.start ];
-                int b_row = e / B.rows;                    
-                int b_col = e % B.cols;                    
-                float b = ((__local uchar*)self)[ b_row * B.step + b_col + B.start ];
-                if (precise) {
-                    float y = a * (norm.shift + norm.stride * b) - c;
-                    float t = sum + y;
-                    c = (t - sum) - y;
-                    sum = t;
-                }
-                else // NOT precise
-                {
-                    sum += a * (norm.shift + norm.stride * b);
-                }
-            }
-                
-            ((__local float*)self)[ q * result.step + w + result.start ] = alpha * sum  + beta * ((__local float*)self)[ q * C.step + w + C.start ];
+    float dot = 0.0f;
+    
+    for ( int q=0; q<C.rows; q++ ) {
+        sum = 0;
+        for ( int e=0; e<A.cols; e++ )
+        {              
+            float a = ((__local float*)self)[ q * A.step + e + A.start ];
+            int b_row = e / B.rows;                    
+            int b_col = e % B.cols;                    
+            float b = ((__local uchar*)self)[ b_row * B.step + b_col + B.start ];
+            sum += a * (norm.shift + norm.stride * b);
         }
+        
+        float val    = alpha * sum  + beta * ((__local float*)self)[ q * C.step /* + w==0*/ + C.start ];
+        float resval = 2.0f/(exp(val) + 1) - 1;
+        
+        dot += resval * ((__local float*)self)[ q + dotmatrix.start ];     
+    } // for q 
     
-    
-    return;
+    return dot;
 } // gemmFloatDirDirDir
-
-void
-activateOutput( __local void * self, clMat /*float*/input )
-{
-    int q, w;
-
-    for ( q=0; q<input.rows; q++ )
-        for ( w=0; w<input.cols; w++ ) {
-            float val = ((__local float*)self)[ q * input.step + w + input.start ];
-            float result = 2.0f/(exp(val) + 1) - 1;
-            ((__local float*)self)[ q * input.step + w + input.start ] = result;
-        }
-
-    return;
-} // activateOutput
-
 
 float
 GetValueFloat( __local void * self, clMat /*float*/smat, int row, int col )
@@ -202,20 +147,6 @@ GetValueFloat( __local void * self, clMat /*float*/smat, int row, int col )
     // assert(smat.step % smat.cols == 0);
 
     return ((__local float*)self)[ row * smat.step + col + smat.start ];
-    // return -1231.;
-}
-
-uchar
-GetValueChar( __local void * self, clMat /* uint8_t*/ smat, int row, int col )
-{
-    // assert(self);
-    // assert(row >= 0);
-    // assert(col >= 0);
-    // assert(row < smat.rows);
-    // assert(col < smat.cols);
-    // assert(smat.step >= smat.cols);
-    
-    return ((__local uchar*)self)[ row * smat.step + col + smat.start ];
     // return -1231.;
 }
 
@@ -234,91 +165,23 @@ SetValueFloat( __local void * self, clMat /*float*/ smat, int row, int col, floa
     return;    
 }
 
-void
-SetValueChar( __local void * self, clMat /*float*/ smat, int row, int col, uchar value )
-{
-    // assert(self);
-    // assert(row >= 0);
-    // assert(col >= 0);
-    // assert(row < smat.rows);
-    // assert(col < smat.cols);
-    // assert(smat.step >= smat.cols);
-    // assert(smat.step % smat.cols == 0);
-
-    ((__local uchar*)self)[ row * smat.step + col + smat.start ] = value;
-    return;    
-}
-
-
-
-float dotProductDirDir( __local void * self, clMat /*float*/A, clMat /*float*/B )
-{
-  // assert( A.cols == 1 );
-  // assert( B.cols == 1 );
-  // assert( A.rows == B.rows );
-
-  float result = 0.0f;
-  float c = 0.0f;  
-
-  int q;
-  for (q=0; q<A.rows; q++) {
-      float y = ((__local float*)self)[ q * A.step + A.start ] * ((__local float*)self)[ q * B.step + B.start ] - c;
-      float t = result + y;
-      c = (t - result) - y;
-      result = t ;
-  }
-  
-  return result;
-}
-
-float dotProductTransDir( __local void * self, clMat /*float*/A, clMat /*float*/B )
-{
-  // assert( A.rows == 1 );
-  // assert( B.cols == 1 );
-  // assert( A.cols == B.rows );
-
-  float result = 0.0f;
-  float c = 0.0f;  
-
-  int q;
-  for (q=0; q<A.cols; q++) {
-      float y = ((__local float*)self)[ q + A.start ] * ((__local float*)self)[ q * B.step + B.start ] - c;
-      float t = result + y;
-      c = (t - result) - y;
-      result = t ;
-  }
-  
-  return result;
-}
-
 normalization
 normalizeSample( __local void * self, clMat /*uint8_t*/  image ) // , clMat /*float*/ * result )
 {
   // assert(result->cols == image.cols);
   // assert(result->rows == image.rows);
 
-    int q,w;
     float sum=0.0f;
-    float c = 0.0f; // kahan summation
     uchar minvalue = 255;
     uchar maxvalue = 0;
     
-    for ( q=0; q<image.rows; q++ )
-        for ( w=0; w<image.cols; w++ )
+    for ( int q=0; q<image.rows; q++ )
+        for ( int w=0; w<image.cols; w++ )
         {
 	    uchar pixel = ((__local uchar*)self)[ q * image.step + w + image.start ];
 	    minvalue = min( minvalue, pixel );
 	    maxvalue = max( maxvalue, pixel );
-            if (precise) {
-                float y = pixel - c;
-                float t = sum + y;
-                c = (t - sum) - y;        
-                sum = t;
-            }
-            else
-            {                
-                sum += pixel;                
-            }            
+            sum += pixel;                
         }
     
     normalization nresult;
@@ -355,10 +218,6 @@ generateResponseMap(
     clMat wIn,
     clMat bIn,
     
-    // temporary variables
-//    clVector /*cMat float*/ patches,
-    clVector /*cMat float*/ xOuts,
-//    clVector /*cMat float*/ es,
     // result
     clMat /*float*/ result
     )
@@ -376,12 +235,11 @@ generateResponseMap(
         int localid = get_local_id(0);
 //        for ( localid=0; localid<gangsize; localid++ ) {
           
-            int work = 0;      
             int worksize = (2 * mapSize + 1) * (2 * mapSize + 1);
           
             float bOut = GetValueFloat( self, m_wOut, 0, m_wOut.cols - 1 );
             
-            for ( work=0; work < (worksize / gangsize) + 1; work++ )
+            for ( int work=0; work < (worksize / gangsize) + 1; work++ )
             {
               int index = work * gangsize + localid;
               if (index>=worksize) continue;
@@ -394,22 +252,14 @@ generateResponseMap(
 
               normalization norm = normalizeSample( self, imagePatch );
 
-              clMat xOut = GetMatFromVector( self, xOuts, localid );
+              float dot = gemmFloatDirDirDir( self, wIn, imagePatch, -1.0f, bIn, -1.0f, norm, wOut_tmp /*, xOut */);
 
-              gemmFloatDirDirDir( self, wIn, imagePatch, -1.0f, bIn, -1.0f, norm, xOut );
-
-              activateOutput( self, xOut );              
+              SetValueFloat( self, result, ncy, ncx, 1.0f/( 1.0f + exp( - dot - bOut ) ) );
               
-              SetValueFloat( self, result, ncy, ncx, 1.0f/( 1.0f + exp(- dotProductTransDir( self, wOut_tmp, xOut) - bOut ) ) );
-
             } // for gangsize
             //       } // for localid
     } // localid block
   
-//  // assert(false);
-  
-  // freeMatFloat( self, allocator, &wIn);
-  // end of classic impl
     return;
 } // generateResponseMap
 
@@ -444,20 +294,21 @@ calculateMaps(
         __global int * glob = ((__global int*)(self + memory_segments[idx]));
         __local  int * loc  = ((__local  int*) buffer);
 
-        int iter = 0;
-        for ( iter = 0; iter < (buffersize/4) / gangsize + 1; iter++ ) {         
+        for ( int iter = 0; iter < (buffersize/4) / gangsize + 1; iter++ ) {         
             int index = gangsize * iter + localid;
             loc[index]=glob[index];        
         }
     }    
     barrier(CLK_LOCAL_MEM_FENCE);
 
+    calcpackage package = packages[idx];
+    
     // Calculating    
     Point2i center;
     
     float shape_x;
     float shape_y;
-    calcpackage package = packages[idx];
+    
     shape_x = GetValueFloat( buffer, package.input.shape, 2*idx, 0 );
     shape_y = GetValueFloat( buffer, package.input.shape, 2*idx+1, 0 );
     
@@ -474,10 +325,6 @@ calculateMaps(
         package.input.wIn,
         package.input.bIn,
         
-        // temporary
-        // package.tmp.patches,
-        package.tmp.xOuts,
-        // package.tmp.es,
         // result
         package.output.responseMap );
 
@@ -490,8 +337,7 @@ calculateMaps(
         __global float * glob = ((__global float*)(self + memory_segments[idx]));
         __local  float * loc  = ((__local  float*) buffer);
         
-        int iter = 0;
-        for ( iter = 0; iter < size / gangsize + 1; iter++ ) {         
+        for ( int iter = 0; iter < size / gangsize + 1; iter++ ) {         
             int index = start + gangsize * iter + localid;
             glob[index]=loc[index];        
         }
