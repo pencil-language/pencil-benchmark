@@ -44,7 +44,7 @@ int main()
           conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id)
         )
     {
-        PRINT(conductor.id);
+        // PRINT(conductor.id);
         conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.hack);
 
         int groupsize = conductor.hack.m_visibleLandmarks_size;
@@ -79,7 +79,7 @@ int main()
                 conductor.hack.m_visibleLandmarks_size,
                 conductor.hack.m_mapSize,
                 clCalcpackages.cl(),
-                local_memsize - gangsize * 4,
+                local_memsize,
                 carp::opencl::buffer(local_memsize)
                 ).groupsize( carp::make_vector<size_t>(gangsize),carp::make_vector<size_t>(gangsize*conductor.hack.m_visibleLandmarks_size));
             auto end = std::chrono::high_resolution_clock::now();

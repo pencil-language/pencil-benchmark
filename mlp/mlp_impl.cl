@@ -43,7 +43,7 @@ typedef struct {
 
 typedef struct {
     float shift;
-    float stride;        
+    float stride;
 } normalization;
     
 
@@ -295,17 +295,17 @@ calculateMaps(
         __global int * glob = ((__global int*)(self + memory_segments[idx]));
         __local  int * loc  = ((__local  int*) buffer);
 
-        for ( int iter = 0; iter < (buffersize/4) / gangsize + 1; iter++ ) {         
+        for ( int iter = 0; iter < (buffersize/4) / gangsize + 1; iter++ ) {
             int index = gangsize * iter + localid;
-            if (index > buffersize) continue;            
-            loc[index]=glob[index];        
+            if (index >= buffersize/4) continue;
+            loc[index]=glob[index];
         }
-    }    
+    }
     barrier(CLK_LOCAL_MEM_FENCE);
 
     calcpackage package = packages[idx];
     
-    // Calculating    
+    // Calculating
     Point2i center;
     
     float shape_x;
@@ -341,7 +341,7 @@ calculateMaps(
         
         for ( int iter = 0; iter < size / gangsize + 1; iter++ ) {         
             int index = start + gangsize * iter + localid;
-            if (index > start + size) continue;            
+            if (index >= start + size) continue;            
             glob[index]=loc[index];        
         }
     }
