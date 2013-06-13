@@ -13,7 +13,8 @@ const int MiB=1024*KiB;
 const int GiB=1024*KiB;
 
 //const int local_memsize = 37 * KiB;
-const int local_memsize = 22 * KiB;
+ const int local_memsize = 48 * KiB;
+// const int local_memsize = 22 * KiB;
 
 #define PRINT(var)  std::cout << "debug: " << BOOST_PP_STRINGIZE(var) << " = " << var << std::endl
 

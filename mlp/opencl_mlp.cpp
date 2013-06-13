@@ -74,7 +74,7 @@ int main()
                 conductor.hack.m_visibleLandmarks_size,
                 conductor.hack.m_mapSize,
                 clCalcpackages.cl(),
-                local_memsize - 1*KiB,
+                local_memsize - gangsize * 4,
                 carp::opencl::buffer(local_memsize)
                 ).groupsize( carp::make_vector<size_t>(gangsize),carp::make_vector<size_t>(gangsize*conductor.hack.m_visibleLandmarks_size));
             auto end = std::chrono::high_resolution_clock::now();
