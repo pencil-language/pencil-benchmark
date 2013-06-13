@@ -170,9 +170,9 @@ normalizeSample( __local void * self, clMat /*uint8_t*/  image ) // , clMat /*fl
   // assert(result->cols == image.cols);
   // assert(result->rows == image.rows);
 
-    float4 sum4      = (float4)(0.0f, 0.0f, 0.0f, 0.0f);
-    uchar4 minvalue4 = (uchar4)(255, 255, 255, 255);
-    uchar4 maxvalue4 = (uchar4)(0, 0, 0, 0);
+    float8 sum8      = (float8)(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+    uchar8 minvalue8 = (uchar8)(255, 255, 255, 255, 255, 255, 255, 255);
+    uchar8 maxvalue8 = (uchar8)(0, 0, 0, 0, 0, 0, 0, 0);
     float sum      = 0.0f;
     uchar minvalue = 255;
     uchar maxvalue = 0;
@@ -181,8 +181,8 @@ normalizeSample( __local void * self, clMat /*uint8_t*/  image ) // , clMat /*fl
         int start_index = image.start + q * image.step;
         int end_index = image.start + q * image.step + image.cols;
 
-        int start_aligned = start_index - start_index % 4 + 4;
-        int end_aligned = end_index - end_index % 4;
+        int start_aligned = start_index - start_index % 8 + 8;
+        int end_aligned = end_index - end_index % 8;
         
         for ( int index = start_index; index < start_aligned; index++ )
         {
@@ -192,12 +192,12 @@ normalizeSample( __local void * self, clMat /*uint8_t*/  image ) // , clMat /*fl
             sum += pixel;            
         }
 
-        for ( int index = start_aligned / 4; index < end_aligned / 4; index ++ )
+        for ( int index = start_aligned / 8; index < end_aligned / 8; index ++ )
         {
-            uchar4 pixel4 = ((__local uchar4*)self)[index];
-            minvalue4 = min( minvalue4, pixel4 );
-            maxvalue4 = max( maxvalue4, pixel4 );
-            sum4 += convert_float4(pixel4);
+            uchar8 pixel8 = ((__local uchar8*)self)[index];
+            minvalue8 = min( minvalue8, pixel8 );
+            maxvalue8 = max( maxvalue8, pixel8 );
+            sum8 += convert_float8(pixel8);
         }
                 
         for ( int index = end_aligned; index < end_index; index++ )
@@ -205,21 +205,21 @@ normalizeSample( __local void * self, clMat /*uint8_t*/  image ) // , clMat /*fl
             uchar pixel = ((__local uchar*)self)[index];
             minvalue = min( minvalue, pixel );
             maxvalue = max( maxvalue, pixel );
-            sum += pixel;            
+            sum += pixel;
         }
     } // for q
 
-    sum += sum4.x + sum4.y + sum4.z + sum4.w;
+    sum += sum8.s0 + sum8.s1 + sum8.s2 + sum8.s3 + sum8.s4 + sum8.s5 + sum8.s6 + sum8.s7;
     
-    minvalue = min( minvalue4.x, minvalue );
-    minvalue = min( minvalue4.y, minvalue );
-    minvalue = min( minvalue4.z, minvalue );
-    minvalue = min( minvalue4.w, minvalue );
+    uchar4 min_a = min( minvalue8.s0123, minvalue8.s4567 );
+    uchar2 min_b = min( min_a.s01, min_a.s23 );    
+    uchar  min_c = min( min_b.s0, min_b.s1 );
+    minvalue = min( min_c, minvalue );    
     
-    maxvalue = max( maxvalue4.x, maxvalue );
-    maxvalue = max( maxvalue4.y, maxvalue );
-    maxvalue = max( maxvalue4.z, maxvalue );
-    maxvalue = max( maxvalue4.w, maxvalue );
+    uchar4 max_a = max( maxvalue8.s0123, maxvalue8.s4567 );
+    uchar2 max_b = max( max_a.s01, max_a.s23 );    
+    uchar  max_c = max( max_b.s0, max_b.s1 );
+    maxvalue = max( max_c, maxvalue );    
         
     normalization nresult;
      
@@ -239,8 +239,6 @@ normalizeSample( __local void * self, clMat /*uint8_t*/  image ) // , clMat /*fl
     
     return nresult;
 } // normalizeSample
-
-
 
 void
 generateResponseMap(
