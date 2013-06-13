@@ -43,13 +43,12 @@ typedef struct {
 
 typedef struct {
     float shift;
-    float stride;        
+    float stride;
 } normalization;
     
 
 __constant const int MAX_INT = ~(1 << (8*sizeof(int) - 1));
 // __constant const int false = (1!=1);
-__constant const int gangsize = 640;
 __constant const bool precise = false;
 
 clMat /*uint8_t*/ 
@@ -222,7 +221,8 @@ generateResponseMap(
     clMat /*float*/ result
     )
 {
-    
+
+    int gangsize = get_local_size(0);    
   // assert( result.rows == 2 * mapSize + 1 );
   // assert( result.cols == 2 * mapSize + 1 );
 
@@ -287,6 +287,7 @@ calculateMaps(
 {
 
     int idx = get_group_id(0);
+    int gangsize = get_local_size(0);    
     int localid = get_local_id(0);
 
     // Copying the calculation into the local memory
@@ -294,16 +295,17 @@ calculateMaps(
         __global int * glob = ((__global int*)(self + memory_segments[idx]));
         __local  int * loc  = ((__local  int*) buffer);
 
-        for ( int iter = 0; iter < (buffersize/4) / gangsize + 1; iter++ ) {         
+        for ( int iter = 0; iter < (buffersize/4) / gangsize + 1; iter++ ) {
             int index = gangsize * iter + localid;
-            loc[index]=glob[index];        
+            if (index >= buffersize/4) continue;
+            loc[index]=glob[index];
         }
-    }    
+    }
     barrier(CLK_LOCAL_MEM_FENCE);
 
     calcpackage package = packages[idx];
     
-    // Calculating    
+    // Calculating
     Point2i center;
     
     float shape_x;
@@ -339,6 +341,7 @@ calculateMaps(
         
         for ( int iter = 0; iter < size / gangsize + 1; iter++ ) {         
             int index = start + gangsize * iter + localid;
+            if (index >= start + size) continue;            
             glob[index]=loc[index];        
         }
     }

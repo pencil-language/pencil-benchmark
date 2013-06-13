@@ -26,8 +26,11 @@ CreateMatFloat( carp::memory::allocator & pool, int rows, int cols )
     // assert(result.data);
     result.rows  = rows;
     result.cols  = cols;
-    result.step  = cols;
-    result.start = pool.allocate(carp::memory::allocator::sizer(rows * cols, float()));
+    // int r = cols % 32;    
+    // int step = cols - r + 32 + 1;
+    int step = cols;    
+    result.step  = step;
+    result.start = pool.allocate(carp::memory::allocator::sizer(rows * step, float()));
 
     return result;
 } // CreateMatFloat
@@ -44,12 +47,11 @@ CreateMatChar /*uint8_t*/ ( carp::memory::allocator & pool, int rows, int cols )
     // assert(result.data);
     result.rows  = rows;
     result.cols  = cols;
-    //int r = cols % (4 * 32);
-    //int step = cols - r + 4 * 32 + 4;
-    int step = cols;
-    
+    // int r = cols % (4 * 32);
+    // int step = cols - r + 4 * 32 + 4;
+    int step = cols;    
     result.step  = step;
-    result.start = pool.allocate( carp::memory::allocator::sizer(rows * cols, uint8_t()));
+    result.start = pool.allocate( carp::memory::allocator::sizer(rows * step, uint8_t()));
 
     return result;
 }

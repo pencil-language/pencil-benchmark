@@ -12,6 +12,7 @@
 #include "errors.hpp"
 #include "memory.hpp"
 
+const int local_memsize = 48 * KiB;
 const int numel = local_memsize / sizeof(float);
 const bool debug = false;
 
