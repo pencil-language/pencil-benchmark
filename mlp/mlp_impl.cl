@@ -170,21 +170,59 @@ normalizeSample( __local void * self, clMat /*uint8_t*/  image ) // , clMat /*fl
   // assert(result->cols == image.cols);
   // assert(result->rows == image.rows);
 
-    float sum=0.0f;
+    float4 sum4      = (float4)(0.0f, 0.0f, 0.0f, 0.0f);
+    uchar4 minvalue4 = (uchar4)(255, 255, 255, 255);
+    uchar4 maxvalue4 = (uchar4)(0, 0, 0, 0);
+    float sum      = 0.0f;
     uchar minvalue = 255;
     uchar maxvalue = 0;
-    
-    for ( int q=0; q<image.rows; q++ )
-        for ( int w=0; w<image.cols; w++ )
+
+    for ( int q=0; q<image.rows; q++ ) {
+        int start_index = image.start + q * image.step;
+        int end_index = image.start + q * image.step + image.cols;
+
+        int start_aligned = start_index - start_index % 4 + 4;
+        int end_aligned = end_index - end_index % 4;
+        
+        for ( int index = start_index; index < start_aligned; index++ )
         {
-	    uchar pixel = ((__local uchar*)self)[ q * image.step + w + image.start ];
-	    minvalue = min( minvalue, pixel );
-	    maxvalue = max( maxvalue, pixel );
-            sum += pixel;                
+            uchar pixel = ((__local uchar*)self)[index];
+            minvalue = min( minvalue, pixel );
+            maxvalue = max( maxvalue, pixel );
+            sum += pixel;            
         }
+
+        for ( int index = start_aligned / 4; index < end_aligned / 4; index ++ )
+        {
+            uchar4 pixel4 = ((__local uchar4*)self)[index];
+            minvalue4 = min( minvalue4, pixel4 );
+            maxvalue4 = max( maxvalue4, pixel4 );
+            sum4 += convert_float4(pixel4);
+        }
+                
+        for ( int index = end_aligned; index < end_index; index++ )
+        {
+            uchar pixel = ((__local uchar*)self)[index];
+            minvalue = min( minvalue, pixel );
+            maxvalue = max( maxvalue, pixel );
+            sum += pixel;            
+        }
+    } // for q
+
+    sum += sum4.x + sum4.y + sum4.z + sum4.w;
     
+    minvalue = min( minvalue4.x, minvalue );
+    minvalue = min( minvalue4.y, minvalue );
+    minvalue = min( minvalue4.z, minvalue );
+    minvalue = min( minvalue4.w, minvalue );
+    
+    maxvalue = max( maxvalue4.x, maxvalue );
+    maxvalue = max( maxvalue4.y, maxvalue );
+    maxvalue = max( maxvalue4.z, maxvalue );
+    maxvalue = max( maxvalue4.w, maxvalue );
+        
     normalization nresult;
-    
+     
     float sampleMean = sum / (image.rows * image.cols);
     float sampleMin  = minvalue; 
     float sampleMax  = maxvalue;

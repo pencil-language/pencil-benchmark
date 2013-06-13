@@ -59,7 +59,7 @@ int main()
     PRINT("benchmarking");
     opt_t opt;
     
-    for ( int gangsize = 32; gangsize<=640; gangsize+=32 )
+    for ( int gangsize = 32; gangsize<=512 /*640*/; gangsize+=32 )
     {
         PRINT(gangsize);
         long int elapsed_time = 0;
