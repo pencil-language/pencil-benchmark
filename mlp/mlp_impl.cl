@@ -110,17 +110,16 @@ gemmFloatDirDirDir(
     // assert(C.cols == result.cols);
     // assert(C.cols == 1 );
     
-    float sum=0.0f;
-    float c=0.0f;
     float dot = 0.0f;
     
     for ( int q=0; q<C.rows; q++ ) {
-        sum = 0;
-        for ( int e=0; e<A.cols; e++ )
+        float sum = 0.0f;
+
+        for ( int e=0; e < A.cols; e++ )
         {              
-            float a = ((__local float*)self)[ q * A.step + e + A.start ];
-            int b_row = e / B.rows;                    
-            int b_col = e % B.cols;                    
+            float a = ((__local float*)self)[q * A.step + e + A.start];
+            int b_row = e / B.rows;
+            int b_col = e % B.cols;
             float b = ((__local uchar*)self)[ b_row * B.step + b_col + B.start ];
             sum += a * (norm.shift + norm.stride * b);
         }
@@ -170,9 +169,9 @@ normalizeSample( __local void * self, clMat /*uint8_t*/  image ) // , clMat /*fl
   // assert(result->cols == image.cols);
   // assert(result->rows == image.rows);
 
-    float4 sum4      = (float4)(0.0f, 0.0f, 0.0f, 0.0f);
-    uchar4 minvalue4 = (uchar4)(255, 255, 255, 255);
-    uchar4 maxvalue4 = (uchar4)(0, 0, 0, 0);
+    float4 sum4      = (float4)(0.0f);
+    uchar4 minvalue4 = (uchar4)(255);
+    uchar4 maxvalue4 = (uchar4)(0);
     float sum      = 0.0f;
     uchar minvalue = 255;
     uchar maxvalue = 0;
