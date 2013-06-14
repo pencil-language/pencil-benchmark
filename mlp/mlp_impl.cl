@@ -110,17 +110,16 @@ gemmFloatDirDirDir(
     // assert(C.cols == result.cols);
     // assert(C.cols == 1 );
     
-    float sum=0.0f;
-    float c=0.0f;
     float dot = 0.0f;
     
     for ( int q=0; q<C.rows; q++ ) {
-        sum = 0;
-        for ( int e=0; e<A.cols; e++ )
+        float sum = 0.0f;
+
+        for ( int e=0; e < A.cols; e++ )
         {              
-            float a = ((__local float*)self)[ q * A.step + e + A.start ];
-            int b_row = e / B.rows;                    
-            int b_col = e % B.cols;                    
+            float a = ((__local float*)self)[q * A.step + e + A.start];
+            int b_row = e / B.rows;
+            int b_col = e % B.cols;
             float b = ((__local uchar*)self)[ b_row * B.step + b_col + B.start ];
             sum += a * (norm.shift + norm.stride * b);
         }
@@ -170,21 +169,57 @@ normalizeSample( __local void * self, clMat /*uint8_t*/  image ) // , clMat /*fl
   // assert(result->cols == image.cols);
   // assert(result->rows == image.rows);
 
-    float sum=0.0f;
+    float4 sum4      = (float4)(0.0f);
+    uchar4 minvalue4 = (uchar4)(255);
+    uchar4 maxvalue4 = (uchar4)(0);
+    float sum      = 0.0f;
     uchar minvalue = 255;
     uchar maxvalue = 0;
-    
-    for ( int q=0; q<image.rows; q++ )
-        for ( int w=0; w<image.cols; w++ )
+
+    for ( int q=0; q<image.rows; q++ ) {
+        int start_index = image.start + q * image.step;
+        int end_index = image.start + q * image.step + image.cols;
+
+        int start_aligned = start_index - start_index % 4 + 4;
+        int end_aligned = end_index - end_index % 4;
+        
+        for ( int index = start_index; index < start_aligned; index++ )
         {
-	    uchar pixel = ((__local uchar*)self)[ q * image.step + w + image.start ];
-	    minvalue = min( minvalue, pixel );
-	    maxvalue = max( maxvalue, pixel );
-            sum += pixel;                
+            uchar pixel = ((__local uchar*)self)[index];
+            minvalue = min( minvalue, pixel );
+            maxvalue = max( maxvalue, pixel );
+            sum += pixel;            
         }
+
+        for ( int index = start_aligned / 4; index < end_aligned / 4; index ++ )
+        {
+            uchar4 pixel4 = ((__local uchar4*)self)[index];
+            minvalue4 = min( minvalue4, pixel4 );
+            maxvalue4 = max( maxvalue4, pixel4 );
+            sum4 += convert_float4(pixel4);
+        }
+                
+        for ( int index = end_aligned; index < end_index; index++ )
+        {
+            uchar pixel = ((__local uchar*)self)[index];
+            minvalue = min( minvalue, pixel );
+            maxvalue = max( maxvalue, pixel );
+            sum += pixel;
+        }
+    } // for q
+
+    sum += sum4.s0 + sum4.s1 + sum4.s2 + sum4.s3;    
     
+    uchar2 min_a = min( minvalue4.s01, minvalue4.s23 );
+    uchar  min_b = min( min_a.s0, min_a.s1 );
+    minvalue = min( min_b, minvalue );    
+    
+    uchar2 max_a = max( maxvalue4.s01, maxvalue4.s23 );
+    uchar  max_b = max( max_a.s0, max_a.s1 );
+    maxvalue = max( max_b, maxvalue );    
+        
     normalization nresult;
-    
+     
     float sampleMean = sum / (image.rows * image.cols);
     float sampleMin  = minvalue; 
     float sampleMax  = maxvalue;
@@ -201,8 +236,6 @@ normalizeSample( __local void * self, clMat /*uint8_t*/  image ) // , clMat /*fl
     
     return nresult;
 } // normalizeSample
-
-
 
 void
 generateResponseMap(

@@ -21,11 +21,19 @@
 #include "bench_mlp.hpp"
 
 const int processed_frames = 100;
-//const int local_memsize = 37 * KiB;
-// const int local_memsize = 48 * KiB;
 const int local_memsize = 21 * KiB;
-// const int gangsize = 640;
-const int gangsize = 320;
+
+namespace {
+    struct opt_t {
+        opt_t() : gangsize(-1), fps(0), time(0) {  }
+        
+        int gangsize;
+        float fps;
+        float time;    
+    }; // opt_t
+} // unnamed namespace
+
+    
 
 int main()
 {
@@ -35,7 +43,7 @@ int main()
     device.compile( carp::string_vector("mlp_impl.cl"), carp::string_vector("calculateMaps") );
         
     int fail = 0;
-        
+    
     for ( conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id);
           ((conductor.id != -1) && (conductor.id != processed_frames));
           conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id)
@@ -49,7 +57,9 @@ int main()
     } // for conductor
 
     PRINT("benchmarking");
-    for ( int gangsize = 32; gangsize<=640; gangsize+=32 )
+    opt_t opt;
+    
+    for ( int gangsize = 32; gangsize<=/*640*/ 512; gangsize+=32 )
     {
         PRINT(gangsize);
         long int elapsed_time = 0;
@@ -112,13 +122,25 @@ int main()
                 }
             }
         } // packages
+        float fps = 1000000. * processed_frames / elapsed_time;
+        if (opt.fps < fps) {
+            opt.fps = fps;
+            opt.gangsize = gangsize;
+            opt.time = elapsed_time / 1000000.;            
+        }
+        
+        
         std::cout << "total elapsed time = " << elapsed_time / 1000000. << " s." << std::endl;
 //        std::cout << std::setprecision(2) << std::fixed;
         std::cout << "processing speed   = " << 1000000. * processed_frames / elapsed_time << "fps" << std::endl;
         PRINT(maxnetallocated);
         PRINT(maxgrossallocated);            
     } // gangsize 
-        
+
+    PRINT(opt.gangsize);
+    PRINT(opt.fps);
+    PRINT(opt.time);    
+    
     return EXIT_SUCCESS;
 } // int main
 
