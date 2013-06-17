@@ -56,7 +56,6 @@ export CFLAGS
 export LDLIBS
 
 all:
-	/opt/intel/composer_xe_2013.4.183/bin/compilervars.sh intel64
 	+make -C core
 	+make -C opencl
 	+make -C base
