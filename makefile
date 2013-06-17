@@ -3,13 +3,17 @@
 # ## absolute directory for the subprojects
 BASEDIR=$(shell pwd)
 
-#CXX=g++-4.6
-#CC=gcc-4.6
-#LD=ld
+# Use icc by default, but allow the user to it
+ifeq ($(USE_GCC), 1)
+	CXX=g++
+	CC=gcc
+	LD=ld
+else
+	CXX?=icc
+	CC?=icc
+	LD?=xiar
+endif
 
-CXX=icc
-CC=icc
-LD=xiar
 CXXFLAGS=-std=c++11 -I$(BASEDIR)/opencl -I$(BASEDIR)/core -gcc-name=gcc-4.6 -I/opt/intel/composer_xe_2013/ipp/include
 CFLAGS=-lOpenCL
 #LDFLAGS=-lirc -lOpenCL -lboost_serialization -L/home/ujoimro/Inst/opencv/build/OpenCV-2.4.2/optimized/install/lib -lopencv_core
