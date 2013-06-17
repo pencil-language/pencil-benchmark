@@ -1,6 +1,12 @@
 
 
-all: test_mlp opencl_mlp gel_mlp GEL
+TO_BUILD=test_mlp opencl_mlp
+
+ifneq ($(NO_INTEL_LIBS), 1)
+	TO_BUILD+=gel_mlp GEL
+endif
+
+all: $(TO_BUILD)
 
 GEL:
 	+make GEL

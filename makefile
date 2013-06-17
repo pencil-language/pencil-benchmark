@@ -19,7 +19,10 @@ LDFLAGS+=-L/home/ujoimro/Inst/opencv/build/opencv-2.4.5/release/install/lib
 LDLIBS=-lOpenCL
 LDLIBS+=-lboost_serialization
 LDLIBS+=-lopencv_core -lopencv_ocl -lopencv_imgproc -lopencv_flann -lopencv_highgui -lopencv_features2d -lopencv_objdetect -lopencv_video
-LDLIBS+=-ltbb -lipps -lippi -lmkl_core -lmkl_vml_mc3 -lmkl_vml_avx -lmkl_vml_def -lmkl_vml_mc2 -lmkl_vml_p4n -lmkl_vml_mc -lmkl_vml_cmpt -lmkl_vml_avx2 -lmkl_intel_lp64 -lmkl_sequential
+
+ifneq ($(NO_INTEL_LIBS), 1)
+	LDLIBS+=-ltbb -lipps -lippi -lmkl_core -lmkl_vml_mc3 -lmkl_vml_avx -lmkl_vml_def -lmkl_vml_mc2 -lmkl_vml_p4n -lmkl_vml_mc -lmkl_vml_cmpt -lmkl_vml_avx2 -lmkl_intel_lp64 -lmkl_sequential
+endif
 
 # optimization flags
 CXXFLAGS+=-O3
@@ -53,6 +56,7 @@ export LDFLAGS
 export CXXFLAGS
 export CFLAGS
 export LDLIBS
+export NO_INTEL_LIBS
 
 all:
 	+make -C core
