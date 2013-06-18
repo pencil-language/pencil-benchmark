@@ -18,7 +18,6 @@
 #include "mlp.hpp"
 #include "errors.hpp"
 #include "memory.hpp"
-#include "mlp_impl.h"
 #include "allocator.hpp"
 
 namespace { struct hack_t; }

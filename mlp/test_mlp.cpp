@@ -3,6 +3,20 @@
 // Copyright (c) RealEyes, 2013
 // This version tests the responseMap calculation with input dumps
 
+#include <chrono>
+#include <string>
+#include <iomanip>
+#include <stdlib.h>
+#include <opencv2/core/core.hpp>
+#include <boost/preprocessor.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/archive/xml_iarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+
+#include "cast.h"
+#include "mlp.hpp"
+#include "mlp_impl.h"
+#include "utility.hpp"
 
 /*
   extern int EF_ALIGNMENT = 0;
@@ -12,22 +26,170 @@
   extern int EF_FILL = 1922;
 */
 
-#include <boost/smart_ptr.hpp>
+namespace { struct hack_t; }
+MatChar  convertCVToMatChar ( const cv::Mat_<uint8_t> & input );
+mlp *    convertHackToMlp ( const hack_t & hack );
+void     freeClassifiers( mlp * classifiers[], int size );
+MatChar  convertCVToMatChar ( const cv::Mat_<uint8_t> & input );
+MatFloat convertCVToMatFloat (  const cv::Mat_<double> & input );
+cv::Mat_<double> convertMatFloatToCV( MatFloat input );
+void     allocateResponseMaps( int mapSize, int size, MatFloat * responseMaps[] );
+void     freeResponseMaps( MatFloat * responseMaps[], int size );
 
-#include "opencl.hpp"
-#include "memory.hpp"
-#include "bench_mlp.hpp"
 
 const int processed_frames = 100;
-const int local_memsize = 48 * KiB;
+
+namespace {
+     
+    struct hack_t {
+        int m_visibleLandmarks_size;
+        int m_mapSize;
+        
+        cv::Mat_<double> shape;
+        cv::Mat_<uint8_t> alignedImage;
+        std::vector<gel::MLP<double> > m_classifiers;
+        std::vector<cv::Mat_<double> > responseMaps;
+                
+        template <class MT0>
+        void serialize( MT0 & archiver, unsigned int ) {
+            GEL_EXPORT_VAR( archiver, m_visibleLandmarks_size );
+            GEL_EXPORT_VAR( archiver, m_mapSize );
+            GEL_EXPORT_VAR( archiver, shape );
+            GEL_EXPORT_VAR( archiver, alignedImage );
+            GEL_EXPORT_VAR( archiver, m_classifiers );
+            GEL_EXPORT_VAR( archiver, responseMaps );            
+        } // serialize
+    
+    }; // struct hack_t
+    
+    class conductor_t {
+    public:
+        int id;
+        hack_t hack;
+        std::ifstream dumpStream;
+        boost::archive::xml_iarchive importer;
+
+    public:
+        
+        conductor_t() : id(0), dumpStream("response_dumps.xml", std::ios::in | std::ios::binary ), importer(dumpStream) {
+            
+        }; // conductor_t
+        
+    }; // conductor_t
+
+} // unnamed namespace 
+
+
+
+mlp *
+convertHackToMlp ( const hack_t & hack )
+{
+    assert(hack.m_visibleLandmarks_size==hack.m_classifiers.size());
+    assert(hack.m_visibleLandmarks_size==hack.responseMaps.size());
+        
+    mlp * result;
+    result = reinterpret_cast<mlp*>( malloc( sizeof(mlp) * hack.m_visibleLandmarks_size ) );
+
+    // we export each classifier
+    for (int q=0; q<hack.m_visibleLandmarks_size; q++)
+    {
+        result[q].m_patchSize = hack.m_classifiers[q].m_patchSize;
+        result[q].m_wIn       = convertCVToMatFloat(hack.m_classifiers[q].m_wIn);
+        result[q].m_wOut      = convertCVToMatFloat(hack.m_classifiers[q].m_wOut);
+        result[q].m_U         = convertCVToMatFloat(hack.m_classifiers[q].m_U);
+        result[q].hidden_num  = hack.m_classifiers[q].hidden_num;
+        result[q].rho2        = hack.m_classifiers[q].rho2;
+    } // for q in m_visibleLandmarks_size
+
+    return result;
+} // convertHackToMlp
+
+void
+freeClassifiers( mlp * classifiers[], int size )
+{
+    mlp * result = *classifiers;    
+    for (int q=0; q<size; q++ )
+        freeMLP( &(result[q]) );
+
+    free(*classifiers);
+    *classifiers=NULL;
+
+    return;    
+} // freeClassifiers
+
+
+MatChar convertCVToMatChar ( const cv::Mat_<uint8_t> & input )
+{
+    MatChar result = CreateMatChar( input.rows, input.cols );
+
+    for ( int q=0; q<input.rows; q++)
+        for ( int w=0; w<input.cols; w++ )
+            result.data[ q * result.step + w + result.start ] = input(q,w);
+    
+    return result;    
+} // convertCVToMatChar
+
+MatFloat convertCVToMatFloat (  const cv::Mat_<double> & input )
+{
+    MatFloat result = CreateMatFloat( input.rows, input.cols );
+    
+    for ( int q=0; q<input.rows; q++)
+        for ( int w=0; w<input.cols; w++ )
+            result.data[ q * result.step + w + result.start ] = input(q,w);
+    
+    return result;    
+} // convertCVToMatFloat
+
+
+cv::Mat_<double> convertMatFloatToCV( MatFloat input )
+{
+    cv::Mat_<double> result( input.rows, input.cols );
+    
+    for ( int q=0; q<input.rows; q++)
+        for ( int w=0; w<input.cols; w++ )
+            result(q,w) = input.data[ q * input.step + w + input.start ];
+    
+    return result;
+} // convertMatFloatToCV
+
+
+void allocateResponseMaps( int mapSize, int size, MatFloat * responseMaps[] )
+{
+    *responseMaps = (MatFloat*)malloc( sizeof(MatFloat) * size );
+    assert(*responseMaps);    
+    MatFloat * result = *responseMaps;    
+
+    for ( int q=0; q<size; q++ )
+        result[q] = CreateMatFloat( 2 * mapSize + 1, 2 * mapSize + 1 );
+    
+    return;
+}
+
+void freeResponseMaps( MatFloat * responseMaps[], int size )
+{
+    MatFloat * result = *responseMaps;    
+    assert(result);
+    for ( int q=0; q<size; q++ )
+        freeMatFloat(&(result[q]));
+
+    free(result);
+    *responseMaps=NULL;
+    return;    
+}
+
+template <class T0>
+auto
+microseconds( T0 t0 ) -> decltype(std::chrono::duration_cast<std::chrono::microseconds>(t0).count())
+{
+    return std::chrono::duration_cast<std::chrono::microseconds>(t0).count();
+}
+
 
 int main()
 {
     conductor_t conductor;
     int fail = 0;
     long int elapsed_time = 0;
-    int64_t maxnetallocated = 0;
-    int64_t maxgrossallocated = 0;
     
     
     for ( conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id);
@@ -39,45 +201,38 @@ int main()
         PRINT(conductor.id);
         conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.hack);
 
-        int groupsize = conductor.hack.m_visibleLandmarks_size;
-
-        boost::shared_array<char> buffer( new char[groupsize * local_memsize] );
-        
-        // std::vector<carp::memory::buddy> pools( groupsize, carp::memory::buddy({local_memsize, uint8_t()}));
-        std::vector<carp::memory::dense> pools( groupsize, carp::memory::dense( carp::memory::allocator::sizer(local_memsize, uint8_t())));
-        carp::memory::local_memory_manager locmm( groupsize * local_memsize, groupsize, local_memsize );
-        
-        char * self = buffer.get();
-        std::vector<int> segments = locmm.get_segments();
-       
         // here comes the function call
-        {           
-            auto calcpackages = convertHackToMlp( self, pools, segments, conductor.hack );
+        {
+            // preparing the inputs
+            MatChar alignedImage = convertCVToMatChar(conductor.hack.alignedImage);
+            MatFloat shape = convertCVToMatFloat(conductor.hack.shape);
+            mlp * m_classifiers = convertHackToMlp(conductor.hack);
+            MatFloat * responseMaps;
+            allocateResponseMaps( conductor.hack.m_mapSize, conductor.hack.m_visibleLandmarks_size, &responseMaps );
 
-            for ( auto & pool : pools ) {
-//                PRINT(pool.grossallocated());
-//                PRINT(pool.netallocated());
-                maxgrossallocated = std::max( maxgrossallocated, pool.grossallocated() );
-                maxnetallocated = std::max( maxnetallocated, pool.netallocated() );
-            }
-                                    
             auto start = std::chrono::high_resolution_clock::now();
             calculateMaps(
-                self,
-                segments.data(),
                 conductor.hack.m_visibleLandmarks_size,
                 conductor.hack.m_mapSize,
-                calcpackages.data() // ,
+                alignedImage,
+                shape,
+                m_classifiers,
+                &responseMaps
                 );
             auto end = std::chrono::high_resolution_clock::now();
             elapsed_time += microseconds(end - start);
+
+            // releasing the inputs
+            freeMatChar(&alignedImage);
+            freeMatFloat(&shape);
+            freeClassifiers(&m_classifiers, conductor.hack.m_classifiers.size());
 
             // converting the outputs
             std::vector< cv::Mat_<double> > calculatedResults;
             for (int q=0; q<conductor.hack.m_visibleLandmarks_size; q++)
             {
                 cv::Mat_<double> nextResult;
-                nextResult = convertMatFloatToCV( self + segments[q], calcpackages[q].output.responseMap );
+                nextResult = convertMatFloatToCV( responseMaps[q] );
                 calculatedResults.push_back(nextResult);
             }
             
@@ -87,6 +242,9 @@ int main()
                 if (cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) > 0.0001) throw std::runtime_error("conductor.hack.responseMaps[q] - calculatedResults[q] ) < 0.0001 failed");
             }
             
+            // releasing the outputs
+            freeResponseMaps( &responseMaps, conductor.hack.m_visibleLandmarks_size );
+
         }
     }
     
@@ -96,9 +254,6 @@ int main()
 
     //conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.hack);
 
-    PRINT(maxnetallocated);
-    PRINT(maxgrossallocated);
-    
     return EXIT_SUCCESS;
 } // int main
 

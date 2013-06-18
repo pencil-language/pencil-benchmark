@@ -1,23 +1,54 @@
 # UjoImro, 2013
 
+## These are the compilation preferences
+
+USE_GCC=0
+
+## end of preferences
+
+
 # ## absolute directory for the subprojects
 BASEDIR=$(shell pwd)
 
-#CXX=g++-4.6
-#CC=gcc-4.6
-#LD=ld
+# Use icc by default, but allow the user to it
+ifeq ($(USE_GCC), 1)
+	echo "a"
+	CXX=g++
+	CC=gcc
+	LD=ld
+	CXXFLAGS=-std=c++11 -I$(BASEDIR)/opencl -I$(BASEDIR)/core -I/opt/local/include
+	LDLIBS+=-lstdc++ -lm
+else
+	CXX=icc
+	CC=icc
+	LD=xiar
+	CXXFLAGS=-std=c++0x -I$(BASEDIR)/opencl -I$(BASEDIR)/core -I/opt/local/include
+	LDLIBS=-lstdc++ -lm
+endif
 
-CXX=icc
-CC=icc
-LD=xiar
-CXXFLAGS=-std=c++11 -I$(BASEDIR)/opencl -I$(BASEDIR)/core -gcc-name=gcc-4.6 -I/opt/local/include
-CFLAGS=-lOpenCL
-#LDFLAGS=-lirc -lOpenCL -lboost_serialization -L/home/ujoimro/Inst/opencv/build/OpenCV-2.4.2/optimized/install/lib -lopencv_core
-#LDFLAGS=-lirc -lOpenCL -lboost_serialization -L/home/ujoimro/Inst/opencv/build/opencv-2.4.5/release/install/lib -lopencv_core -lopencv_ocl -lopencv_imgproc -lopencv_flann -lopencv_highgui -lopencv_features2d -lopencv_objdetect -lopencv_video -ltbb -lipps -lippi -lmkl_core -lmkl_vml_mc3 -lmkl_vml_avx -lmkl_vml_def -lmkl_vml_mc2 -lmkl_vml_p4n -lmkl_vml_mc -lmkl_vml_cmpt -lmkl_vml_avx2 -lmkl_intel_lp64 -lmkl_sequential
-LDFLAGS=-L/opt/intel/composer_xe_2013.4.183/mkl/lib/intel64 -L/opt/local/lib64 -L/home/ujoimro/Inst/opencv/build/opencv-2.4.5/release/install/lib -lirc -lOpenCL -lopencv_core -lopencv_ocl -lopencv_imgproc -lopencv_flann -lopencv_highgui -lopencv_features2d -lopencv_objdetect -lopencv_video -lboost_serialization -ltbb -pthread -lmkl_intel_ilp64 -lmkl_sequential -lmkl_core -lippi -lipps -lippcc -lippcore -lippcv -liomp5 -lboost_serialization -lboost_iostreams -lboost_thread -lboost_system -lboost_program_options -lboost_chrono -lboost_system -lz -lbz2
+
+LDFLAGS+=-L/home/ujoimro/Inst/opencv/build/opencv-2.4.5/release/install/lib -L/opt/local/lib64
+
+LDLIBS+=-lboost_serialization -lOpenCL
+LDLIBS+=-lopencv_core -lopencv_ocl -lopencv_imgproc -lopencv_flann -lopencv_highgui -lopencv_features2d -lopencv_objdetect -lopencv_video
+
+ifneq ($(NO_INTEL_LIBS), 1)
+	CXXFLAGS+=-I/opt/intel/composer_xe_2013.4.183/ipp/include
+	LDLIBS+=-ltbb -lipps -lippi -lmkl_core -lmkl_vml_mc3 -lmkl_vml_avx -lmkl_vml_def -lmkl_vml_mc2 -lmkl_vml_p4n -lmkl_vml_mc -lmkl_vml_cmpt -lmkl_vml_avx2 -lmkl_intel_lp64 -lmkl_sequential
+endif
+
 # optimization flags
-#CXXFLAGS+=-O3 -mtune=native
-CXXFLAGS+=-O3 -xHOST -ipo
+CXXFLAGS+=-O3
+
+ifeq (CXX, icc)
+	CXXFLAGS+=-xHOST -ipo
+	CXXFLAGS+=-gcc-name=gcc-4.6
+	CXXFLAGS+=-I/opt/intel/composer_xe_2013/ipp/include
+endif
+
+ifeq (CXX, g++)
+	CXXFLAGS+=-mtune=native
+endif
 
 # includes 
 CXXFLAGS+=-I/home/ujoimro/Inst/opencv/build/opencv-2.4.5/release/install/include
@@ -37,9 +68,10 @@ export BASEDIR
 export LDFLAGS
 export CXXFLAGS
 export CFLAGS
+export LDLIBS
+export NO_INTEL_LIBS
 
 all:
-	/opt/intel/composer_xe_2013.4.183/bin/compilervars.sh intel64
 	+make -C core
 	+make -C opencl
 	+make -C base
