@@ -12,6 +12,6 @@ errors.o: errors.cpp errors.hpp
 #	$(CXX) $(CXXFLAGS) -c opencl.hpp -o opencl.gch
 
 clean:
-	-rm -f *.gch
+	-rm -f *.gch *.o
 
 # LuM end of file
