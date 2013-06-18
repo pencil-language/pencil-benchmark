@@ -44,12 +44,12 @@ int main()
             gel::MLP<double> mlp;
             tbb::concurrent_vector< cv::Mat_<double> > calculatedResults(conductor.hack.m_visibleLandmarks_size);
             auto start = std::chrono::high_resolution_clock::now();
-//            tbb::parallel_for(0,conductor.hack.m_visibleLandmarks_size,[&](int q){
-            for(int q = 0; q < conductor.hack.m_visibleLandmarks_size; ++q) {
-                const cv::Point2i center(cvRound(conductor.hack.shape(2*q,0)),cvRound(conductor.hack.shape(2*q+1,0)));
-                calculatedResults[q] = conductor.hack.m_classifiers[q].generateResponseMap(conductor.hack.alignedImage, center, conductor.hack.m_mapSize);
-            }
-            // ); // tbb::parallel_for
+            tbb::parallel_for(0,conductor.hack.m_visibleLandmarks_size,[&](int q){
+//                    for(int q = 0; q < conductor.hack.m_visibleLandmarks_size; ++q) {
+                        const cv::Point2i center(cvRound(conductor.hack.shape(2*q,0)),cvRound(conductor.hack.shape(2*q+1,0)));
+                        calculatedResults[q] = conductor.hack.m_classifiers[q].generateResponseMap(conductor.hack.alignedImage, center, conductor.hack.m_mapSize);
+                }
+                    ); // tbb::parallel_for
             auto end = std::chrono::high_resolution_clock::now();
             elapsed_time += microseconds(end - start);
 

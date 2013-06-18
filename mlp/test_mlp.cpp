@@ -178,8 +178,8 @@ void freeResponseMaps( MatFloat * responseMaps[], int size )
 }
 
 template <class T0>
-auto
-microseconds( T0 t0 ) -> decltype(std::chrono::duration_cast<std::chrono::microseconds>(t0).count())
+std::chrono::microseconds::rep
+microseconds( T0 t0 )
 {
     return std::chrono::duration_cast<std::chrono::microseconds>(t0).count();
 }
