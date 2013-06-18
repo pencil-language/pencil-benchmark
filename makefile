@@ -8,19 +8,24 @@ ifeq ($(USE_GCC), 1)
 	CXX=g++
 	CC=gcc
 	LD=ld
+	CXXFLAGS=-std=c++11 -I$(BASEDIR)/opencl -I$(BASEDIR)/core
+	LDLIBS+=-lstdc++ -lm
 else
 	CXX?=icc
 	CC?=icc
 	LD?=xiar
+	CXXFLAGS=-std=c++0x -I$(BASEDIR)/opencl -I$(BASEDIR)/core
+	LDLIBS=-lstdc++ -lm
 endif
 
-CXXFLAGS=-std=c++11 -I$(BASEDIR)/opencl -I$(BASEDIR)/core
+
 LDFLAGS+=-L/home/ujoimro/Inst/opencv/build/opencv-2.4.5/release/install/lib
-LDLIBS=-lOpenCL
-LDLIBS+=-lboost_serialization
+
+LDLIBS+=-lboost_serialization -lOpenCL
 LDLIBS+=-lopencv_core -lopencv_ocl -lopencv_imgproc -lopencv_flann -lopencv_highgui -lopencv_features2d -lopencv_objdetect -lopencv_video
 
 ifneq ($(NO_INTEL_LIBS), 1)
+	CXXFLAGS+=-I/opt/intel/composer_xe_2013.4.183/ipp/include
 	LDLIBS+=-ltbb -lipps -lippi -lmkl_core -lmkl_vml_mc3 -lmkl_vml_avx -lmkl_vml_def -lmkl_vml_mc2 -lmkl_vml_p4n -lmkl_vml_mc -lmkl_vml_cmpt -lmkl_vml_avx2 -lmkl_intel_lp64 -lmkl_sequential
 endif
 
