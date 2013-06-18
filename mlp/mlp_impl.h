@@ -6,69 +6,68 @@
 #ifndef __MLP_IMPL__H__
 #define __MLP_IMPL__H__
 
-#include "cltypes.h"
-// #include "allocator.hpp"
-
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
-    void calculateMaps( char * self, int memory_segments[], int m_visibleLandmarks_size, int m_mapSize, calcpackage inputs[] );
-    
-    void printMatFloat( void * self, clMat /*float*/mat, char * name );
-    
-    void printMatChar( void * self, clMat /*uint8_t*/ mat, char * name );
-    
-    float GetValueFloat( void * self, clMat /*float*/smat, int row, int col );
-    
-    uint8_t GetValueChar( void * self, clMat /* uint8_t*/ smat, int row, int col );
+    typedef struct {
+        int rows;
+        int cols;
+        int step;
+        int start;    
+        float * data;
+    } MatFloat; // struct MatFloat
 
-    void copyToFloat( void * self, clMat /*float*/input, clMat /*float*/ output );    
+    typedef struct {
+        int rows;
+        int cols;
+        int step;
+        int start;    
+        uint8_t * data;    
+    } MatChar; // struct MatChar
 
-    void transposeFloat( void * self, clMat /*float*/input, clMat /*float*/ output );
-    
-    void transposeFloatGang( void * self, clMat /*float*/input, int localid, clMat /*float*/ output );
-    
-    float meanChar( void * self, clMat /*uint8_t*/  input );    
+    typedef struct {
+        int x;
+        int y;
+    } Point2i;
 
-    uint8_t minChar( void * self, clMat /*uint8_t*/  input );
-    
-    uint8_t maxChar( void * self, clMat /*uint8_t*/  input );
-    
-    clMat /*uint8_t*/ GetBlockChar( void * self, clMat /*uint8_t*/  smat, int row_from, int row_to, int col_from, int col_to );
-    
-    clMat GetBlockFloat( void * self, clMat /*float*/smat, int row_from, int row_to, int col_from, int col_to );
-    
-    void convertFromCharToFloat( void * self, clMat /*uint8_t*/  from, float quotient, float shift, clMat /*float*/ to );    
+    typedef enum { none, maxAbs, meanStd } NormalizationMethod;
 
-    clMat reshapeFloat( void * self, clMat /*float*/smat, int new_rows );
+    typedef struct {
+        int m_patchSize;      /*!< \brief Radius like patch size, the true size of the patch is [(2*patchSize+1) x (2*patchSize+1)] */
+        MatFloat m_wIn; /*!< \brief */
+        MatFloat m_wOut; /*!< \brief  */
+        MatFloat m_U; /*!< \brief */
+        int hidden_num;
+        double rho2;
+        // NormalizationMethod preSVDNormalizationMethod /*= none*/;
+        // NormalizationMethod postSVDNormalizationMethod;
+    } mlp; // struct 
 
-//    void gemmFloatDirDirDir( void * self, clMat /*float*/A, clMat /*float*/B, float alpha, clMat /*float*/C, float beta, clMat /*float*/ result );
-    
-    void gemmFloatDirDirDirGang( void * self, clMat /*float*/A, clMat /*float*/B, float alpha, clMat /*float*/C, float beta, int localid, clMat /*float*/ result );
-    
-    void gemmFloatDirTransDirGang( void * self, clMat /*float*/A, clMat /*float*/B, float alpha, clMat /*float*/C, float beta, int localid, clMat /*float*/ result );
-    
-    float GetValueFloat( void * self, clMat /*float*/smat, int row, int col );
-    
-    uint8_t GetValueChar( void * self, clMat /* uint8_t*/ smat, int row, int col );
-    
-    void SetValueFloat( void * self, clMat /*float*/ smat, int row, int col, float value );
-    
-    float dotProductDirDir( void * self, clMat /*float*/A, clMat /*float*/B );
-    
-    float dotProductTransDir( void * self, clMat /*float*/A, clMat /*float*/B );
-        
-//    void normalizeSample( void * self, clMat /*uint8_t*/  image, clMat /*float*/ * result );
-    
-//    void generateResponseMap( void * self, const clMat /*uint8_t*/  image, const Point2i center, int mapSize, int m_patchSize, clMat /*float*/m_wOut, clMat wIn, clMat bIn, clVector /*cMat float*/ patches, clVector /*cMat float*/ xOuts, clVector /*cMat float*/ es, clMat /*float*/ result );
+    MatFloat CreateMatFloat( int rows, int cols );
 
-    int cvRound( float value );
-    
-        
-#ifdef __cplusplus
-} // extern C
-#endif // __cplusplus
+    MatChar CreateMatChar( int rows, int cols );
+
+    void freeMatFloat( MatFloat * mat );
+
+    void freeMatChar( MatChar * mat );
+
+    void freeMLP( mlp * classifier );
+
+    void
+    calculateMaps( 
+        int m_visibleLandmarks_size, 
+        int m_mapSize, 
+        MatChar alignedImage, 
+        MatFloat shape, 
+        mlp m_classifiers[], 
+        // results
+        MatFloat * responseMaps[] );    
+
 
 #endif /* __MLP_IMPL__H__ */
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
 // LuM end of file

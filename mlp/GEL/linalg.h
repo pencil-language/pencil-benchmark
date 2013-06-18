@@ -19,7 +19,7 @@
 #define CLM_LINALG_H_
 
 #include <cmath>
-
+#include <stdexcept>
 //#include "Core/defines.h"
 //#include "Core/static_assert.h"
 
@@ -113,7 +113,8 @@ void mkl_gemm( const CBLAS_ORDER Order, const  CBLAS_TRANSPOSE TransA,
           const MKL_INT lda, const T0* B, const MKL_INT ldb,
           const T0 beta, T0* C, const MKL_INT ldc )
 {
-    STATIC_ASSERT(sizeof(T0)==0); // This value type is not supported or not bridged.
+    // STATIC_ASSERT(sizeof(T0)==0); // This value type is not supported or not bridged.
+    throw std::runtime_error("error: wrong template specialization.");    
 }
     
 template <>
@@ -136,7 +137,8 @@ void mkl_gemm( const CBLAS_ORDER Order, const  CBLAS_TRANSPOSE TransA,
 template <typename T0>
 void mkl_exp(int n,const T0* source, T0* result)
 {
-    STATIC_ASSERT(sizeof(T0)==0); // This value type is not supported or not bridged.
+    // STATIC_ASSERT(sizeof(T0)==0); // This value type is not supported or not bridged.
+    throw std::runtime_error("error: wrong template specialization.");
 }
 
 template <>
@@ -153,7 +155,8 @@ void mkl_solve( int matrix_order, lapack_int m, lapack_int n,
                            lapack_int ldb,  T0* s, T0 rcond,
                            lapack_int* rank  )
 {
-    STATIC_ASSERT(sizeof(T0)==0); // This value type is not supported or not bridged.
+    // STATIC_ASSERT(sizeof(T0)==0); // This value type is not supported or not bridged.
+    throw std::runtime_error("error: wrong template specialization.");
 }
 
 template <>
@@ -180,7 +183,8 @@ GEL_EXPORT void mkl_solve( int matrix_order, lapack_int m, lapack_int n,
 template <typename T0>
 void ipp_copy( const T0 * pSrc, int srcStep, T0 * pDst, int dstStep, IppiSize roiSize )
 {
-    STATIC_ASSERT(sizeof(T0)==0); // This value type is not supported or not bridged.
+    // STATIC_ASSERT(sizeof(T0)==0); // This value type is not supported or not bridged.
+    throw std::runtime_error("error: wrong template specialization.");    
 }
 
 template <>
@@ -198,7 +202,8 @@ void ipp_copy( const uint8_t * pSrc, int srcStep, uint8_t * pDst, int dstStep, I
 template <typename src_t, typename dst_t>
 void ipps_convert( src_t* src, dst_t* dst, int32_t length )
 {
-    STATIC_ASSERT(sizeof(src_t)==0); // This pixel_type is either not supported or not bridged.
+    // STATIC_ASSERT(sizeof(src_t)==0); // This pixel_type is either not supported or not bridged.
+    throw std::runtime_error("error: wrong template specialization.");    
 }
 
 template <>
@@ -209,7 +214,8 @@ void ipps_convert( uint8_t *, double *, int32_t );
 template <typename T0>
 void ipps_AddC( T0 C, T0 * src, int32_t length )
 {
-    STATIC_ASSERT(sizeof(T0)==0); // This pixel_type is either not supported or not bridged.
+    // STATIC_ASSERT(sizeof(T0)==0); // This pixel_type is either not supported or not bridged.
+    throw std::runtime_error("error: wrong template specialization.");    
 }
 
 template <>
@@ -221,7 +227,8 @@ void ipps_AddC( double, double *, int32_t );
 template <typename T0>
 void ipps_MulC( T0 C, T0 * src, int32_t length )
 {
-    STATIC_ASSERT(sizeof(T0)==0); // This pixel_type is either not supported or not bridged.
+    // STATIC_ASSERT(sizeof(T0)==0); // This pixel_type is either not supported or not bridged.
+    throw std::runtime_error("error: wrong template specialization.");    
 }
 
 template <>
