@@ -84,24 +84,6 @@ CreateMatChar( int rows, int cols )
 }
 
 static void
-copyToFloat( MatFloat input, MatFloat * output )
-{
-    assert(input.data);
-    assert(output);
-    assert(output->data);
-    assert(input.rows == output->rows);
-    assert(input.cols == output->cols);
-
-    int q, w;
-    for ( q=0; q<input.rows; q++ )
-        for ( w=0; w<input.cols; w++ )
-            output->data[ q * output->step + w + output->start ] =
-        	input.data[ q * input.step + w + input.start ];
-
-    return;
-}
-
-static void
 transposeFloat( MatFloat input, MatFloat * output )
 {
     int q,w;
@@ -356,21 +338,6 @@ divideFloat( float val, MatFloat input, MatFloat * output )
         for ( w=0; w<input.cols; w++ )
             output->data[ q * output->step + w + output->start ] =
         	val / input.data[ q * input.step + w + input.start ];
-
-    return;
-}
-
-static void
-subtractFloat( MatFloat input, float val, MatFloat * output )
-{
-    assert(input.rows == output->rows);
-    assert(input.cols == output->cols);
-
-    int q, w;
-    for ( q=0; q<input.rows; q++ )
-        for ( w=0; w<input.cols; w++ )
-            output->data[ q * output->step + w + output->start ] =
-        	input.data[ q * input.step + w + input.start ] - val;
 
     return;
 }
