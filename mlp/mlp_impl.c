@@ -15,32 +15,7 @@
 const int MAX_INT = ~(1 << (8*sizeof(int) - 1));
 const int false = (1!=1);
 
-void     freeMLP( mlp * classifier );
-MatFloat CreateMatFloat( int rows, int cols );
-MatChar  CreateMatChar( int rows, int cols );
-void     copyToFloat( MatFloat input, MatFloat * output );
-void     transposeFloat( MatFloat input, MatFloat * output );
-float    meanChar( MatChar input );
-uint8_t  minChar( MatChar input );
-uint8_t  maxChar( MatChar input );
-MatChar  GetBlockChar( MatChar self, int row_from, int row_to, int col_from, int col_to );
-MatFloat GetBlockFloat( MatFloat self, int row_from, int row_to, int col_from, int col_to );
-void     convertFromCharToFloat( MatChar from, float quotient, float shift, MatFloat * to );
-MatFloat reshapeFloat( MatFloat self, int new_rows );
-void     freeMatFloat( MatFloat * mat );
-void     freeMatChar( MatChar * mat );
-void     gemmFloat( MatFloat A, MatFloat B, float alpha, MatFloat C, float beta, MatFloat * result );
-void     expFloat( MatFloat input, MatFloat * output );
-void     addFloat( MatFloat input, float val, MatFloat * output );
-void     divideFloat( float val, MatFloat input, MatFloat * output );
-void     subtractFloat( MatFloat input, float val, MatFloat * output );
 float    GetValueFloat( MatFloat self, int row, int col );
-void     SetValueFloat( MatFloat * self, int row, int col, float value );
-void     generateResponseMap( const MatChar image, const Point2i center, int mapSize, mlp classifier, MatFloat * result  );
-int      cvRound( float value );
-float    dotProduct( MatFloat A, MatFloat B );
-void     normalizeSample( MatChar image, MatFloat * result );
-void     printMatFloat( MatFloat mat, char * name );
 
 void     printMatFloat( MatFloat mat, char * name )
 {
@@ -107,8 +82,7 @@ CreateMatChar( int rows, int cols )
     return result;
 }
 
-
-void
+static void
 copyToFloat( MatFloat input, MatFloat * output )
 {
     assert(input.data);
@@ -126,7 +100,7 @@ copyToFloat( MatFloat input, MatFloat * output )
     return;
 } // copyTo
 
-void
+static void
 transposeFloat( MatFloat input, MatFloat * output )
 {
     int q,w;
@@ -140,7 +114,7 @@ transposeFloat( MatFloat input, MatFloat * output )
     return;
 } // transposeFloat
 
-float
+static float
 meanChar( MatChar input )
 {
     assert(input.data);    
@@ -160,7 +134,7 @@ meanChar( MatChar input )
     return sum / ( input.rows * input.cols );
 } // meanFloat
 
-uint8_t
+static uint8_t
 minChar( MatChar input )
 {
     assert(input.data);    
@@ -174,7 +148,7 @@ minChar( MatChar input )
     return minvalue;
 } // minFloat
 
-uint8_t
+static uint8_t
 maxChar( MatChar input )
 {
     assert(input.data);
@@ -189,7 +163,7 @@ maxChar( MatChar input )
 } // maxFloat
 
 
-MatChar
+static MatChar
 GetBlockChar( MatChar self, int row_from, int row_to, int col_from, int col_to )
 {    
     assert(row_from>=0);
@@ -210,7 +184,7 @@ GetBlockChar( MatChar self, int row_from, int row_to, int col_from, int col_to )
     return result;
 }
 
-MatFloat
+static MatFloat
 GetBlockFloat( MatFloat self, int row_from, int row_to, int col_from, int col_to )
 {  
     assert(row_from>=0);
@@ -231,7 +205,7 @@ GetBlockFloat( MatFloat self, int row_from, int row_to, int col_from, int col_to
     return result;
 }
 
-void
+static void
 convertFromCharToFloat( MatChar from, float quotient, float shift, MatFloat * to )
 {
     assert(from.rows == to->rows);
@@ -245,7 +219,7 @@ convertFromCharToFloat( MatChar from, float quotient, float shift, MatFloat * to
     return;
 }
 
-MatFloat
+static MatFloat
 reshapeFloat( MatFloat self, int new_rows )
 {
 
@@ -292,7 +266,7 @@ freeMatChar( MatChar * mat )
 
 
 // returns alpha*A*B + beta * C
-void 
+static void
 gemmFloat( MatFloat A, MatFloat B, float alpha, MatFloat C, float beta, MatFloat * result )
 {
     assert(A.rows == C.rows);
@@ -342,7 +316,7 @@ gemmFloat( MatFloat A, MatFloat B, float alpha, MatFloat C, float beta, MatFloat
     return;
 }
 
-void
+static void
 expFloat( MatFloat input, MatFloat * output )
 {
     assert(input.rows == output->rows);
@@ -357,7 +331,7 @@ expFloat( MatFloat input, MatFloat * output )
     return;
 }
 
-void
+static void
 addFloat( MatFloat input, float val, MatFloat * output )
 {
     assert(input.rows == output->rows);
@@ -372,7 +346,7 @@ addFloat( MatFloat input, float val, MatFloat * output )
     return;
 }
 
-void 
+static void
 divideFloat( float val, MatFloat input, MatFloat * output )
 {
     assert(input.rows == output->rows);
@@ -387,7 +361,7 @@ divideFloat( float val, MatFloat input, MatFloat * output )
     return;
 }
 
-void
+static void
 subtractFloat( MatFloat input, float val, MatFloat * output )
 {
     assert(input.rows == output->rows);
@@ -406,18 +380,18 @@ float
 GetValueFloat( MatFloat self, int row, int col )
 {
     return self.data[ row * self.step + col + self.start ];
+    // return -1231.;
 }
 
-void
+static void
 SetValueFloat( MatFloat * self, int row, int col, float value )
 {
     self->data[ row * self->step + col + self->start ] = value;
     return;    
 }
 
-
-
-float dotProduct( MatFloat A, MatFloat B )
+static float
+dotProduct( MatFloat A, MatFloat B )
 {
   assert( A.cols == 1 );
   assert( B.cols == 1 );
@@ -437,7 +411,8 @@ float dotProduct( MatFloat A, MatFloat B )
   return result;
 }
 
-void normalizeSample( MatChar image, MatFloat * result )
+static void
+normalizeSample( MatChar image, MatFloat * result )
 {
   assert(result->cols == image.cols);
   assert(result->rows == image.rows);
@@ -460,7 +435,7 @@ void normalizeSample( MatChar image, MatFloat * result )
   return;
 } // normalizeSample
 
-void
+static void
 generateResponseMap(
     const MatChar image,
     const Point2i center,
@@ -530,7 +505,7 @@ generateResponseMap(
     return;
 } // generateResponseMap
 
-int 
+static int
 cvRound( float value )
 {
     return (int)(value + (value >= 0 ? 0.5 : -0.5));
