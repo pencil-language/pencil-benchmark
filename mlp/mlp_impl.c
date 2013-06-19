@@ -32,9 +32,9 @@ void     printMatFloat( MatFloat mat, char * name )
     }
     printf(" ]\n");
   }
-  
+
   printf("]\n");
-  
+
   return;
 } // printMatFloat
 
@@ -49,7 +49,7 @@ void freeMLP( mlp * classifier )
 MatFloat
 CreateMatFloat( int rows, int cols )
 {
-    MatFloat result; 
+    MatFloat result;
     assert(rows>0);
     assert(cols>0);
 
@@ -67,7 +67,7 @@ CreateMatFloat( int rows, int cols )
 MatChar
 CreateMatChar( int rows, int cols )
 {
-    MatChar result; 
+    MatChar result;
     assert(rows>0);
     assert(cols>0);
 
@@ -87,16 +87,16 @@ copyToFloat( MatFloat input, MatFloat * output )
 {
     assert(input.data);
     assert(output);
-    assert(output->data);    
+    assert(output->data);
     assert(input.rows == output->rows);
     assert(input.cols == output->cols);
-    
+
     int q, w;
     for ( q=0; q<input.rows; q++ )
         for ( w=0; w<input.cols; w++ )
             output->data[ q * output->step + w + output->start ] =
         	input.data[ q * input.step + w + input.start ];
-    
+
     return;
 } // copyTo
 
@@ -108,7 +108,7 @@ transposeFloat( MatFloat input, MatFloat * output )
     assert(output->cols == input.rows);
     for (q=0; q<input.rows; q++)
         for (w=0; w<input.cols; w++)
-            output->data[ w * output->step + q + output->start ] 
+            output->data[ w * output->step + q + output->start ]
         	= input.data[ q * input.step + w + input.start ];
 
     return;
@@ -117,34 +117,34 @@ transposeFloat( MatFloat input, MatFloat * output )
 static float
 meanChar( MatChar input )
 {
-    assert(input.data);    
+    assert(input.data);
     int q,w;
     float sum=0;
     float c = 0; // kahan summation
-    
+
     for ( q=0; q<input.rows; q++ )
       for ( w=0; w<input.cols; w++ )
       {
         float y = input.data[ q * input.step + w + input.start ] - c;
         float t = sum + y;
-        c = (t - sum) - y;        
-        sum = t;        
+        c = (t - sum) - y;
+        sum = t;
       }
-    
+
     return sum / ( input.rows * input.cols );
 } // meanFloat
 
 static uint8_t
 minChar( MatChar input )
 {
-    assert(input.data);    
+    assert(input.data);
     int q,w;
     uint8_t minvalue = 255;
 
     for ( q=0; q<input.rows; q++ )
         for ( w=0; w<input.cols; w++ )
             minvalue = fmin( minvalue, input.data[ q * input.step + w + input.start ] );
-    
+
     return minvalue;
 } // minFloat
 
@@ -158,14 +158,14 @@ maxChar( MatChar input )
     for ( q=0; q<input.rows; q++ )
         for ( w=0; w<input.cols; w++ )
             maxvalue = fmax( maxvalue, input.data[ q * input.step + w + input.start ] );
-    
+
     return maxvalue;
 } // maxFloat
 
 
 static MatChar
 GetBlockChar( MatChar self, int row_from, int row_to, int col_from, int col_to )
-{    
+{
     assert(row_from>=0);
     assert(col_from>=0);
     assert(row_from<row_to);
@@ -173,7 +173,7 @@ GetBlockChar( MatChar self, int row_from, int row_to, int col_from, int col_to )
     assert(row_to<=self.rows);
     assert(col_to<=self.cols);
     assert(self.data);
-    
+
     MatChar result;
     result.rows  = row_to - row_from;
     result.cols  = col_to - col_from;
@@ -186,7 +186,7 @@ GetBlockChar( MatChar self, int row_from, int row_to, int col_from, int col_to )
 
 static MatFloat
 GetBlockFloat( MatFloat self, int row_from, int row_to, int col_from, int col_to )
-{  
+{
     assert(row_from>=0);
     assert(col_from>=0);
     assert(row_from<row_to);
@@ -210,11 +210,11 @@ convertFromCharToFloat( MatChar from, float quotient, float shift, MatFloat * to
 {
     assert(from.rows == to->rows);
     assert(from.cols == to->cols);
-    
+
     int q, w;
     for ( q=0; q<from.rows; q++ )
         for ( w=0; w<from.cols; w++ )
-            to->data[ q * to->step + w + to->start ] = 
+            to->data[ q * to->step + w + to->start ] =
         	quotient * (float)from.data[ q * from.step + w + from.start ] + shift;
     return;
 }
@@ -250,7 +250,7 @@ freeMatFloat( MatFloat * mat )
     return;
 } // freeMatFloat
 
-void 
+void
 freeMatChar( MatChar * mat )
 {
     assert(mat->data);
@@ -270,7 +270,7 @@ static void
 gemmFloat( MatFloat A, MatFloat B, float alpha, MatFloat C, float beta, MatFloat * result )
 {
     assert(A.rows == C.rows);
-    assert(A.cols == B.rows); 
+    assert(A.cols == B.rows);
     assert(B.cols == C.cols);
     assert(C.rows == result->rows);
     assert(C.cols == result->cols);
@@ -282,16 +282,16 @@ gemmFloat( MatFloat A, MatFloat B, float alpha, MatFloat C, float beta, MatFloat
     if ( fabs(beta) > 0.000001 ) {
         for ( q=0; q<C.rows; q++ )
             for ( w=0; w<C.cols; w++ )
-            {	    
+            {	
                 sum = 0;
                 for ( e=0; e<A.cols; e++ )
-                {              
+                {
                     float y = A.data[ q * A.step + e + A.start ] * B.data[ e * B.step + w + B.start ] - c;
                     float t = sum + y;
                     c = (t - sum) - y;
-                    sum = t;              
+                    sum = t;
                 }
-                
+
                 result->data[ q * result->step + w + result->start ] = alpha * sum  + beta * C.data[ q * C.step + w + C.start ];
             }
     }
@@ -299,20 +299,20 @@ gemmFloat( MatFloat A, MatFloat B, float alpha, MatFloat C, float beta, MatFloat
     {
         for ( q=0; q<C.rows; q++ )
             for ( w=0; w<C.cols; w++ )
-            {	    
+            {
                 sum = 0;
                 for ( e=0; e<A.cols; e++ )
-                {              
+                {
                     float y = A.data[ q * A.step + e + A.start ] * B.data[ e * B.step + w + B.start ] - c;
                     float t = sum + y;
                     c = (t - sum) - y;
-                    sum = t;              
+                    sum = t;
                 }
-                
+
                 result->data[ q * result->step + w + result->start ] = alpha * sum;
-            }        
+            }
     }
-    
+
     return;
 }
 
@@ -325,7 +325,7 @@ expFloat( MatFloat input, MatFloat * output )
     int q, w;
     for ( q=0; q<input.rows; q++ )
         for ( w=0; w<input.cols; w++ )
-            output->data[ q * output->step + w + output->start ] = 
+            output->data[ q * output->step + w + output->start ] =
         	exp(input.data[ q * input.step + w + input.start ]);
 
     return;
@@ -340,7 +340,7 @@ addFloat( MatFloat input, float val, MatFloat * output )
     int q, w;
     for ( q=0; q<input.rows; q++ )
         for ( w=0; w<input.cols; w++ )
-            output->data[ q * output->step + w + output->start ] = 
+            output->data[ q * output->step + w + output->start ] =
         	val + input.data[ q * input.step + w + input.start ];
 
     return;
@@ -355,7 +355,7 @@ divideFloat( float val, MatFloat input, MatFloat * output )
     int q, w;
     for ( q=0; q<input.rows; q++ )
         for ( w=0; w<input.cols; w++ )
-            output->data[ q * output->step + w + output->start ] = 
+            output->data[ q * output->step + w + output->start ] =
         	val / input.data[ q * input.step + w + input.start ];
 
     return;
@@ -370,9 +370,9 @@ subtractFloat( MatFloat input, float val, MatFloat * output )
     int q, w;
     for ( q=0; q<input.rows; q++ )
         for ( w=0; w<input.cols; w++ )
-            output->data[ q * output->step + w + output->start ] = 
+            output->data[ q * output->step + w + output->start ] =
         	input.data[ q * input.step + w + input.start ] - val;
-    
+
     return;
 }
 
@@ -387,7 +387,7 @@ static void
 SetValueFloat( MatFloat * self, int row, int col, float value )
 {
     self->data[ row * self->step + col + self->start ] = value;
-    return;    
+    return;
 }
 
 static float
@@ -398,7 +398,7 @@ dotProduct( MatFloat A, MatFloat B )
   assert( A.rows == B.rows );
 
   float result = 0.;
-  float c = 0.;  
+  float c = 0.;
 
   int q;
   for (q=0; q<A.rows; q++) {
@@ -407,7 +407,7 @@ dotProduct( MatFloat A, MatFloat B )
       c = (t - result) - y;
       result = t ;
   }
-  
+
   return result;
 }
 
@@ -416,7 +416,7 @@ normalizeSample( MatChar image, MatFloat * result )
 {
   assert(result->cols == image.cols);
   assert(result->rows == image.rows);
-    
+
   float sampleMean = meanChar(image);
   float sampleMin  = minChar(image);
   float sampleMax  = maxChar(image);
@@ -431,7 +431,7 @@ normalizeSample( MatChar image, MatFloat * result )
   convertFromCharToFloat( image, 1.0/sampleMax, -(1.0/sampleMax)*sampleMean, result );
 
   *result = reshapeFloat( *result, image.rows * image.cols );
- 
+
   return;
 } // normalizeSample
 
@@ -439,18 +439,18 @@ static void
 generateResponseMap(
     const MatChar image,
     const Point2i center,
-    int mapSize, 
-    mlp classifier, 
+    int mapSize,
+    mlp classifier,
     MatFloat * result
     )
 {
 
   assert(result->rows == 2 * mapSize + 1);
   assert(result->cols == 2 * mapSize + 1);
-  
+
   MatFloat m_U_transpose = CreateMatFloat( classifier.m_U.cols, classifier.m_U.rows );
   transposeFloat( classifier.m_U, &m_U_transpose );
-  
+
   MatFloat wIn_A = GetBlockFloat( classifier.m_wIn, 0, classifier.m_wIn.rows, 0, classifier.m_wIn.cols - 1 );
   MatFloat wIn = CreateMatFloat( wIn_A.rows, m_U_transpose.cols );
   gemmFloat( wIn_A, m_U_transpose, 1.0, wIn, 0.0, &wIn );
@@ -466,7 +466,7 @@ generateResponseMap(
   int cy=0;
   int ncx=0;
   int cx=0;
-  
+
   for ( ncy = 0, cy = center.y - mapSize; cy <= center.y + mapSize; ++ncy, ++cy ) {
     for (ncx = 0, cx = center.x - mapSize; cx <= center.x + mapSize; ++ncx, ++cx ) {
 
@@ -480,7 +480,7 @@ generateResponseMap(
       gemmFloat( wIn, patch, -1.0, bIn, -1.0, &xOut );
 
       MatFloat e = CreateMatFloat(xOut.rows, xOut.cols);
-      
+
       expFloat( xOut, &e );
 
       addFloat( e, 1.0, &xOut );
@@ -489,8 +489,8 @@ generateResponseMap(
 
       SetValueFloat( result, ncy, ncx, 1./( 1. + exp(- dotProduct(wOut, xOut) ) - bOut) );
       SetValueFloat( result, ncy, ncx, 1./( 1. + exp(- dotProduct(wOut, xOut) - bOut ) ) );
-      
-      freeMatFloat(&e);      
+
+      freeMatFloat(&e);
       freeMatFloat(&xOut);
       freeMatFloat(&patch);
     } // for ncx
@@ -500,7 +500,7 @@ generateResponseMap(
   freeMatFloat(&wIn);
   freeMatFloat(&m_U_transpose);
 
-  
+
   // end of classic impl
     return;
 } // generateResponseMap
@@ -512,12 +512,12 @@ cvRound( float value )
 } // cvRound
 
 void
-calculateMaps( 
-    int m_visibleLandmarks_size, 
-    int m_mapSize, 
-    MatChar alignedImage, 
-    MatFloat shape, 
-    mlp m_classifiers[], 
+calculateMaps(
+    int m_visibleLandmarks_size,
+    int m_mapSize,
+    MatChar alignedImage,
+    MatFloat shape,
+    mlp m_classifiers[],
     // results
     MatFloat * responseMaps[] )
 {
@@ -534,7 +534,7 @@ calculateMaps(
 	shape_y = GetValueFloat( shape, 2*idx+1, 0 );
 	center.x = cvRound(shape_x);
 	center.y = cvRound(shape_y);
-        
+
 	generateResponseMap( alignedImage, center, m_mapSize, m_classifiers[idx], (&(*responseMaps)[q]) );
     }
 
