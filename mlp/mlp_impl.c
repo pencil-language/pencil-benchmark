@@ -15,9 +15,11 @@
 const int MAX_INT = ~(1 << (8*sizeof(int) - 1));
 const int false = (1!=1);
 
-float    GetValueFloat( MatFloat self, int row, int col );
+float
+GetValueFloat( MatFloat self, int row, int col );
 
-void     printMatFloat( MatFloat mat, char * name )
+void
+printMatFloat( MatFloat mat, char * name )
 {
   printf("%s = [\n", name);
 
@@ -36,15 +38,14 @@ void     printMatFloat( MatFloat mat, char * name )
   printf("]\n");
 
   return;
-} // printMatFloat
-
+}
 
 void freeMLP( mlp * classifier )
 {
     freeMatFloat(&classifier->m_wIn);
     freeMatFloat(&classifier->m_wOut);
     freeMatFloat(&classifier->m_U);
-} // freeMLP
+}
 
 MatFloat
 CreateMatFloat( int rows, int cols )
@@ -98,7 +99,7 @@ copyToFloat( MatFloat input, MatFloat * output )
         	input.data[ q * input.step + w + input.start ];
 
     return;
-} // copyTo
+}
 
 static void
 transposeFloat( MatFloat input, MatFloat * output )
@@ -112,7 +113,7 @@ transposeFloat( MatFloat input, MatFloat * output )
         	= input.data[ q * input.step + w + input.start ];
 
     return;
-} // transposeFloat
+}
 
 static float
 meanChar( MatChar input )
@@ -132,7 +133,7 @@ meanChar( MatChar input )
       }
 
     return sum / ( input.rows * input.cols );
-} // meanFloat
+}
 
 static uint8_t
 minChar( MatChar input )
@@ -146,7 +147,7 @@ minChar( MatChar input )
             minvalue = fmin( minvalue, input.data[ q * input.step + w + input.start ] );
 
     return minvalue;
-} // minFloat
+}
 
 static uint8_t
 maxChar( MatChar input )
@@ -160,8 +161,7 @@ maxChar( MatChar input )
             maxvalue = fmax( maxvalue, input.data[ q * input.step + w + input.start ] );
 
     return maxvalue;
-} // maxFloat
-
+}
 
 static MatChar
 GetBlockChar( MatChar self, int row_from, int row_to, int col_from, int col_to )
@@ -234,7 +234,7 @@ reshapeFloat( MatFloat self, int new_rows )
     result.data = self.data;
 
     return result;
-} // reshapeFloat
+}
 
 void
 freeMatFloat( MatFloat * mat )
@@ -248,7 +248,7 @@ freeMatFloat( MatFloat * mat )
     mat->step  = 0;
     mat->start = 0;
     return;
-} // freeMatFloat
+}
 
 void
 freeMatChar( MatChar * mat )
@@ -262,8 +262,7 @@ freeMatChar( MatChar * mat )
     mat->step  = 0;
     mat->start = 0;
     return;
-} // freeMatChar
-
+}
 
 // returns alpha*A*B + beta * C
 static void
@@ -433,7 +432,7 @@ normalizeSample( MatChar image, MatFloat * result )
   *result = reshapeFloat( *result, image.rows * image.cols );
 
   return;
-} // normalizeSample
+}
 
 static void
 generateResponseMap(
@@ -493,23 +492,21 @@ generateResponseMap(
       freeMatFloat(&e);
       freeMatFloat(&xOut);
       freeMatFloat(&patch);
-    } // for ncx
-  } // for ncy
+    }
+  }
 
   freeMatFloat(&wOut);
   freeMatFloat(&wIn);
   freeMatFloat(&m_U_transpose);
 
-
-  // end of classic impl
-    return;
-} // generateResponseMap
+  return;
+}
 
 static int
 cvRound( float value )
 {
     return (int)(value + (value >= 0 ? 0.5 : -0.5));
-} // cvRound
+}
 
 void
 calculateMaps(
@@ -539,7 +536,4 @@ calculateMaps(
     }
 
     return;
-} // calculateMaps
-
-
-// LuM end of file
+}
