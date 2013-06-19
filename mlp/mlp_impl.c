@@ -14,7 +14,6 @@
 
 const int MAX_INT = ~(1 << (8*sizeof(int) - 1));
 const int false = (1!=1);
-// const int NULL=0;
 
 void     freeMLP( mlp * classifier );
 MatFloat CreateMatFloat( int rows, int cols );
@@ -407,7 +406,6 @@ float
 GetValueFloat( MatFloat self, int row, int col )
 {
     return self.data[ row * self.step + col + self.start ];
-    // return -1231.;
 }
 
 void
@@ -475,7 +473,6 @@ generateResponseMap(
   assert(result->rows == 2 * mapSize + 1);
   assert(result->cols == 2 * mapSize + 1);
   
-  // MatFloat resMap( 2 * mapSize + 1, 2 * mapSize + 1 );
   MatFloat m_U_transpose = CreateMatFloat( classifier.m_U.cols, classifier.m_U.rows );
   transposeFloat( classifier.m_U, &m_U_transpose );
   
@@ -549,35 +546,23 @@ calculateMaps(
     // results
     MatFloat * responseMaps[] )
 {
-    // printf("calculateMaps started\n");    
     int q;
     for (q=0; q<m_visibleLandmarks_size; q++ )
     {
-	// printf("processing patch %d/%d\n", q, m_visibleLandmarks_size );
-        /* const int idx = m_visibleLandmarks[q]; */
-        /* assert(idx==q); */
 	int idx = q;
 
         Point2i center;
 	float shape_x;
 	float shape_y;
 
-	// printf("ici01\n");
 	shape_x = GetValueFloat( shape, 2*idx, 0 );
-	// printf("ici02\n");
 	shape_y = GetValueFloat( shape, 2*idx+1, 0 );
-	// printf("ici03\n");
 	center.x = cvRound(shape_x);
-	// printf("ici04\n");
 	center.y = cvRound(shape_y);
-	// printf("ici05\n");
         
-	// responseMaps[q] = m_classifiers[idx].generateResponseMap( alignedImage, center, m_mapSize );
 	generateResponseMap( alignedImage, center, m_mapSize, m_classifiers[idx], (&(*responseMaps)[q]) );
-	// printf("ici06\n");
     }
 
-    // printf("calculateMaps finished\n");
     return;
 } // calculateMaps
 
