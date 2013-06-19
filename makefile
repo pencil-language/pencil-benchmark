@@ -3,6 +3,7 @@
 ## These are the compilation preferences
 
 USE_GCC=0
+NO_INTEL_LIBS=0
 
 ## end of preferences
 
@@ -12,11 +13,10 @@ BASEDIR=$(shell pwd)
 
 # Use icc by default, but allow the user to it
 ifeq ($(USE_GCC), 1)
-	echo "a"
 	CXX=g++
 	CC=gcc
 	LD=ld
-	CXXFLAGS=-std=c++11 -I$(BASEDIR)/opencl -I$(BASEDIR)/core -I/opt/local/include
+	CXXFLAGS=-std=c++0x -I$(BASEDIR)/opencl -I$(BASEDIR)/core -I/opt/local/include -I/usr/local/cuda/include/
 	LDLIBS+=-lstdc++ -lm
 else
 	CXX=icc
@@ -28,6 +28,7 @@ endif
 
 
 LDFLAGS+=-L/home/ujoimro/Inst/opencv/build/opencv-2.4.5/release/install/lib -L/opt/local/lib64
+LDFLAGS+=-L/home/b/src-not-saved/opencv-2.4.5-build/lib/
 
 LDLIBS+=-lboost_serialization -lOpenCL
 LDLIBS+=-lopencv_core -lopencv_ocl -lopencv_imgproc -lopencv_flann -lopencv_highgui -lopencv_features2d -lopencv_objdetect -lopencv_video
@@ -51,6 +52,7 @@ ifeq (CXX, g++)
 endif
 
 # includes 
+CXXFLAGS+=-I/home/b/src-not-saved/opencv-2.4.5-build/include/
 CXXFLAGS+=-I/home/ujoimro/Inst/opencv/build/opencv-2.4.5/release/install/include
 #CXXFLAGS+=-I/home/ujoimro/Inst/opencv/build/OpenCV-2.4.2/optimized/install/include
 
