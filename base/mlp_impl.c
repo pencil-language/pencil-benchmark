@@ -14,7 +14,7 @@
 
 const int MAX_INT = ~(1 << (8*sizeof(int) - 1));
 const int false = (1!=1);
-const int gangsize = 32;
+const int gangsize = 640;
 
 // const int NULL=0;
 
@@ -722,8 +722,8 @@ void
 calculateMaps( 
     int m_visibleLandmarks_size, 
     int m_mapSize, 
-    MatChar alignedImage, 
-    MatFloat shape, 
+    MatChar alignedImages[], 
+    MatFloat shapes[], 
     mlp m_classifiers[], 
     // results
     MatFloat * responseMaps[] )
@@ -742,9 +742,9 @@ calculateMaps(
 	float shape_y;
 
 	// printf("ici01\n");
-	shape_x = GetValueFloat( shape, 2*idx, 0 );
+	shape_x = GetValueFloat( shapes[q], 2*idx, 0 );
 	// printf("ici02\n");
-	shape_y = GetValueFloat( shape, 2*idx+1, 0 );
+	shape_y = GetValueFloat( shapes[q], 2*idx+1, 0 );
 	// printf("ici03\n");
 	center.x = cvRound(shape_x);
 	// printf("ici04\n");
@@ -752,7 +752,7 @@ calculateMaps(
 	// printf("ici05\n");
         
 	// responseMaps[q] = m_classifiers[idx].generateResponseMap( alignedImage, center, m_mapSize );
-	generateResponseMap( alignedImage, center, m_mapSize, m_classifiers[idx], (&(*responseMaps)[q]) );
+	generateResponseMap( alignedImages[q], center, m_mapSize, m_classifiers[idx], (&(*responseMaps)[q]) );
 	// printf("ici06\n");
     }
 

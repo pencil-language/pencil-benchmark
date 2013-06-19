@@ -26,6 +26,10 @@
 
 #include "cast.h"
 
+#include "GEL/histo.h"
+#include "GEL/linalg.h"
+
+
 const int gel_xml_export_version = 1;
 
 class exception : public std::exception {
@@ -128,7 +132,7 @@ void boost::serialization::load( T0 & archiver, cv::Mat_<T1> & matrix, unsigned 
         archiver >> BOOST_SERIALIZATION_NVP(type);
 
         if (matrix.type()!=type)                    
-            throw ::exception( std::string("serialization error: the matrix data type (") + gel::gel_cast<std::string>(matrix.type()) + ") in the file is different from the class type (" + gel::gel_cast<std::string>(type) + ")" );
+            throw ::exception( std::string("serialization error: the matrix data type (") + gel::cast<std::string>(matrix.type()) + ") in the file is different from the class type (" + gel::cast<std::string>(type) + ")" );
 
         matrix.create(rows, cols);
                 
@@ -142,7 +146,7 @@ void boost::serialization::load( T0 & archiver, cv::Mat_<T1> & matrix, unsigned 
         break;
                 
     default:
-        throw ::exception ( std::string("serialization error: file version (") + gel::gel_cast<std::string>(gel_xml_export_version) + ") not recognized " );
+        throw ::exception ( std::string("serialization error: file version (") + gel::cast<std::string>(gel_xml_export_version) + ") not recognized " );
     } /* switch */
 
     return;            
@@ -154,8 +158,6 @@ template<class T0, class T1> inline void boost::serialization::serialize( T0 & a
     boost::serialization::split_free( archiver, matrix, version );
 }
 
-#define PRINT(x) std::cout << "_debug: " << #x << " = " << x << "\n"
-    
 #define GEL_EXPORT_VAR( archiver, var )                                 \
     try                                                                 \
     {                                                                   \
@@ -191,7 +193,16 @@ namespace gel
             GEL_EXPORT_VAR( archiver, rho2 );
         } // serialize
 
-    
+        /*!
+          \brief Generates response map around a given coordinate
+
+          \param image Image, [n x m], uint8
+          \param center Center coordinates of the response map, [2 x 1], integer
+          \param mapSize Radius like size of the response map, integer
+          \return Response of the classifier, [(2*mapSize+1) x (2*mapSize+1)] double
+        */
+        cv::Mat_<pixel_type> generateResponseMap(const cv::Mat_<uint8_t>& image, const cv::Point2i& center, int mapSize ) const;
+
     public:
 
         int m_patchSize;      /*!< \brief Radius like patch size, the true size of the patch is [(2*patchSize+1) x (2*patchSize+1)] */
@@ -201,11 +212,39 @@ namespace gel
         int hidden_num;
         double rho2;
 
-        enum NormalizationMethod { none, maxAbs, meanStd };
-
     private:
-        NormalizationMethod preSVDNormalizationMethod;
-        NormalizationMethod postSVDNormalizationMethod;
+        /*!
+           This function updates the mutable variables which are used
+           for the response map generation. This function has to be
+           called when a new potential mapSize comes in the function,
+           but it recalculates the matrices only if the mapSize of the
+           requested response map changes.
+    
+           IMPORTANT: This function is NOT thread safe. The
+           responseMaps are generated separately for each control
+           point. This function however can be made thread safe for
+           the cost of the synchronization overhead.
+    
+           \param new_mapSize
+         */
+        void update(int newMapSize ) const;
+        
+        /**
+         * Generates a matrix with normalized patches.
+         *
+         * @param sample
+         * @param patch_size
+         *
+         * @return
+         */
+        cv::Mat_<pixel_type> generatePatch(const cv::Mat_<uint8_t>& sample,int patch_size) const;
+    
+        /*!
+          \brief Evaluate normalized samples
+          
+          \return The values
+        */
+        cv::Mat_<pixel_type> evaluateSamples() const;
     
         // we store the data for the response map generation if the
         // mapSize parameter does not change (and there is no reason
@@ -221,6 +260,156 @@ namespace gel
         mutable cv::Mat_<pixel_type> m_wOut_gemm;
     };
 
-} // namespace gel  
+} // namespace gel
+
+/************************************************ implementation of GEL functions ************************************************/
+
+template <typename T0>
+cv::Mat_<typename gel::MLP<T0>::pixel_type> gel::MLP<T0>::generateResponseMap( const cv::Mat_<uint8_t>& image,
+                             const cv::Point2i& center,
+                             int mapSize ) const
+{
+    // static conductor_t conductor;    
+    // conductor.hack.center = center;
+    // conductor.hack.mapSize = mapSize;
+    // conductor.hack.m_patchSize = m_patchSize;
+    // conductor.hack.m_currentMapSize = m_currentMapSize;
+    // conductor.hack.postSVDNormalizationMethod = postSVDNormalizationMethod;
+    // conductor.hack.image = image.clone();
+    // conductor.hack.m_wIn = m_wIn.clone();
+    // conductor.hack.m_U = m_U.clone();
+    // conductor.hack.m_wOut = m_wOut.clone();
+    
+    // make sure that we have the necessary matrices
+    // calculated (this is a method; it is NOT thread safe!), but it is called for each classifier once
+    update(mapSize);
+
+    for ( int ncy = 0, cy = center.y - mapSize; cy < center.y + mapSize + 1; ++ncy, ++cy ) {
+        cv::Mat_<uint8_t> sample = image( cv::Range( cy - m_patchSize, cy + m_patchSize + 1 ), cv::Range( center.x - mapSize - m_patchSize, center.x + mapSize + m_patchSize + 2 ) );
+        cv::Mat_<pixel_type> pack_patches = generatePatch(sample, m_patch_line_size);
+
+        cv::Mat_<pixel_type> target = m_all_patches( cv::Range::all(), cv::Range( ncy * m_number_of_patches_per_line, (ncy + 1) * m_number_of_patches_per_line ) );
+        gel::copyTo( pack_patches, target ); // pack_patches.copyTo(target);
+    }
+
+    cv::Mat_<pixel_type> result = evaluateSamples();
+
+    // conductor.hack.result = result.cv::Mat::reshape(0,m_number_of_patches_per_line).clone();
+
+    // conductor.exporter << BOOST_SERIALIZATION_NVP(conductor.id);
+    // conductor.exporter << BOOST_SERIALIZATION_NVP(conductor.hack);
+    // conductor.id++;
+    
+    return result.cv::Mat::reshape(0,m_number_of_patches_per_line);
+}
+
+#define WITH_IPP
+#define WITH_MKL
+#include "GEL/linalg.h"
+
+template <typename T0>
+void gel::MLP<T0>::update(int newMapSize) const
+{
+    // this function is interesting only if the mapSize has
+    // changed
+    if ( newMapSize != m_currentMapSize )
+    {
+        cv::Mat_<pixel_type> target;
+
+        m_currentMapSize = newMapSize;
+
+        // extract to the creation
+        m_wIn_gemm = m_wIn.colRange(0,m_wIn.cols-1)*m_U.t();
+        cv::Mat_<pixel_type> bIn = m_wIn.col(m_wIn.cols-1);
+        m_wOut_gemm = m_wOut.colRange(0,m_wOut.cols-1); ///!!!!!!!!!! NO MORE TRANSPOSE .t();
+
+        pixel_type bOut = m_wOut(0,m_wOut.cols-1);
+
+        m_number_of_patches_per_line = 2 * m_currentMapSize + 1;
+        // here we assume that the patches are always square-like
+        int number_of_all_patches  = m_number_of_patches_per_line * m_number_of_patches_per_line;
+        m_patch_line_size = 2 * m_patchSize + 1;
+        int patch_size = m_patch_line_size * m_patch_line_size;
+
+        m_all_bIns.create ( bIn.rows, number_of_all_patches );
+        m_all_bOuts.create( 1, number_of_all_patches );
+        m_all_patches.create( m_wIn_gemm.cols, number_of_all_patches );
+
+        for (int q=0; q < number_of_all_patches; q++)
+        {
+            target = m_all_bIns( cv::Range::all(), cv::Range(q, q+1) );
+            gel::copyTo(bIn, target); // bIn.copyTo(target);
+            m_all_bOuts( 0, q ) = bOut;
+        }
+    }
+}
+
+template <typename T0>
+cv::Mat_<typename gel::MLP<T0>::pixel_type> gel::MLP<T0>::generatePatch(const cv::Mat_<uint8_t>& sample,int patch_size) const
+{
+    cv::Mat_<pixel_type> result( sample.rows * patch_size, sample.cols - patch_size );
+
+    // the first patch is treated specially
+    cv::Mat_<uint8_t> patch_image = sample( cv::Range::all(), cv::Range(0, patch_size) );
+
+    histo<pixel_type> stat;
+    stat.insert( patch_image );
+
+    // we are now processing line by line
+    for ( int q = patch_size, col = 0;
+        q < sample.cols;
+        q++, col++ )
+    {
+        pixel_type sample_mean = stat.mean();
+        pixel_type sample_max = stat.max() - sample_mean;
+        pixel_type sample_min = stat.min() - sample_mean;
+
+        sample_max = std::max( std::abs( sample_max ), std::abs( sample_min ) );
+        if (sample_max==0) sample_max = 1;
+
+        patch_image = sample( cv::Range::all(), cv::Range( col, col + patch_size ) );
+
+        cv::Mat_<pixel_type> normalized_patch;
+        patch_image.convertTo (
+            normalized_patch, normalized_patch.type(),
+            1.0/sample_max, -(1.0/sample_max)*sample_mean );
+
+        cv::Mat_<pixel_type> patch_line = normalized_patch.cv::Mat::reshape(0,normalized_patch.rows * normalized_patch.cols);
+        cv::Mat_<pixel_type> target = result( cv::Range::all(), cv::Range( col, col + 1) );
+
+        gel::copyTo(patch_line, target);  //patch_line.copyTo( target );
+
+        cv::Mat_<uint8_t> patch_line_in  = sample( cv::Range::all(), cv::Range( q, q + 1 ) );
+        cv::Mat_<uint8_t> patch_line_out = sample( cv::Range::all(), cv::Range( col, col + 1 ) );
+        stat.insert( patch_line_in );
+        stat.remove( patch_line_out );
+    }
+
+    return result;
+}
+
+template <typename T0>
+cv::Mat_<typename gel::MLP<T0>::pixel_type> gel::MLP<T0>::evaluateSamples() const
+{
+    cv::Mat_<pixel_type> xOut;
+    gel::gemm<pixel_type>( m_wIn_gemm, m_all_patches, -1., m_all_bIns, -1., xOut ); // cv::gemm
+    cv::Mat_<pixel_type> e;
+    gel::exp( xOut, e ); // cv::exp
+    cv::add( e, 1.0, xOut );
+    cv::divide( 2.0, xOut, e );
+    cv::subtract( e, 1.0, xOut );
+
+    cv::Mat_<pixel_type> dot;
+    gel::gemm<pixel_type>( m_wOut_gemm, xOut, -1., m_all_bOuts, -1., dot ); // cv::gemm
+
+    cv::Mat_<pixel_type> result;
+    gel::exp( dot, result ); // cv::exp
+    cv::add( result, 1.0, dot );
+    cv::divide( 1.0, dot, result );
+
+    return result;
+}
+
+
 
 #endif /* CLM_MLP_H */

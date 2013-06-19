@@ -6,8 +6,6 @@
 #ifndef __MLP_IMPL__H__
 #define __MLP_IMPL__H__
 
-#include "cltypes.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
@@ -29,18 +27,9 @@ extern "C" {
     } MatChar; // struct MatChar
 
     typedef struct {
-        int rows;
-        int cols;
-        int step;
-        int start;    
-        int * data;    
-    } MatInt; // struct MatInt
-
-    
-    typedef struct {
         int x;
         int y;
-    } Point2i; // struct Point2i
+    } Point2i;
 
     typedef enum { none, maxAbs, meanStd } NormalizationMethod;
 
@@ -66,14 +55,14 @@ extern "C" {
     void freeMLP( mlp * classifier );
 
     void
-    calculateMaps(
-        int m_visibleLandmarks_size,
-        int m_mapSize,
-        MatChar alignedImage,
-        MatFloat shape,
-        mlp m_classifiers[],
+    calculateMaps( 
+        int m_visibleLandmarks_size, 
+        int m_mapSize, 
+        MatChar alignedImage, 
+        MatFloat shape, 
+        mlp m_classifiers[], 
         // results
-        MatFloat * responseMaps[] );
+        MatFloat * responseMaps[] );    
 
 
 #endif /* __MLP_IMPL__H__ */

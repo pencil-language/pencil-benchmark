@@ -5,22 +5,25 @@
 
 #include <chrono>
 #include <string>
+#include <iomanip>
 #include <stdlib.h>
 #include <opencv2/core/core.hpp>
 #include <boost/preprocessor.hpp>
 #include <boost/serialization/vector.hpp>
+#include <boost/archive/xml_iarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 
 #include "cast.h"
 #include "mlp.hpp"
 #include "mlp_impl.h"
+#include "utility.hpp"
 
 /*
-extern int EF_ALIGNMENT = 0;
-extern int EF_PROTECT_BELOW = 0;
-extern int EF_PROTECT_FREE = 0;
-extern int EF_ALLOW_MALLOC_0 = 1;
-extern int EF_FILL = 1922;
+  extern int EF_ALIGNMENT = 0;
+  extern int EF_PROTECT_BELOW = 0;
+  extern int EF_PROTECT_FREE = 0;
+  extern int EF_ALLOW_MALLOC_0 = 1;
+  extern int EF_FILL = 1922;
 */
 
 namespace { struct hack_t; }
@@ -33,6 +36,8 @@ cv::Mat_<double> convertMatFloatToCV( MatFloat input );
 void     allocateResponseMaps( int mapSize, int size, MatFloat * responseMaps[] );
 void     freeResponseMaps( MatFloat * responseMaps[], int size );
 
+
+const int processed_frames = 100;
 
 namespace {
      
@@ -62,11 +67,11 @@ namespace {
         int id;
         hack_t hack;
         std::ifstream dumpStream;
-        boost::archive::binary_iarchive importer;
+        boost::archive::xml_iarchive importer;
 
     public:
         
-        conductor_t() : id(0), dumpStream("response_dumps.bin", std::ios::in | std::ios::binary ), importer(dumpStream) {
+        conductor_t() : id(0), dumpStream("response_dumps.xml", std::ios::in | std::ios::binary ), importer(dumpStream) {
             
         }; // conductor_t
         
@@ -173,8 +178,8 @@ void freeResponseMaps( MatFloat * responseMaps[], int size )
 }
 
 template <class T0>
-auto
-microseconds( T0 t0 ) -> decltype(std::chrono::duration_cast<std::chrono::microseconds>(t0).count())
+std::chrono::microseconds::rep
+microseconds( T0 t0 )
 {
     return std::chrono::duration_cast<std::chrono::microseconds>(t0).count();
 }
@@ -186,10 +191,10 @@ int main()
     int fail = 0;
     long int elapsed_time = 0;
     
-
-    for ( conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id);          
-          //((conductor.id != -1) and (conductor.id != 25));
-          conductor.id != -1;
+    
+    for ( conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id);
+          ((conductor.id != -1) && (conductor.id != processed_frames));
+          // conductor.id != -1;
           conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id)
         )
     {
@@ -215,8 +220,8 @@ int main()
                 &responseMaps
                 );
             auto end = std::chrono::high_resolution_clock::now();
-            elapsed_time = microseconds(end - start);            
-            
+            elapsed_time += microseconds(end - start);
+
             // releasing the inputs
             freeMatChar(&alignedImage);
             freeMatFloat(&shape);
@@ -228,32 +233,29 @@ int main()
             {
                 cv::Mat_<double> nextResult;
                 nextResult = convertMatFloatToCV( responseMaps[q] );
-                calculatedResults.push_back(nextResult);                
+                calculatedResults.push_back(nextResult);
             }
             
             // testing the output
             for (int q=0; q<conductor.hack.m_visibleLandmarks_size; q++)
             {
-                // std::cout << "cv::norm( conductor.hack.responseMaps[" << q << "] - calculatedResults[" << q << "] ) = "
-                //           << cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) << std::endl;
-                
-                assert(cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) < 0.00001);
+                if (cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) > 0.0001) throw std::runtime_error("conductor.hack.responseMaps[q] - calculatedResults[q] ) < 0.0001 failed");
             }
             
             // releasing the outputs
             freeResponseMaps( &responseMaps, conductor.hack.m_visibleLandmarks_size );
 
         }
-        // here comes the test
-        // PRINT(cv::norm( ));
     }
     
-    std::cout << "total elapsed time = " << elapsed_time / 1000000. << " s." << std::endl;    
-    //conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.hack);
-    
-    return EXIT_SUCCESS;
-}
+    std::cout << "total elapsed time = " << elapsed_time / 1000000. << " s." << std::endl;
+    std::cout << std::setprecision(2) << std::fixed;
+    std::cout << "processing speed   = " << 1000000. * processed_frames / elapsed_time << "fps" << std::endl;
 
+    //conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.hack);
+
+    return EXIT_SUCCESS;
+} // int main
 
 
 // LuM end of file

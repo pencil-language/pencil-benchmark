@@ -14,6 +14,7 @@
 
 #include "cltypes.h"
 #include "errors.hpp"
+#include "utility.hpp"
 
 
 namespace carp {
@@ -25,21 +26,10 @@ namespace carp {
             std::string
             readfile( const std::string & filename )
             {
-                std::ifstream input( filename, std::ifstream::binary );
-    
-                if (!input) throw std::runtime_error("error: Couldn't open file `" + filename + "'" );
-        
-                input.seekg(0, input.end);
-                int length = input.tellg();
-                input.seekg(0, input.beg);
-
-                boost::scoped_array<char> result_c_str(new char[length+1]);            
-                input.read(result_c_str.get(), length);
-                if (!input) throw std::runtime_error("error: Could not read file `" + filename + "'");
-            
-                std::string result(result_c_str.get());
-
-                return result;
+                std::ifstream input(filename);
+                std::stringstream buffer;
+                buffer << input.rdbuf();
+                return buffer.str();
             } // readfile
 
 
@@ -51,7 +41,7 @@ namespace carp {
                 ) throw (std::exception&) {
                 if ( error != CL_SUCCESS )
                     throw std::runtime_error( std::string("error: OpenCL: ") +
-                                              carp::opencl::errors[error] +
+                                              carp::opencl::errors.at(error) +
                                               "; line: " + std::to_string(line) + " in file " + filename );
             } // checkerror
 
@@ -79,13 +69,10 @@ namespace carp {
                 
                 std::vector<T0> result(group_sizes.size());
 
-                for (
-                    auto group = group_sizes.begin(),
-                        glob = global_sizes.begin(),
-                        rup = result.begin();
-                    group!= group_sizes.end();
-                    group++, glob++, rup++
-                    )
+                auto group = group_sizes.begin();
+                auto glob = global_sizes.begin();
+                auto rup = result.begin();
+                for (; group!= group_sizes.end(); group++, glob++, rup++ )
                     *rup = roundup( *group, *glob );
                 
                 return result;
@@ -120,7 +107,7 @@ namespace carp {
                 size_t m_size;
                 
             public:
-                preparator( MT0 & mt0 ) : m_ptr(reinterpret_cast<void*>(&mt0)), m_size(sizeof(mt0)) { }                
+                preparator( MT0 & mt0 ) : m_ptr(reinterpret_cast<void*>(&mt0)), m_size(sizeof(mt0)) { }
                 void * ptr() { return m_ptr; } // ptr
                 size_t size() { return m_size; } // size                 
             }; // class preparator
@@ -162,7 +149,7 @@ namespace carp {
             kernel & operator() ( MT ... mt ) {
                 assert(m_set);
                 int pos=0; // the position of the parameters
-                std::vector<bool> err { setparameter(pos, mt)... };
+                bool err[] = { setparameter(pos, mt)... };
 
                 return *this;
             } // operator ()
@@ -173,7 +160,7 @@ namespace carp {
                 assert(cqKernel);
                 assert(cqCommandQueue);
                 std::vector<size_t> kernelsize = utility::roundup(groupsize, worksize);
-                utility::checkerror(clEnqueueNDRangeKernel( cqCommandQueue, cqKernel, worksize.size(), NULL, &(kernelsize[0]), &(groupsize[0]), 0, NULL, NULL ), __FILE__, __LINE__ );
+                utility::checkerror(clEnqueueNDRangeKernel( cqCommandQueue, cqKernel, worksize.size(), NULL, kernelsize.data(), groupsize.data(), 0, NULL, NULL ), __FILE__, __LINE__ );
                 utility::checkerror(clFinish(cqCommandQueue), __FILE__, __LINE__ );
             } // groupsize 
             
@@ -217,7 +204,7 @@ namespace carp {
                 assert(num_platforms==1);  // there is only one supported platform at the time
                 
                 utility::checkerror(clGetDeviceIDs(cpPlatform, CL_DEVICE_TYPE_GPU, 1, &cdDevice, &num_devices), __FILE__, __LINE__ );
-                assert(num_devices==1);
+//                assert(num_devices==1);
 
                 cxGPUContext = clCreateContext( NULL, 1, &cdDevice, NULL, NULL, &err );
                 utility::checkerror( err, __FILE__, __LINE__ );
@@ -250,7 +237,7 @@ namespace carp {
                     lengths.push_back(sources.back().size());                    
                 }
                                 
-                cpProgram = clCreateProgramWithSource( cxGPUContext, sources.size(), &(c_strs[0]), &(lengths[0]), &err );
+                cpProgram = clCreateProgramWithSource( cxGPUContext, sources.size(), &(c_strs[0]), lengths.data(), &err );
                 utility::checkerror(err, __FILE__, __LINE__ );
 
                 // building the OpenCL source code
@@ -258,11 +245,11 @@ namespace carp {
                 if ( err!=CL_SUCCESS )
                 {
                     size_t len;
-                    std::string buffer(1048576, 0);
+                    std::vector<char> buffer(1048576);
 
-                    utility::checkerror( clGetProgramBuildInfo( cpProgram, cdDevice, CL_PROGRAM_BUILD_LOG, buffer.size(), reinterpret_cast<void*>(&buffer[0]), &len ), __FILE__, __LINE__ );
-
-                    std::cerr << buffer << std::endl;
+                    utility::checkerror( clGetProgramBuildInfo( cpProgram, cdDevice, CL_PROGRAM_BUILD_LOG, buffer.size(), buffer.data(), &len ), __FILE__, __LINE__ );
+                    
+                    std::cerr << buffer.data() << std::endl;
                     throw std::runtime_error("error: OpenCL: The compilation has failed.");                    
                 }
 
@@ -295,7 +282,7 @@ namespace carp {
         }; // class device
 
 
-        template <class T0>
+        template <class T0 = uint8_t >
         class array {
         private:
             cl_mem cl_ptr;
@@ -314,7 +301,7 @@ namespace carp {
                 ) : m_size(size), cqContext(cqContext), cqCommandQueue(cqCommandQueue) {
                 assert( (flags & CL_MEM_USE_HOST_PTR) == 0 );
                 cl_int err;                
-                cl_ptr = clCreateBuffer( cqContext, flags, size * sizeof(T0), NULL, &err );
+                cl_ptr = clCreateBuffer( cqContext, flags, m_size * sizeof(T0), NULL, &err );
                 utility::checkerror( err, __FILE__, __LINE__ );              
             } // array
 
@@ -322,12 +309,41 @@ namespace carp {
                    const cl_command_queue & cqCommandQueue,
                    std::vector<T0> & input,
                    cl_mem_flags flags = CL_MEM_READ_WRITE
-                ) : m_size(input.size()) {
-                cl_int err;
-                cl_ptr = clCreateBuffer( cqContext, flags | CL_MEM_COPY_HOST_PTR, size * sizeof(T0), reinterpret_cast<void*>(input[0]), &err );
-                utility::checkerror( err, __FILE__, __LINE__ );
-            } // array
+                ) : m_size(input.size()),
+                    cqContext(cqContext),
+                    cqCommandQueue(cqCommandQueue)
+                {
+                    cl_int err;
+                    cl_ptr = clCreateBuffer( cqContext, flags | CL_MEM_COPY_HOST_PTR, m_size * sizeof(T0), reinterpret_cast<void*>(input.data()), &err );
+                    utility::checkerror( err, __FILE__, __LINE__ );
+                } // array
 
+            array( opencl::device & device,
+                   std::vector<T0> & input,
+                   cl_mem_flags flags = CL_MEM_READ_WRITE
+                ) : m_size(input.size()),
+                    cqContext(device.get_context()),
+                    cqCommandQueue(device.get_queue())
+                {
+                    cl_int err;
+                    cl_ptr = clCreateBuffer( cqContext, flags | CL_MEM_COPY_HOST_PTR, m_size * sizeof(T0), reinterpret_cast<void*>(input.data()), &err );
+                    utility::checkerror( err, __FILE__, __LINE__ );                    
+                }
+                        
+            template <class MT0>
+            array( opencl::device & device,
+                   size_t size,
+                   MT0 * ptr,
+                   cl_mem_flags flags = CL_MEM_READ_WRITE )
+                : m_size(size),
+                  cqContext(device.get_context()),
+                  cqCommandQueue(device.get_queue())
+                {
+                    cl_int err;
+                    cl_ptr = clCreateBuffer( cqContext, flags | CL_MEM_COPY_HOST_PTR, size * sizeof(T0), reinterpret_cast<void*>(ptr), &err );
+                    utility::checkerror( err, __FILE__, __LINE__ );
+                }            
+            
             cl_mem cl() {
                 return cl_ptr;
             } // cl
@@ -341,8 +357,8 @@ namespace carp {
             } // size
             
             std::vector<T0> get( ) {
-                std::vector<T0> result(size);                
-                utility::checkerror( clEnqueueReadBuffer( cqCommandQueue, cl_ptr, CL_TRUE, 0, sizeof(T0) * size, &(result[0]), 0, NULL, NULL), __FILE__, __LINE__ );
+                std::vector<T0> result(m_size);                
+                utility::checkerror( clEnqueueReadBuffer( cqCommandQueue, cl_ptr, CL_TRUE, 0, sizeof(T0) * m_size, result.data(), 0, NULL, NULL), __FILE__, __LINE__ );
 
                 return result;                
             } // extract
@@ -385,7 +401,19 @@ namespace carp {
                 m_cols(cols),
                 buf(cqContext, cqCommandQueue, rows * cols )
                 { }
+            
+            image( opencl::device & device,
+                   cv::Mat_<T0> input ) :
+                cqContext(device.get_context()),
+                cqCommandQueue(device.get_queue()),
+                m_rows(input.rows),
+                m_cols(input.cols),
+                buf(cqContext, cqCommandQueue, input.rows * input.cols )
+                {
+                    this->set(input);                    
+                } // image
 
+            
             int rows() const { return m_rows; };
 
             int cols() const { return m_cols; };
@@ -415,7 +443,7 @@ namespace carp {
                 return result;
             } // get
 
-            void set( cv::Mat_<value_type> & image ) {
+            void set( cv::Mat_<value_type> image ) {
                 assert(image.isContinuous());
 
                 utility::checkerror(
@@ -424,7 +452,17 @@ namespace carp {
                                 
                 return;                
             } // set
-            
+
+            image<T0> & operator= ( cv::Mat_<value_type> & image ) {
+                assert(image.isContinuous());
+
+                utility::checkerror(
+                    clEnqueueWriteBuffer(
+                        cqCommandQueue, ptr(), CL_TRUE, 0, buf.size() * sizeof(value_type), reinterpret_cast<void*>(&image(0,0)), 0, NULL, NULL ) );
+                                
+                return *this;                
+            } // operator = 
+
                 
         }; // class image
         

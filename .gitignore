@@ -2,4 +2,6 @@
 *.o
 tobias_credentials
 response_dumps.bin
+response_dumps.xml
 test_mlp
+*.orig

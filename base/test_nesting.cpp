@@ -1,9 +1,13 @@
 // UjoImro, 2013
 
+#include <string>
 #include <stdlib.h>
 #include <opencv2/core/core.hpp>
 
 #include "opencl.hpp"
+#include "utility.hpp"
+
+
 
 const int rows = 10;
 const int cols = 15;
@@ -12,7 +16,7 @@ int main()
 {
 
     carp::opencl::device device;
-    device.compile( {"nesting.cl"}, {"transposeFloat"} );
+    device.compile( carp::string_vector("nesting.cl"), carp::string_vector("transposeFloat"));
 
     cv::Mat_<float> image(rows, cols);
     for ( int q=0; q<image.rows; q++ )
@@ -27,7 +31,7 @@ int main()
     cl_image.set(image);
     
     device["transposeFloat"]( cl_image.cl(), cl_image.ptr(), cl_trans.cl(), cl_trans.ptr() )
-        .groupsize({32}, {32});
+        .groupsize( carp::make_vector(32ul), carp::make_vector(32ul));
 
     cv::Mat_<float> trans = cl_trans.get();
 

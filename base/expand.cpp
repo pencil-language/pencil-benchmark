@@ -21,7 +21,7 @@ printall( Args... args )
 {
     int q = 0;
 
-    std::vector<int> results { printme(q, args)... };
+    int results[] = { printme(q, args)... };
 
 }
 // printall

@@ -5,10 +5,10 @@ typedef struct {
     int cols;
     int step;
     int start;    
-} Mat; // struct Mat
+} clMat; // struct Mat
 
 
-__kernel void color( Mat image, __global int * data )
+__kernel void color( clMat image, __global int * data )
 {
     // get index into global data array
     int row = get_global_id(0);

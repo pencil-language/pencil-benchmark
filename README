@@ -1,7 +1,12 @@
  For compiling and running the test You are going to need OpenCV
 (tested with 2.4.2) and boost.
 
-The file with the input data has to be downloaded separately. The
-credentials will be attributed at a later time. The file is
-'response_dumps.bin.7z'. You have to decompress it, but be carefull
-it's 1.6GiB when uncompressed.
+The input data for mlp testing is stored in file
+'response_dumps.xml.7z'. You have to decompress it before the benchmark. 
+
+There are makefile parameters which can be set in order to compile the
+benchmark. Look into the makefile. 
+
+The most interesting files in the mlp benchmark are 
+mlp_impl.c
+mlp_impl.cl
