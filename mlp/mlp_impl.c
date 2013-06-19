@@ -99,6 +99,8 @@ static float meanChar(MatChar input) {
   return sum / (input.rows * input.cols);
 }
 
+static uint8_t min(uint8_t a, uint8_t b) { return a < b ? a : b; }
+
 static uint8_t minChar(MatChar input) {
   assert(input.data);
   int q, w;
@@ -106,10 +108,12 @@ static uint8_t minChar(MatChar input) {
 
   for (q = 0; q < input.rows; q++)
     for (w = 0; w < input.cols; w++)
-      minvalue = fmin(minvalue, input.data[q * input.step + w + input.start]);
+      minvalue = min(minvalue, input.data[q * input.step + w + input.start]);
 
   return minvalue;
 }
+
+static uint8_t max(uint8_t a, uint8_t b) { return a > b ? a : b; }
 
 static uint8_t maxChar(MatChar input) {
   assert(input.data);
@@ -118,7 +122,7 @@ static uint8_t maxChar(MatChar input) {
 
   for (q = 0; q < input.rows; q++)
     for (w = 0; w < input.cols; w++)
-      maxvalue = fmax(maxvalue, input.data[q * input.step + w + input.start]);
+      maxvalue = max(maxvalue, input.data[q * input.step + w + input.start]);
 
   return maxvalue;
 }
@@ -325,7 +329,7 @@ static void normalizeSample(MatChar image, MatFloat *result) {
   sampleMax -= sampleMean;
   sampleMin -= sampleMean;
 
-  sampleMax = fmax(fabs(sampleMin), fabs(sampleMax));
+  sampleMax = fmaxf(fabsf(sampleMin), fabsf(sampleMax));
 
   if (sampleMax == 0.0)
     sampleMax = 1.0;
@@ -394,9 +398,9 @@ static void generateResponseMap(const MatChar image, const Point2i center,
       addFloat(e, -1.0, &xOut);
 
       SetValueFloat(result, ncy, ncx,
-                    1. / (1. + exp(-dotProduct(wOut, xOut)) - bOut));
+                    1. / (1. + expf(-dotProduct(wOut, xOut)) - bOut));
       SetValueFloat(result, ncy, ncx,
-                    1. / (1. + exp(-dotProduct(wOut, xOut) - bOut)));
+                    1. / (1. + expf(-dotProduct(wOut, xOut) - bOut)));
 
       freeMatFloat(&e);
       freeMatFloat(&xOut);
