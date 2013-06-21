@@ -334,10 +334,23 @@ static void normalizeSample(MatChar image, MatFloat *result) {
   if (sampleMax == 0.0)
     sampleMax = 1.0;
 
-  convertFromCharToFloat(image, 1.0 / sampleMax,
-                         -(1.0 / sampleMax) * sampleMean, result);
+/*  convertFromCharToFloat(image, 1.0 / sampleMax,
+                         -(1.0 / sampleMax) * sampleMean, result);*/
+  int q, w;
+  for (q = 0; q < image.rows; q++)
+    for (w = 0; w < image.cols; w++)
+      result->data[q * result->step + w + result->start] =
+          (1.0 / sampleMax) * (float)image.data[q * image.step + w + image.start] - (1.0 / sampleMax) * sampleMean;
 
-  *result = reshapeFloat(*result, image.rows * image.cols);
+//  assert(result.cols == result.step);
+//  assert((result.cols * result.rows) % new_rows == 0);
+
+  result->cols = result->cols * result->rows / (image.rows * image.cols);
+  result->rows = image.rows * image.cols;
+  result->step = result->cols;
+
+
+//  *result = reshapeFloat(*result, image.rows * image.cols);
 
   return;
 }
@@ -345,18 +358,52 @@ static void normalizeSample(MatChar image, MatFloat *result) {
 static void generateResponseMap(const MatChar image, const Point2i center,
                                 int mapSize, mlp classifier, MatFloat *result) {
 
-  int q, w;
+  int q, w, e;
+  float sum = 0;
+  float c;
+
   assert(result->rows == 2 * mapSize + 1);
   assert(result->cols == 2 * mapSize + 1);
 
   MatFloat m_U_transpose =
       CreateMatFloat(classifier.m_U.cols, classifier.m_U.rows);
-  transposeFloat(classifier.m_U, &m_U_transpose);
+ 
+
+
+  /* transposeFloat(classifier.m_U, &m_U_transpose); */
+  assert(m_U_transpose.rows == classifier.m_U.cols);
+  assert(m_U_transpose.cols == classifier.m_U.rows);
+  for (q = 0; q < classifier.m_U.rows; q++)
+    for (w = 0; w < classifier.m_U.cols; w++)
+      m_U_transpose.data[w * m_U_transpose.step + q + m_U_transpose.start] =
+          classifier.m_U.data[q * classifier.m_U.step + w + classifier.m_U.start];
+  /* --------------------- END ------------------- */
+
+
 
   MatFloat wIn_A = GetBlockFloat(classifier.m_wIn, 0, classifier.m_wIn.rows, 0,
                                  classifier.m_wIn.cols - 1);
   MatFloat wIn = CreateMatFloat(wIn_A.rows, m_U_transpose.cols);
-  gemmFloat(wIn_A, m_U_transpose, 1.0, wIn, 0.0, &wIn);
+
+
+
+  /* gemmFloat(wIn_A, m_U_transpose, 1.0, wIn, 0.0, &wIn); */
+  for (q = 0; q < wIn.rows; q++)
+    for (w = 0; w < wIn.cols; w++) {
+      sum = 0;
+      for (e = 0; e < wIn_A.cols; e++) {
+        float y = wIn_A.data[q * wIn_A.step + e + wIn_A.start] *
+                      m_U_transpose.data[e * m_U_transpose.step + w + m_U_transpose.start] - c;
+        float t = sum + y;
+        c = (t - sum) - y;
+        sum = t;
+      }
+
+      wIn.data[q * wIn.step + w + wIn.start] = sum;
+    }
+  /* --------------------- END ------------------- */
+
+
 
   MatFloat bIn =
       GetBlockFloat(classifier.m_wIn, 0, classifier.m_wIn.rows,
@@ -366,7 +413,20 @@ static void generateResponseMap(const MatChar image, const Point2i center,
       GetBlockFloat(classifier.m_wOut, 0, classifier.m_wOut.rows, 0,
                     classifier.m_wOut.cols - 1);
   MatFloat wOut = CreateMatFloat(wOut_tmp.cols, wOut_tmp.rows);
-  transposeFloat(wOut_tmp, &wOut);
+
+
+
+  /* transposeFloat(wOut_tmp, &wOut); */
+  assert(wOut.rows == wOut_tmp.cols);
+  assert(wOut.cols == wOut_tmp.rows);
+  for (q = 0; q < wOut_tmp.rows; q++)
+    for (w = 0; w < wOut_tmp.cols; w++)
+      wOut.data[w * wOut.step + q + wOut.start] =
+          wOut_tmp.data[q * wOut_tmp.step + w + wOut_tmp.start];
+  /* --------------------- END ------------------- */
+
+
+
   float bOut = GetValueFloat(classifier.m_wOut, 0, classifier.m_wOut.cols - 1);
 
   int ncy = 0;
@@ -384,49 +444,119 @@ static void generateResponseMap(const MatChar image, const Point2i center,
           cx - classifier.m_patchSize, cx + classifier.m_patchSize + 1);
       MatFloat patch = CreateMatFloat(imagePatch.rows, imagePatch.cols);
 
-      normalizeSample(imagePatch, &patch);
+
+
+      /* normalizeSample(imagePatch, &patch); */
+      float sampleMean = meanChar(imagePatch);
+      float sampleMin = minChar(imagePatch);
+      float sampleMax = maxChar(imagePatch);
+
+      sampleMax -= sampleMean;
+      sampleMin -= sampleMean;
+
+      sampleMax = fmaxf(fabsf(sampleMin), fabsf(sampleMax));
+
+      if (sampleMax == 0.0)
+        sampleMax = 1.0;
+
+      int q, w;
+      for (q = 0; q < imagePatch.rows; q++)
+        for (w = 0; w < imagePatch.cols; w++)
+          patch.data[q * patch.step + w + patch.start] =
+             (1.0 / sampleMax) * (float)imagePatch.data[q * imagePatch.step + w + imagePatch.start] - (1.0 / sampleMax) * sampleMean;
+
+      patch.cols = patch.cols * patch.rows / (imagePatch.rows * imagePatch.cols);
+      patch.rows = imagePatch.rows * imagePatch.cols;
+      patch.step = patch.cols;
+      /* --------------------- END ------------------- */
+
+
 
       MatFloat xOut = CreateMatFloat(bIn.rows, bIn.cols);
 
-      gemmFloat(wIn, patch, -1.0, bIn, -1.0, &xOut);
+
+
+      /* gemmFloat(wIn, patch, -1.0, bIn, -1.0, &xOut);*/
+      assert(wIn.rows == bIn.rows);
+      assert(wIn.cols == patch.rows);
+      assert(patch.cols == bIn.cols);
+      assert(bIn.rows == xOut.rows);
+      assert(bIn.cols == xOut.cols);
+
+      for (q = 0; q < bIn.rows; q++)
+        for (w = 0; w < bIn.cols; w++) {
+          sum = 0;
+          for (e = 0; e < wIn.cols; e++) {
+            float y = wIn.data[q * wIn.step + e + wIn.start] *
+                      patch.data[e * patch.step + w + patch.start] - c;
+            float t = sum + y;
+            c = (t - sum) - y;
+            sum = t;
+          }
+
+        xOut.data[q * xOut.step + w + xOut.start] =
+            (-1.0) * sum + (-1.0) * bIn.data[q * bIn.step + w + bIn.start];
+      }
+      /* --------------------- END ------------------- */
+
+
 
       MatFloat e = CreateMatFloat(xOut.rows, xOut.cols);
 
       assert(xOut.rows == e.rows);
       assert(xOut.cols == e.cols);
 
+      
+
       /* expFloat(xOut, &e); */
       for (q = 0; q < xOut.rows; q++)
         for (w = 0; w < xOut.cols; w++)
           e.data[q * e.step + w + e.start] =
             exp(xOut.data[q * xOut.step + w + xOut.start]);
+      /* --------------------- END ------------------- */
+
+
 
       assert(xOut.rows == e.rows);
       assert(xOut.cols == e.cols);
+
+
 
       /* addFloat(e, 1.0, &xOut); */
       for (q = 0; q < xOut.rows; q++)
         for (w = 0; w < xOut.cols; w++)
           xOut.data[q * xOut.step + w + xOut.start] = 1.0 +
-            e.data[q * e.step + w + e.start];
+            e.data[q * e.step + w + e.start];      
+      /* --------------------- END ------------------- */
+
+
 
       assert(xOut.rows == e.rows);
       assert(xOut.cols == e.cols);
+
+
 
       /* divideFloat(2.0, xOut, &e); */
       for (q = 0; q < xOut.rows; q++)
         for (w = 0; w < xOut.cols; w++)
           e.data[q * e.step + w + e.start] = 2.0 /
             xOut.data[q * xOut.step + w + xOut.start];
+      /* --------------------- END ------------------- */
+
+
 
       assert(xOut.rows == e.rows);
       assert(xOut.cols == e.cols);
+
+
 
       /* addFloat(e, -1.0, &xOut); */
       for (q = 0; q < xOut.rows; q++)
         for (w = 0; w < xOut.cols; w++)
           xOut.data[q * xOut.step + w + xOut.start] = -1.0 +
             e.data[q * e.step + w + e.start];
+      /* --------------------- END ------------------- */
+
 
 
       result->data[ncy * (result->step) + ncx + (result->start)] = (1. / (1. + expf(-dotProduct(wOut, xOut)) - bOut));
