@@ -342,7 +342,10 @@ static void normalizeSample(MatChar image, MatFloat *result) {
   return;
 }
 
-static void generateResponseMap(const MatChar image, const Point2i center,
+/// @brief Calculate a single response map for an image.
+///
+/// @param Image The image to process.
+static void generateResponseMap(const MatChar Image, const Point2i center,
                                 int mapSize, mlp classifier, MatFloat *result) {
 
   assert(result->rows == 2 * mapSize + 1);
@@ -379,7 +382,7 @@ static void generateResponseMap(const MatChar image, const Point2i center,
          ++ncx, ++cx) {
 
       MatChar imagePatch = GetBlockChar(
-          image, cy - classifier.m_patchSize, cy + classifier.m_patchSize + 1,
+          Image, cy - classifier.m_patchSize, cy + classifier.m_patchSize + 1,
           cx - classifier.m_patchSize, cx + classifier.m_patchSize + 1);
       MatFloat patch = CreateMatFloat(imagePatch.rows, imagePatch.cols);
 
@@ -417,8 +420,11 @@ static int cvRound(float value) {
   return (int)(value + (value >= 0 ? 0.5 : -0.5));
 }
 
+// Calculate a set of respone maps for a given image.
+//
+// @param Image The image to process
 void calculateMaps(int m_visibleLandmarks_size, int m_mapSize,
-                   MatChar alignedImage, MatFloat shape, mlp m_classifiers[],
+                   MatChar Image, MatFloat shape, mlp m_classifiers[],
                    // results
                    MatFloat *responseMaps[]) {
   int q;
@@ -434,7 +440,7 @@ void calculateMaps(int m_visibleLandmarks_size, int m_mapSize,
     center.x = cvRound(shape_x);
     center.y = cvRound(shape_y);
 
-    generateResponseMap(alignedImage, center, m_mapSize, m_classifiers[idx],
+    generateResponseMap(Image, center, m_mapSize, m_classifiers[idx],
                         (&(*responseMaps)[q]));
   }
 
