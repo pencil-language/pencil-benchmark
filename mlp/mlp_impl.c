@@ -423,26 +423,57 @@ static int cvRound(float value) {
 // Calculate a set of respone maps for a given image.
 //
 // @param Image The image to process
-void calculateMaps(int m_visibleLandmarks_size, int m_mapSize,
-                   MatChar Image, MatFloat shape, mlp m_classifiers[],
-                   // results
-                   MatFloat *responseMaps[]) {
-  int q;
-  for (q = 0; q < m_visibleLandmarks_size; q++) {
-    int idx = q;
+// @param responseMaps A pointer at which results of the calculation,
+//                     the response maps, are stored.
+void calculateRespondMaps(int m_visibleLandmarks_size, int m_mapSize,
+                          MatChar Image, MatFloat shape, mlp m_classifiers[],
+                          MatFloat *responseMaps[]) {
 
+  // The response maps calculated in this loop are in general calculated
+  // from non-overlapping parts of the image. However, even if those parts
+  // would overlap, this loop is still parallel, as memory is either only
+  // read from or, if it is written to, each iteration writes into a distinct
+  // subarray. When translating this to GPU code, we could map this loop to
+  // distinct thread groups.
+  for (int i = 0; i < m_visibleLandmarks_size; i++) {
+
+    // This array is interesting as it gives the coordinates of the different
+    // subimages that we need to process. It is not trivially polyhedral, as
+    // when inlined, it is an indirection array, that makes all loop bounds
+    // data-dependent. However, it is read only and basically used as a
+    // two-dimensional set of parameters.
+    //
+    // TODO: I do not see why 'shape' is defined using floats. Also, this
+    //       is a trivial case where we could use a C99 array to represent
+    //       the matrix.
+    //       Finally, Point2i is non-polyhedral but a plain structure. We
+    //       could represent it as a 2-element array, but it may actually
+    //       be worth supporting such simple structures in ppcg.
+    //
     Point2i center;
     float shape_x;
     float shape_y;
 
-    shape_x = GetValueFloat(shape, 2 * idx, 0);
-    shape_y = GetValueFloat(shape, 2 * idx + 1, 0);
+    shape_x = GetValueFloat(shape, 2 * i, 0);
+    shape_y = GetValueFloat(shape, 2 * i + 1, 0);
     center.x = cvRound(shape_x);
     center.y = cvRound(shape_y);
 
-    generateResponseMap(Image, center, m_mapSize, m_classifiers[idx],
-                        (&(*responseMaps)[q]));
+    generateResponseMap(Image, center, m_mapSize, m_classifiers[i],
+                        (&(*responseMaps)[i]));
   }
 
   return;
+}
+
+/// @brief Calculate a set of response maps.
+///
+/// This function implements the external interface. In its implementation
+/// we transform the input parameters in a way, such that the internal
+/// implementation is as close to PENCIL as possible.
+void calculateMaps(int m_visibleLandmarks_size, int m_mapSize,
+                   MatChar Image, MatFloat shape, mlp m_classifiers[],
+                   MatFloat *responseMaps[]) {
+  calculateRespondMaps(m_visibleLandmarks_size, m_mapSize, Image, shape,
+                       m_classifiers, responseMaps);
 }
