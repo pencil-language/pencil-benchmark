@@ -82,7 +82,7 @@ static void transposeFloat(MatFloat input, MatFloat *output) {
   return;
 }
 
-static float meanChar(MatChar input) {
+static float meanChar(const MatChar input) {
   assert(input.data);
   int q, w;
   float sum = 0;
@@ -101,7 +101,7 @@ static float meanChar(MatChar input) {
 
 static uint8_t min(uint8_t a, uint8_t b) { return a < b ? a : b; }
 
-static uint8_t minChar(MatChar input) {
+static uint8_t minChar(const MatChar input) {
   assert(input.data);
   int q, w;
   uint8_t minvalue = 255;
@@ -115,7 +115,7 @@ static uint8_t minChar(MatChar input) {
 
 static uint8_t max(uint8_t a, uint8_t b) { return a > b ? a : b; }
 
-static uint8_t maxChar(MatChar input) {
+static uint8_t maxChar(const MatChar input) {
   assert(input.data);
   int q, w;
   uint8_t maxvalue = 0;
