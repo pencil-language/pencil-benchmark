@@ -395,8 +395,7 @@ static void generateResponseMap(const MatChar Image, const Point2i center,
       divideFloat(2.0, xOut, &e);
       addFloat(e, -1.0, &xOut);
 
-      result->data[ncy * (result->step) + ncx + (result->start)] = (1. / (1. + expf(-dotProduct(wOut, xOut)) - bOut));
-      result->data[ncy * (result->step) + ncx + (result->start)] = (1. / (1. + expf(-dotProduct(wOut, xOut) - bOut)));
+      result->data[ncy * (result->step) + ncx + (result->start)] = (1.0f / (1.0f + expf(-dotProduct(wOut, xOut) - bOut)));
 
       freeMatFloat(&e);
       freeMatFloat(&xOut);
