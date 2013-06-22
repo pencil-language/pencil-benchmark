@@ -291,32 +291,29 @@ static void gemmFloat(MatFloat A, MatFloat B, float alpha, MatFloat C,
   return;
 }
 
-static void expFloat(MatFloat Mat) {
+static void expFloat(int rows, int cols, float Mat[rows][cols]) {
 
-  for (int i = 0; i < Mat.rows; i++)
-    for (int j = 0; j < Mat.cols; j++)
-      Mat.data[i * Mat.step + j + Mat.start] =
-          expf(Mat.data[i * Mat.step + j + Mat.start]);
-
-  return;
-}
-
-static void addFloat(MatFloat Mat, float Val) {
-
-  for (int i = 0; i < Mat.rows; i++)
-    for (int j = 0; j < Mat.cols; j++)
-      Mat.data[i * Mat.step + j + Mat.start] =
-          Val + Mat.data[i * Mat.step + j + Mat.start];
+  for (int i = 0; i < rows; i++)
+    for (int j = 0; j < cols; j++)
+      Mat[i][j] = expf(Mat[i][j]);
 
   return;
 }
 
-static void divideFloat(float Val, MatFloat Mat) {
+static void addFloat(int rows, int cols, float Mat[rows][cols], float Val) {
 
-  for (int i = 0; i < Mat.rows; i++)
-    for (int j = 0; j < Mat.cols; j++)
-      Mat.data[i * Mat.step + j + Mat.start] =
-          Val / Mat.data[i * Mat.step + j + Mat.start];
+  for (int i = 0; i < rows; i++)
+    for (int j = 0; j < cols; j++)
+      Mat[i][j] = Val + Mat[i][j];
+
+  return;
+}
+
+static void divideFloat(float Val, int rows, int cols, float Mat[rows][cols]) {
+
+  for (int i = 0; i < rows; i++)
+    for (int j = 0; j < cols; j++)
+      Mat[i][j] = Val / Mat[i][j];
 
   return;
 }
@@ -405,6 +402,10 @@ static void generateResponseMap(
     for (int ncx = 0; ncx <= 2 * mapSize; ++ncx) {
       int cx = ncx + center.x - mapSize;
 
+      int bRows = bIn.rows;
+      int bCols = bIn.cols;
+      float (*OutArray)[bCols] = malloc(sizeof(float) * bRows * bCols);
+
       MatChar imagePatch = GetBlockChar(
           Image, cy - classifier.m_patchSize, cy + classifier.m_patchSize + 1,
           cx - classifier.m_patchSize, cx + classifier.m_patchSize + 1);
@@ -416,14 +417,19 @@ static void generateResponseMap(
 
       gemmFloat(wIn, patch, -1.0, bIn, -1.0, &xOut);
 
-      expFloat(xOut);
-      addFloat(xOut, 1.0f);
-      divideFloat(2.0f, xOut);
-      addFloat(xOut, -1.0f);
+      copyMatFloatToArray(xOut, bRows, bCols, OutArray);
+
+      expFloat(bRows, bCols, OutArray);
+      addFloat(bRows, bCols, OutArray, 1.0f);
+      divideFloat(2.0f, bRows, bCols, OutArray);
+      addFloat(bRows, bCols, OutArray, -1.0f);
+
+      copyArrayToMatFloat(bRows, bCols, OutArray, xOut);
 
       ResponseMap[ncy][ncx] =
           (1.0f / (1.0f + expf(-dotProduct(wOut, xOut) - bOut)));
 
+      free(OutArray);
       freeMatFloat(&xOut);
       freeMatFloat(&patch);
     }
