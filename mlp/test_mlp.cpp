@@ -36,8 +36,10 @@ cv::Mat_<double> convertMatFloatToCV( MatFloat input );
 void     allocateResponseMaps( int mapSize, int size, MatFloat * responseMaps[] );
 void     freeResponseMaps( MatFloat * responseMaps[], int size );
 
-
-const int processed_frames = 100;
+#ifndef PROCESSED_FRAMES
+#define PROCESSED_FRAMES 100
+#endif
+const int processed_frames = PROCESSED_FRAMES;
 
 namespace {
      
