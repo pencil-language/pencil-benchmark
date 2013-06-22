@@ -517,4 +517,6 @@ void calculateMaps(int NumLandMarks, int MapSize, MatChar Image, MatFloat Shape,
   for (int i = 0; i < NumLandMarks; ++i)
     copyArrayToMatFloat(Width, Width, ResponseMaps[i],
                         *(&(*MatResponseMaps)[i]));
+
+  free(ResponseMaps);
 }
