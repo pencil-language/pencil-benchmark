@@ -12,6 +12,46 @@
 
 #include "mlp_impl.h"
 
+static void copyMatFloatToArray(MatFloat In, int n, int m, float Out[][m]) {
+  assert(In.start == 0);
+  assert(In.rows == n);
+  assert(In.cols == m);
+  assert(In.step == m);
+
+  for (int i = 0; i < In.rows; i++)
+    for (int j = 0; j < In.cols; j++)
+      Out[i][j] = In.data[i * In.step + j];
+}
+
+static void copyArrayToMatFloat(int n, int m, float In[][m], MatFloat Out) {
+  assert(Out.start == 0);
+  assert(Out.rows == n);
+  assert(Out.cols == m);
+  assert(Out.step == m);
+
+  for (int i = 0; i < n; i++)
+    for (int j = 0; j < m; j++)
+      Out.data[i * Out.step + j] = In[i][j];
+}
+
+void printArray(int n, int m, float Array[n][m]) {
+  printf("%s = [\n", "NAME");
+
+  int q, w;
+
+  for (q = 0; q < n; q++) {
+    printf("[ ");
+    for (w = 0; w < m; w++) {
+      printf("%f, ", Array[n][m]);
+    }
+    printf(" ]\n");
+  }
+
+  printf("]\n");
+
+  return;
+}
+
 float GetValueFloat(MatFloat self, int row, int col);
 
 void printMatFloat(MatFloat mat, char *name) {
@@ -345,11 +385,9 @@ static void normalizeSample(MatChar image, MatFloat *result) {
 /// @brief Calculate a single response map for an image.
 ///
 /// @param Image The image to process.
-static void generateResponseMap(const MatChar Image, const Point2i center,
-                                int mapSize, mlp classifier, MatFloat *result) {
-
-  assert(result->rows == 2 * mapSize + 1);
-  assert(result->cols == 2 * mapSize + 1);
+static void generateResponseMap(
+    const MatChar Image, const Point2i center, int mapSize, mlp classifier,
+    float ResponseMap[mapSize + mapSize + 1][mapSize + mapSize + 1]) {
 
   MatFloat m_U_transpose =
       CreateMatFloat(classifier.m_U.cols, classifier.m_U.rows);
@@ -395,7 +433,8 @@ static void generateResponseMap(const MatChar Image, const Point2i center,
       divideFloat(2.0, xOut, &e);
       addFloat(e, -1.0, &xOut);
 
-      result->data[ncy * (result->step) + ncx + (result->start)] = (1.0f / (1.0f + expf(-dotProduct(wOut, xOut) - bOut)));
+      ResponseMap[ncy][ncx] =
+          (1.0f / (1.0f + expf(-dotProduct(wOut, xOut) - bOut)));
 
       freeMatFloat(&e);
       freeMatFloat(&xOut);
@@ -419,9 +458,10 @@ static int cvRound(float value) {
 // @param Image The image to process
 // @param responseMaps A pointer at which results of the calculation,
 //                     the response maps, are stored.
-void calculateRespondMaps(int m_visibleLandmarks_size, int m_mapSize,
-                          MatChar Image, MatFloat shape, mlp m_classifiers[],
-                          MatFloat *responseMaps[]) {
+void calculateRespondMaps(
+    int m_visibleLandmarks_size, int MapSize, MatChar Image, MatFloat shape,
+    mlp m_classifiers[],
+    float ResponseMaps[][MapSize + MapSize + 1][MapSize + MapSize + 1]) {
 
   // The response maps calculated in this loop are in general calculated
   // from non-overlapping parts of the image. However, even if those parts
@@ -453,8 +493,8 @@ void calculateRespondMaps(int m_visibleLandmarks_size, int m_mapSize,
     center.x = cvRound(shape_x);
     center.y = cvRound(shape_y);
 
-    generateResponseMap(Image, center, m_mapSize, m_classifiers[i],
-                        (&(*responseMaps)[i]));
+    generateResponseMap(Image, center, MapSize, m_classifiers[i],
+                        ResponseMaps[i]);
   }
 
   return;
@@ -465,9 +505,16 @@ void calculateRespondMaps(int m_visibleLandmarks_size, int m_mapSize,
 /// This function implements the external interface. In its implementation
 /// we transform the input parameters in a way, such that the internal
 /// implementation is as close to PENCIL as possible.
-void calculateMaps(int m_visibleLandmarks_size, int m_mapSize,
-                   MatChar Image, MatFloat shape, mlp m_classifiers[],
-                   MatFloat *responseMaps[]) {
-  calculateRespondMaps(m_visibleLandmarks_size, m_mapSize, Image, shape,
-                       m_classifiers, responseMaps);
+void calculateMaps(int NumLandMarks, int MapSize, MatChar Image, MatFloat Shape,
+                   mlp Classifiers[], MatFloat *MatResponseMaps[]) {
+  int Width = MapSize * 2 + 1;
+  float (*ResponseMaps)[Width][Width] =
+      malloc(sizeof(float) * NumLandMarks * Width * Width + 1);
+
+  calculateRespondMaps(NumLandMarks, MapSize, Image, Shape, Classifiers,
+                       ResponseMaps);
+
+  for (int i = 0; i < NumLandMarks; ++i)
+    copyArrayToMatFloat(Width, Width, ResponseMaps[i],
+                        *(&(*MatResponseMaps)[i]));
 }
