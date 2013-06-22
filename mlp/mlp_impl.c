@@ -299,7 +299,7 @@ static void expFloat(MatFloat input, MatFloat *output) {
   for (q = 0; q < input.rows; q++)
     for (w = 0; w < input.cols; w++)
       output->data[q * output->step + w + output->start] =
-          exp(input.data[q * input.step + w + input.start]);
+          expf(input.data[q * input.step + w + input.start]);
 
   return;
 }
@@ -428,7 +428,6 @@ static void generateResponseMap(
       MatFloat e = CreateMatFloat(xOut.rows, xOut.cols);
 
       expFloat(xOut, &e);
-
       addFloat(e, 1.0, &xOut);
       divideFloat(2.0, xOut, &e);
       addFloat(e, -1.0, &xOut);
