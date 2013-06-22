@@ -371,15 +371,10 @@ static void generateResponseMap(const MatChar Image, const Point2i center,
   transposeFloat(wOut_tmp, &wOut);
   float bOut = GetValueFloat(classifier.m_wOut, 0, classifier.m_wOut.cols - 1);
 
-  int ncy = 0;
-  int cy = 0;
-  int ncx = 0;
-  int cx = 0;
-
-  for (ncy = 0, cy = center.y - mapSize; cy <= center.y + mapSize;
-       ++ncy, ++cy) {
-    for (ncx = 0, cx = center.x - mapSize; cx <= center.x + mapSize;
-         ++ncx, ++cx) {
+  for (int ncy = 0; ncy <= 2 * mapSize; ++ncy) {
+    int cy = ncy + center.y - mapSize;
+    for (int ncx = 0; ncx <= 2 * mapSize; ++ncx) {
+      int cx = ncx + center.x - mapSize;
 
       MatChar imagePatch = GetBlockChar(
           Image, cy - classifier.m_patchSize, cy + classifier.m_patchSize + 1,
