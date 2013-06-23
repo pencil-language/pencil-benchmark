@@ -327,18 +327,20 @@ static void SetValueFloat(MatFloat *self, int row, int col, float value) {
   return;
 }
 
-static float dotProduct(MatFloat A, MatFloat B) {
-  assert(A.cols == 1);
-  assert(B.cols == 1);
-  assert(A.rows == B.rows);
+static float dotProduct(int LeftRows, int LeftCols, int RightRows,
+                        int RightCols, float Left[][LeftCols],
+                        float Right[][RightCols]) {
+  assert(LeftCols == 1);
+  assert(RightCols == 1);
+  assert(LeftRows == RightRows);
 
-  float result = 0.;
+  float Result = 0.;
 
-  for (int q = 0; q < A.rows; q++) {
-    result += A.data[q * A.step + A.start] * B.data[q * B.step + B.start];
+  for (int i = 0; i < LeftRows; i++) {
+    Result += Left[i][0] * Right[i][0];
   }
 
-  return result;
+  return Result;
 }
 
 static void normalizeSample(MatChar image, MatFloat *result) {
@@ -396,6 +398,10 @@ static void generateResponseMap(
                     classifier.m_wOut.cols - 1);
   MatFloat wOut = CreateMatFloat(wOut_tmp.cols, wOut_tmp.rows);
   transposeFloat(wOut_tmp, &wOut);
+  int wOutRows = wOut.rows;
+  int wOutCols = wOut.cols;
+  float (*wOutArray)[wOutCols] = malloc(sizeof(float) * wOutRows * wOutCols);
+  copyMatFloatToArray(wOut, wOutRows, wOutCols, wOutArray);
   float bOut = GetValueFloat(classifier.m_wOut, 0, classifier.m_wOut.cols - 1);
 
   for (int ncy = 0; ncy <= 2 * mapSize; ++ncy) {
@@ -413,9 +419,9 @@ static void generateResponseMap(
       //   b) We introduce memory dependences, that would not be here
       //      if we would create different temporary arrays for
       //      different parallel execution streams.
-      int bRows = bIn.rows;
-      int bCols = bIn.cols;
-      float (*OutArray)[bCols] = malloc(sizeof(float) * bRows * bCols);
+      int xOutRows = bIn.rows;
+      int xOutCols = bIn.cols;
+      float (*xOutArray)[xOutCols] = malloc(sizeof(float) * xOutRows * xOutCols);
 
       MatChar imagePatch = GetBlockChar(
           Image, cy - classifier.m_patchSize, cy + classifier.m_patchSize + 1,
@@ -436,24 +442,25 @@ static void generateResponseMap(
 
       gemmFloat(wIn, patch, -1.0, bIn, -1.0, &xOut);
 
-      copyMatFloatToArray(xOut, bRows, bCols, OutArray);
+      copyMatFloatToArray(xOut, xOutRows, xOutCols, xOutArray);
 
-      expFloat(bRows, bCols, OutArray);
-      addFloat(bRows, bCols, OutArray, 1.0f);
-      divideFloat(2.0f, bRows, bCols, OutArray);
-      addFloat(bRows, bCols, OutArray, -1.0f);
-
-      copyArrayToMatFloat(bRows, bCols, OutArray, xOut);
+      expFloat(xOutRows, xOutCols, xOutArray);
+      addFloat(xOutRows, xOutCols, xOutArray, 1.0f);
+      divideFloat(2.0f, xOutRows, xOutCols, xOutArray);
+      addFloat(xOutRows, xOutCols, xOutArray, -1.0f);
 
       ResponseMap[ncy][ncx] =
-          (1.0f / (1.0f + expf(-dotProduct(wOut, xOut) - bOut)));
+          (1.0f / (1.0f + expf(-dotProduct(wOutRows, wOutCols, xOutRows,
+                                           xOutCols, wOutArray, xOutArray) -
+                               bOut)));
 
-      free(OutArray);
+      free(xOutArray);
       freeMatFloat(&xOut);
       freeMatFloat(&patch);
     }
   }
 
+  free(wOutArray);
   freeMatFloat(&wOut);
   freeMatFloat(&wIn);
   freeMatFloat(&m_U_transpose);
