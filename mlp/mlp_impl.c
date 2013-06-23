@@ -121,16 +121,11 @@ static void transposeFloat(MatFloat input, MatFloat *output) {
 
 static float meanChar(MatChar input) {
   assert(input.data);
-  int q, w;
   float sum = 0;
-  float c = 0; // kahan summation
 
-  for (q = 0; q < input.rows; q++)
-    for (w = 0; w < input.cols; w++) {
-      float y = input.data[q * input.step + w + input.start] - c;
-      float t = sum + y;
-      c = (t - sum) - y;
-      sum = t;
+  for (int i = 0; i < input.rows; i++)
+    for (int j = 0; j < input.cols; j++) {
+      sum += input.data[i * input.step + j + input.start];
     }
 
   return sum / (input.rows * input.cols);
