@@ -422,7 +422,6 @@ static void generateResponseMap(
     const Point2i center, int mapSize, mlp classifier,
     float ResponseMap[mapSize + mapSize + 1][mapSize + mapSize + 1]) {
 
-
   // Translate input arrays into C99 Arrays.
   //
   // The problem here is that the size of the arrays is not know to
@@ -448,6 +447,11 @@ static void generateResponseMap(
       malloc(sizeof(float) * m_wOutRows * m_wOutCols);
   copyMatFloatToArray(classifier.m_wOut, m_wOutRows, m_wOutCols, m_wOutArray);
 
+  // This is a temporary array.
+  //
+  // Also, I wonder if this computation can not be precalculated? Or that
+  // we could keep track of the index dimensions being transposed and we
+  // just access the elements at their previous locations?
   int m_U_transposeRows = m_UCols;
   int m_U_transposeCols = m_URows;
   float (*m_U_transposeArray)[m_U_transposeCols] =
@@ -456,14 +460,19 @@ static void generateResponseMap(
   transposeFloat(m_URows, m_UCols, m_UArray, m_U_transposeRows,
                  m_U_transposeCols, m_U_transposeArray);
 
-
+  // A sub array.
+  //
+  // Instead of explicitly calculating this, it would be nice if ppcg
+  // could just be told that we only access a subset of this array.
   int wIn_ARows = m_wInRows;
   int wIn_ACols = m_wInCols - 1;
   float (*wIn_AArray)[wIn_ACols] = malloc(sizeof(float) * wIn_ARows * wIn_ACols);
-
   copySubArrayFloat(m_wInRows, m_wInCols, m_wInArray, m_wInRows,
                     m_wInCols - 1, wIn_AArray, 0, 0);
 
+  // A temporary array.
+  //
+  // Why again can this not be precomputed?
   int wInRows = wIn_ARows;
   int wInCols = m_U_transposeCols;
   float (*wInArray)[wInCols] = malloc(sizeof(float) * wInRows * wInCols);
@@ -471,16 +480,24 @@ static void generateResponseMap(
                  m_U_transposeCols, m_U_transposeArray, 1.0, wInRows, wInCols,
                  wInArray, 0.0, wInRows, wInCols, wInArray);
 
+  // A sub array.
+  //
+  // Instead of explicitly calculating this, it would be nice if ppcg
+  // could just be told that we only access a subset of this array.
   int bInRows = m_wInRows;
   int bInCols = 1;
   float (*bInArray)[bInCols] = malloc(sizeof(float) * bInRows * bInCols);
   copySubArrayFloat(m_wInRows, m_wInCols, m_wInArray, bInRows,
                     bInCols, bInArray, 0, m_wInCols - 1);
 
+
+  // A sub array.
+  //
+  // Instead of explicitly calculating this, it would be nice if ppcg
+  // could just be told that we only access a subset of this array.
   int wOut_tmpRows = m_wOutRows;
   int wOut_tmpCols = m_wOutCols - 1;
   float (*wOut_tmpArray)[wOut_tmpCols] = malloc(sizeof(float) * wOut_tmpRows * wOut_tmpCols);
-
   copySubArrayFloat(m_wOutRows, m_wOutCols, m_wOutArray, wOut_tmpRows,
                     wOut_tmpCols, wOut_tmpArray, 0, 0);
 
