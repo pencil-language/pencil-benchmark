@@ -381,15 +381,21 @@ static void generateResponseMap(
       CreateMatFloat(classifier.m_U.cols, classifier.m_U.rows);
   transposeFloat(classifier.m_U, &m_U_transpose);
 
+  // Subarray
+  //
+  // This function defines a sub array of a given 2D array. We need to
+  // represent this in some way.
   MatFloat wIn_A = GetBlockFloat(classifier.m_wIn, 0, classifier.m_wIn.rows, 0,
                                  classifier.m_wIn.cols - 1);
   MatFloat wIn = CreateMatFloat(wIn_A.rows, m_U_transpose.cols);
   gemmFloat(wIn_A, m_U_transpose, 1.0, wIn, 0.0, &wIn);
 
+  // Subarray
   MatFloat bIn =
       GetBlockFloat(classifier.m_wIn, 0, classifier.m_wIn.rows,
                     classifier.m_wIn.cols - 1, classifier.m_wIn.cols);
 
+  // Subarray
   MatFloat wOut_tmp =
       GetBlockFloat(classifier.m_wOut, 0, classifier.m_wOut.rows, 0,
                     classifier.m_wOut.cols - 1);
@@ -402,6 +408,16 @@ static void generateResponseMap(
     for (int ncx = 0; ncx <= 2 * mapSize; ++ncx) {
       int cx = ncx + center.x - mapSize;
 
+      // We allocate memory within the program.
+      //
+      // This is a temporary array, that is just used within this loop.
+      // Requering the user to declare this outside cause problems:
+      //
+      //   a) We bloat the code, as this array needs to be propagated
+      //      up to this location.
+      //   b) We introduce memory dependences, that would not be here
+      //      if we would create different temporary arrays for
+      //      different parallel execution streams.
       int bRows = bIn.rows;
       int bCols = bIn.cols;
       float (*OutArray)[bCols] = malloc(sizeof(float) * bRows * bCols);
@@ -411,6 +427,14 @@ static void generateResponseMap(
           cx - classifier.m_patchSize, cx + classifier.m_patchSize + 1);
       MatFloat patch = CreateMatFloat(imagePatch.rows, imagePatch.cols);
 
+      // Array reshaping
+      //
+      // This function is changing the interpretation of the array from a
+      // 2D array to a 1D array, such that the dot-product can be applied.
+      // We need to figure out how to interpret this. Either we support
+      // array reshaping or we try to rewrite the code to not include array
+      // reshaping. One solution to get around the need for linearization is to
+      // define some kind of 2D dot product.
       normalizeSample(imagePatch, &patch);
 
       MatFloat xOut = CreateMatFloat(bIn.rows, bIn.cols);
