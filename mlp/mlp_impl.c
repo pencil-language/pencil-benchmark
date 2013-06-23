@@ -368,14 +368,10 @@ static float dotProduct(int LeftRows, int LeftCols, int RightRows,
   return Result;
 }
 
-static void normalizeSample(MatChar image, MatFloat *result) {
-  assert(result->cols == image.cols);
-  assert(result->rows == image.rows);
-
-  int imageRows = image.rows;
-  int imageCols = image.cols;
-  uint8_t (*imageArray)[imageCols] = malloc(sizeof(uint8_t) * imageRows * imageCols);
-  copyMatCharToArray(image, imageRows, imageCols, imageArray);
+static void normalizeSample(int imageRows, int imageCols,
+                            uint8_t imageArray[imageRows][imageCols],
+                            int resultRows, int resultCols,
+                            float resultArray[resultRows][resultCols]) {
 
   float sampleMean = meanChar(imageRows, imageCols, imageArray);
   float sampleMin = minChar(imageRows, imageCols, imageArray);
@@ -389,21 +385,9 @@ static void normalizeSample(MatChar image, MatFloat *result) {
   if (sampleMax == 0.0)
     sampleMax = 1.0;
 
-  int resultRows = result->rows;
-  int resultCols = result->cols;
-  float (*resultArray)[resultCols] =
-      malloc(sizeof(float) * resultRows * resultCols);
-
   convertFromCharToFloatArray(imageRows, imageCols, imageArray, 1.0 / sampleMax,
                               -(1.0 / sampleMax) * sampleMean, resultRows,
                               resultCols, resultArray);
-
-  copyArrayToMatFloat(resultRows, resultCols, resultArray, *result);
-
-  *result = reshapeFloat(*result, image.rows * image.cols);
-
-  free(imageArray);
-
   return;
 }
 
@@ -477,26 +461,33 @@ static void generateResponseMap(
       MatChar imagePatch = GetBlockChar(
           Image, cy - classifier.m_patchSize, cy + classifier.m_patchSize + 1,
           cx - classifier.m_patchSize, cx + classifier.m_patchSize + 1);
-      MatFloat patch = CreateMatFloat(imagePatch.rows, imagePatch.cols);
 
-      // Array reshaping
+      int imagePatchRows = imagePatch.rows;
+      int imagePatchCols = imagePatch.cols;
+      uint8_t (*imagePatchArray)[imagePatchCols] =
+          malloc(sizeof(uint8_t) * imagePatchRows * imagePatchCols);
+
+      copyMatCharToArray(imagePatch, imagePatchRows, imagePatchCols,
+                         imagePatchArray);
+
+      int patchRows = imagePatch.rows;
+      int patchCols = imagePatch.cols;
+      float (*patchArray)[patchCols] =
+          malloc(sizeof(float) * patchRows * patchCols);
+
+      normalizeSample(imagePatchRows, imagePatchCols, imagePatchArray,
+                      patchRows, patchCols, patchArray);
+
+      // Reshape the C99 Array.
       //
-      // This function is changing the interpretation of the array from a
-      // 2D array to a 1D array, such that the dot-product can be applied.
-      // We need to figure out how to interpret this. Either we support
-      // array reshaping or we try to rewrite the code to not include array
-      // reshaping. One solution to get around the need for linearization is to
-      // define some kind of 2D dot product.
-      normalizeSample(imagePatch, &patch);
+      // Is this necessary or can we write the later functions such that they
+      // can work on 2D arrays.
+      int patchReshapedRows = imagePatchRows * imagePatchCols;
+      int patchReshapedCols = 1;
+      float (*patchReshapedArray)[patchReshapedCols] = patchArray;
 
-      int patchRows = patch.rows;
-      int patchCols = patch.cols;
-      float (*patchArray)[patchCols] = malloc(sizeof(float) * patchRows * patchCols);
-
-      copyMatFloatToArray(patch, patchRows, patchCols, patchArray);
-
-      gemmFloatArray(wInRows, wInCols, wInArray, patchRows, patchCols,
-                     patchArray, -1.0, bInRows, bInCols, bInArray, -1.0,
+      gemmFloatArray(wInRows, wInCols, wInArray, patchReshapedRows, patchReshapedCols,
+                     patchReshapedArray, -1.0, bInRows, bInCols, bInArray, -1.0,
                      xOutRows, xOutCols, xOutArray);
 
       expFloat(xOutRows, xOutCols, xOutArray);
@@ -510,7 +501,7 @@ static void generateResponseMap(
                                bOut)));
 
       free(xOutArray);
-      freeMatFloat(&patch);
+      free(imagePatchArray);
     }
   }
 
