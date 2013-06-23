@@ -126,17 +126,7 @@ MatChar CreateMatChar(int rows, int cols) {
   return result;
 }
 
-static void transposeFloat(MatFloat input, MatFloat *output) {
-  int q, w;
-  assert(output->rows == input.cols);
-  assert(output->cols == input.rows);
-  for (q = 0; q < input.rows; q++)
-    for (w = 0; w < input.cols; w++)
-      output->data[w * output->step + q + output->start] =
-          input.data[q * input.step + w + input.start];
-}
-
-static void transposeFloatArray(int InRows, int InCols,
+static void transposeFloat(int InRows, int InCols,
                                 float In[InRows][InCols], int OutRows,
                                 int OutCols, float Out[OutRows][OutCols]) {
   assert(InRows == OutCols);
@@ -432,10 +422,25 @@ static void generateResponseMap(
     const Point2i center, int mapSize, mlp classifier,
     float ResponseMap[mapSize + mapSize + 1][mapSize + mapSize + 1]) {
 
+  int m_URows = classifier.m_U.rows;
+  int m_UCols = classifier.m_U.cols;
+  float (*m_UArray)[m_UCols] =
+  malloc(sizeof(float) * m_URows * m_UCols);
+  copyMatFloatToArray(classifier.m_U, m_URows, m_UCols, m_UArray);
+
+  int m_U_transposeRows = m_UCols;
+  int m_U_transposeCols = m_URows;
+  float (*m_U_transposeArray)[m_U_transposeCols] =
+  malloc(sizeof(float) * m_U_transposeRows * m_U_transposeCols);
+
+  transposeFloat(m_URows, m_UCols, m_UArray, m_U_transposeRows,
+                 m_U_transposeCols, m_U_transposeArray);
+
   MatFloat m_U_transpose =
       CreateMatFloat(classifier.m_U.cols, classifier.m_U.rows);
-  transposeFloat(classifier.m_U, &m_U_transpose);
 
+  copyArrayToMatFloat(m_U_transposeRows, m_U_transposeCols, m_U_transposeArray,
+                      m_U_transpose);
   // Subarray
   //
   // This function defines a sub array of a given 2D array. We need to
@@ -479,8 +484,8 @@ static void generateResponseMap(
   int wOutRows = wOut_tmpCols;
   int wOutCols = wOut_tmpRows;
   float (*wOutArray)[wOutCols] = malloc(sizeof(float) * wOutRows * wOutCols);
-  transposeFloatArray(wOut_tmpRows, wOut_tmpCols, wOut_tmpArray, wOutRows,
-                      wOutCols, wOutArray);
+  transposeFloat(wOut_tmpRows, wOut_tmpCols, wOut_tmpArray, wOutRows, wOutCols,
+                 wOutArray);
 
   float bOut = m_wOutArray[0][m_wOutCols - 1];
 
@@ -541,6 +546,8 @@ static void generateResponseMap(
     }
   }
 
+  free(m_U_transposeArray);
+  free(m_UArray);
   free(wInArray);
   free(m_wOutArray);
   free(wOut_tmpArray);
