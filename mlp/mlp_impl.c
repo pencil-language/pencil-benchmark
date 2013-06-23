@@ -452,6 +452,8 @@ static void generateResponseMap(
   // Also, I wonder if this computation can not be precalculated? Or that
   // we could keep track of the index dimensions being transposed and we
   // just access the elements at their previous locations?
+  //
+  // Also, the size of this array varies / is data-dependent.
   int m_U_transposeRows = m_UCols;
   int m_U_transposeCols = m_URows;
   float (*m_U_transposeArray)[m_U_transposeCols] =
@@ -464,6 +466,8 @@ static void generateResponseMap(
   //
   // Instead of explicitly calculating this, it would be nice if ppcg
   // could just be told that we only access a subset of this array.
+  //
+  // Also the size of this array is data-dependent
   int wIn_ARows = m_wInRows;
   int wIn_ACols = m_wInCols - 1;
   float (*wIn_AArray)[wIn_ACols] = malloc(sizeof(float) * wIn_ARows * wIn_ACols);
@@ -473,6 +477,8 @@ static void generateResponseMap(
   // A temporary array.
   //
   // Why again can this not be precomputed?
+  //
+  // The size of this array seems to be constant for all test cases.
   int wInRows = wIn_ARows;
   int wInCols = m_U_transposeCols;
   float (*wInArray)[wInCols] = malloc(sizeof(float) * wInRows * wInCols);
