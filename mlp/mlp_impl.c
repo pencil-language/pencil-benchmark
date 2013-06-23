@@ -333,14 +333,9 @@ static float dotProduct(MatFloat A, MatFloat B) {
   assert(A.rows == B.rows);
 
   float result = 0.;
-  float c = 0.;
 
-  int q;
-  for (q = 0; q < A.rows; q++) {
-    float y = A.data[q * A.step + A.start] * B.data[q * B.step + B.start] - c;
-    float t = result + y;
-    c = (t - result) - y;
-    result = t;
+  for (int q = 0; q < A.rows; q++) {
+    result += A.data[q * A.step + A.start] * B.data[q * B.step + B.start];
   }
 
   return result;
