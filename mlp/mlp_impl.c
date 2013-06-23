@@ -478,8 +478,8 @@ static void generateResponseMap(
       //   b) We introduce memory dependences, that would not be here
       //      if we would create different temporary arrays for
       //      different parallel execution streams.
-      int xOutRows = bIn.rows;
-      int xOutCols = bIn.cols;
+      int xOutRows = bInRows;
+      int xOutCols = bInRols;
       float (*xOutArray)[xOutCols] = malloc(sizeof(float) * xOutRows * xOutCols);
 
       int imagePatchRows = 2 * classifier.m_patchSize + 1;
