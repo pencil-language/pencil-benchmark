@@ -406,7 +406,6 @@ static void generateResponseMap(
   int wInCols = wIn.cols;
   float (*wInArray)[wInCols] = malloc(sizeof(float) * wInRows * wInCols);
   copyMatFloatToArray(wIn, wInRows, wInCols, wInArray);
-  copyArrayToMatFloat(wInRows, wInCols, wInArray, wIn);
 
   // Subarray
   MatFloat bIn =
