@@ -40,6 +40,16 @@ static void copyArrayToMatFloat(int n, int m, float In[][m], MatFloat Out) {
       Out.data[Out.start + i * Out.step + j] = In[i][j];
 }
 
+static void copyArrayToMatChar(int n, int m, uint8_t In[][m], MatChar Out) {
+  assert(Out.rows == n);
+  assert(Out.cols == m);
+  assert(Out.step == m);
+
+  for (int i = 0; i < n; i++)
+    for (int j = 0; j < m; j++)
+      Out.data[Out.start + i * Out.step + j] = In[i][j];
+}
+
 void printArray(int n, int m, float Array[n][m]) {
   printf("%s = [\n", "NAME");
 
@@ -203,16 +213,17 @@ static MatFloat GetBlockFloat(MatFloat self, int row_from, int row_to,
   return result;
 }
 
-static void convertFromCharToFloat(MatChar from, float quotient, float shift,
-                                   MatFloat *to) {
-  assert(from.rows == to->rows);
-  assert(from.cols == to->cols);
+static void convertFromCharToFloatArray(int InRows, int InCols,
+                                        uint8_t In[InRows][InCols],
+                                        float quotient, float shift,
+                                        int OutRows, int OutCols,
+                                        float Out[OutRows][OutCols]) {
+  assert(InRows == OutRows);
+  assert(InCols == OutCols);
 
-  int q, w;
-  for (q = 0; q < from.rows; q++)
-    for (w = 0; w < from.cols; w++)
-      to->data[q * to->step + w + to->start] =
-          quotient * (float)from.data[q * from.step + w + from.start] + shift;
+  for (int i = 0; i < InRows; i++)
+    for (int j = 0; j < InCols; j++)
+      Out[i][j] = quotient * (float)In[i][j] + shift;
   return;
 }
 
@@ -378,8 +389,16 @@ static void normalizeSample(MatChar image, MatFloat *result) {
   if (sampleMax == 0.0)
     sampleMax = 1.0;
 
-  convertFromCharToFloat(image, 1.0 / sampleMax,
-                         -(1.0 / sampleMax) * sampleMean, result);
+  int resultRows = result->rows;
+  int resultCols = result->cols;
+  float (*resultArray)[resultCols] =
+      malloc(sizeof(float) * resultRows * resultCols);
+
+  convertFromCharToFloatArray(imageRows, imageCols, imageArray, 1.0 / sampleMax,
+                              -(1.0 / sampleMax) * sampleMean, resultRows,
+                              resultCols, resultArray);
+
+  copyArrayToMatFloat(resultRows, resultCols, resultArray, *result);
 
   *result = reshapeFloat(*result, image.rows * image.cols);
 
