@@ -391,11 +391,22 @@ static void normalizeSample(int imageRows, int imageCols,
   return;
 }
 
+static void copySubArrayChar(int arrayRows, int arrayCols,
+                             uint8_t Array[arrayRows][arrayCols],
+                             int subArrayRows, int subArrayCols,
+                             uint8_t subArray[subArrayRows][subArrayCols],
+                             int offsetRow, int offsetCol) {
+  for (int i = 0; i < subArrayRows; i++)
+    for (int j = 0; j < subArrayCols; j++)
+      subArray[i][j] = Array[i + offsetRow][j + offsetCol];
+}
+
 /// @brief Calculate a single response map for an image.
 ///
 /// @param Image The image to process.
 static void generateResponseMap(
-    const MatChar Image, const Point2i center, int mapSize, mlp classifier,
+    int ImageRows, int ImageCols, uint8_t Image[ImageRows][ImageCols],
+    const Point2i center, int mapSize, mlp classifier,
     float ResponseMap[mapSize + mapSize + 1][mapSize + mapSize + 1]) {
 
   MatFloat m_U_transpose =
@@ -433,10 +444,12 @@ static void generateResponseMap(
   int bInCols = bIn.cols;
   float (*bInArray)[bInCols] = malloc(sizeof(float) * bInRows * bInCols);
   copyMatFloatToArray(bIn, bInRows, bInCols, bInArray);
+
   int wOutRows = wOut.rows;
   int wOutCols = wOut.cols;
   float (*wOutArray)[wOutCols] = malloc(sizeof(float) * wOutRows * wOutCols);
   copyMatFloatToArray(wOut, wOutRows, wOutCols, wOutArray);
+
   float bOut = GetValueFloat(classifier.m_wOut, 0, classifier.m_wOut.cols - 1);
 
   for (int ncy = 0; ncy <= 2 * mapSize; ++ncy) {
@@ -458,22 +471,25 @@ static void generateResponseMap(
       int xOutCols = bIn.cols;
       float (*xOutArray)[xOutCols] = malloc(sizeof(float) * xOutRows * xOutCols);
 
-      MatChar imagePatch = GetBlockChar(
-          Image, cy - classifier.m_patchSize, cy + classifier.m_patchSize + 1,
-          cx - classifier.m_patchSize, cx + classifier.m_patchSize + 1);
-
-      int imagePatchRows = imagePatch.rows;
-      int imagePatchCols = imagePatch.cols;
+      int imagePatchRows = 2 * classifier.m_patchSize + 1;
+      int imagePatchCols = 2 * classifier.m_patchSize + 1;
       uint8_t (*imagePatchArray)[imagePatchCols] =
           malloc(sizeof(uint8_t) * imagePatchRows * imagePatchCols);
 
-      copyMatCharToArray(imagePatch, imagePatchRows, imagePatchCols,
-                         imagePatchArray);
-
-      int patchRows = imagePatch.rows;
-      int patchCols = imagePatch.cols;
+      int patchRows = imagePatchRows;
+      int patchCols = imagePatchCols;
       float (*patchArray)[patchCols] =
           malloc(sizeof(float) * patchRows * patchCols);
+
+      // Copy a subarray
+      //
+      // Instead of creating an explicit copy, we could read from the
+      // original array and just offset the reads by the offsets the
+      // subarray we copy out is set off.
+      copySubArrayChar(ImageRows, ImageCols, Image, imagePatchRows,
+                       imagePatchCols, imagePatchArray,
+                       cy - classifier.m_patchSize,
+                       cx - classifier.m_patchSize);
 
       normalizeSample(imagePatchRows, imagePatchCols, imagePatchArray,
                       patchRows, patchCols, patchArray);
@@ -500,8 +516,9 @@ static void generateResponseMap(
                                            xOutCols, wOutArray, xOutArray) -
                                bOut)));
 
-      free(xOutArray);
+      free(patchArray);
       free(imagePatchArray);
+      free(xOutArray);
     }
   }
 
@@ -523,8 +540,8 @@ static int cvRound(float value) {
 // @param responseMaps A pointer at which results of the calculation,
 //                     the response maps, are stored.
 void calculateRespondMaps(
-    int m_visibleLandmarks_size, int MapSize, MatChar Image, MatFloat shape,
-    mlp m_classifiers[],
+    int m_visibleLandmarks_size, int MapSize, int ImageRows, int ImageCols,
+    uint8_t Image[ImageRows][ImageCols], MatFloat shape, mlp m_classifiers[],
     float ResponseMaps[][MapSize + MapSize + 1][MapSize + MapSize + 1]) {
 
   // The response maps calculated in this loop are in general calculated
@@ -557,8 +574,8 @@ void calculateRespondMaps(
     center.x = cvRound(shape_x);
     center.y = cvRound(shape_y);
 
-    generateResponseMap(Image, center, MapSize, m_classifiers[i],
-                        ResponseMaps[i]);
+    generateResponseMap(ImageRows, ImageCols, Image, center, MapSize,
+                        m_classifiers[i], ResponseMaps[i]);
   }
 
   return;
@@ -575,12 +592,19 @@ void calculateMaps(int NumLandMarks, int MapSize, MatChar Image, MatFloat Shape,
   float (*ResponseMaps)[Width][Width] =
       malloc(sizeof(float) * NumLandMarks * Width * Width + 1);
 
-  calculateRespondMaps(NumLandMarks, MapSize, Image, Shape, Classifiers,
-                       ResponseMaps);
+  int ImageRows = Image.rows;
+  int ImageCols = Image.cols;
+  uint8_t (*ImageArray)[ImageCols] =
+      malloc(sizeof(uint8_t) * ImageRows * ImageCols);
+  copyMatCharToArray(Image, ImageRows, ImageCols, ImageArray);
+
+  calculateRespondMaps(NumLandMarks, MapSize, ImageRows, ImageCols, ImageArray,
+                       Shape, Classifiers, ResponseMaps);
 
   for (int i = 0; i < NumLandMarks; ++i)
     copyArrayToMatFloat(Width, Width, ResponseMaps[i],
                         *(&(*MatResponseMaps)[i]));
 
+  free(ImageArray);
   free(ResponseMaps);
 }
