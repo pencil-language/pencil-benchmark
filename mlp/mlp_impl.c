@@ -479,7 +479,7 @@ static void generateResponseMap(
       //      if we would create different temporary arrays for
       //      different parallel execution streams.
       int xOutRows = bInRows;
-      int xOutCols = bInRows;
+      int xOutCols = bInCols;
       float (*xOutArray)[xOutCols] = malloc(sizeof(float) * xOutRows * xOutCols);
 
       int imagePatchRows = 2 * classifier.m_patchSize + 1;
