@@ -138,37 +138,43 @@ static void transposeFloat(MatFloat input, MatFloat *output) {
   return;
 }
 
-static float meanChar(int Rows, int Cols, uint8_t M[Rows][Cols]) {
+static float meanChar(int subImageRows, int subImageCols, int imageRows,
+		      int imageCols, uint8_t image[imageRows][imageCols],
+		      int imageOffsetRow, int imageOffsetCol) {
   float sum = 0;
 
-  for (int i = 0; i < Rows; i++)
-    for (int j = 0; j < Cols; j++) {
-      sum += M[i][j];
+  for (int i = 0; i < subImageRows; i++)
+    for (int j = 0; j < subImageCols; j++) {
+      sum += image[i + imageOffsetRow][j + imageOffsetCol];
     }
 
-  return sum / (Rows * Cols);
+  return sum / (subImageRows * subImageCols);
 }
 
 static uint8_t min(uint8_t a, uint8_t b) { return a < b ? a : b; }
 
-static uint8_t minChar(int Rows, int Cols, uint8_t M[Rows][Cols]) {
+static uint8_t minChar(int subImageRows, int subImageCols, int imageRows,
+		       int imageCols, uint8_t image[imageRows][imageCols],
+		       int imageOffsetRow, int imageOffsetCol) {
   uint8_t minvalue = 255;
 
-  for (int i = 0; i < Rows; i++)
-    for (int j = 0; j < Cols; j++)
-      minvalue = min(minvalue, M[i][j]);
+  for (int i = 0; i < subImageRows; i++)
+    for (int j = 0; j < subImageCols; j++)
+      minvalue = min(minvalue, image[i + imageOffsetRow][j+imageOffsetCol]);
 
   return minvalue;
 }
 
 static uint8_t max(uint8_t a, uint8_t b) { return a > b ? a : b; }
 
-static uint8_t maxChar(int Rows, int Cols, uint8_t M[Rows][Cols]) {
+static uint8_t maxChar(int subImageRows, int subImageCols, int imageRows,
+		       int imageCols, uint8_t image[imageRows][imageCols],
+		       int imageOffsetRow, int imageOffsetCol) {
   uint8_t maxvalue = 0;
 
-  for (int i = 0; i < Rows; i++)
-    for (int j = 0; j < Cols; j++)
-      maxvalue = max(maxvalue, M[i][j]);
+  for (int i = 0; i < subImageRows; i++)
+    for (int j = 0; j < subImageCols; j++)
+      maxvalue = max(maxvalue, image[i + imageOffsetRow][j+imageOffsetCol]);
 
   return maxvalue;
 }
@@ -213,17 +219,16 @@ static MatFloat GetBlockFloat(MatFloat self, int row_from, int row_to,
   return result;
 }
 
-static void convertFromCharToFloatArray(int InRows, int InCols,
-                                        uint8_t In[InRows][InCols],
+static void convertFromCharToFloatArray(int imageRows, int imageCols,
+                                        uint8_t In[imageRows][imageCols],
+					int imageOffsetRow, int imageOffsetCol,
                                         float quotient, float shift,
                                         int OutRows, int OutCols,
                                         float Out[OutRows][OutCols]) {
-  assert(InRows == OutRows);
-  assert(InCols == OutCols);
 
-  for (int i = 0; i < InRows; i++)
-    for (int j = 0; j < InCols; j++)
-      Out[i][j] = quotient * (float)In[i][j] + shift;
+  for (int i = 0; i < OutRows; i++)
+    for (int j = 0; j < OutCols; j++)
+      Out[i][j] = quotient * (float)In[i + imageOffsetRow][j + imageOffsetCol] + shift;
   return;
 }
 
@@ -352,14 +357,26 @@ static float dotProduct(int LeftRows, int LeftCols, int RightRows,
   return Result;
 }
 
-static void normalizeSample(int imageRows, int imageCols,
-                            uint8_t imageArray[imageRows][imageCols],
+/* This function takes an image[imageRows][imageCols] as input and then works on a subset of that
+ * image. imageOffsetRow and imageOffsetCol are used as offsets for image[][] while
+ * subImageRows ad subImageCols define the size of the subimage.
+ */
+static void normalizeSample(int subImageRows, int subImageCols, int imageRows,
+		            int imageCols,
+			    uint8_t imageArray[imageRows][imageCols],
+			    int imageOffsetRow, int imageOffsetCol,
                             int resultRows, int resultCols,
                             float resultArray[resultRows][resultCols]) {
 
-  float sampleMean = meanChar(imageRows, imageCols, imageArray);
-  float sampleMin = minChar(imageRows, imageCols, imageArray);
-  float sampleMax = maxChar(imageRows, imageCols, imageArray);
+  float sampleMean = meanChar(subImageRows, subImageCols, imageRows,
+		              imageCols, imageArray, imageOffsetRow,
+                              imageOffsetCol);
+  float sampleMin = minChar(subImageRows, subImageCols, imageRows,
+		            imageCols, imageArray, imageOffsetRow,
+                            imageOffsetCol);
+  float sampleMax = maxChar(subImageRows, subImageCols, imageRows,
+		            imageCols, imageArray, imageOffsetRow,
+                            imageOffsetCol);
 
   sampleMax -= sampleMean;
   sampleMin -= sampleMean;
@@ -369,7 +386,8 @@ static void normalizeSample(int imageRows, int imageCols,
   if (sampleMax == 0.0)
     sampleMax = 1.0;
 
-  convertFromCharToFloatArray(imageRows, imageCols, imageArray, 1.0 / sampleMax,
+  convertFromCharToFloatArray(imageRows, imageCols, imageArray, imageOffsetRow,
+                              imageOffsetCol, 1.0 / sampleMax,
                               -(1.0 / sampleMax) * sampleMean, resultRows,
                               resultCols, resultArray);
   return;
@@ -457,25 +475,14 @@ static void generateResponseMap(
 
       int imagePatchRows = 2 * classifier.m_patchSize + 1;
       int imagePatchCols = 2 * classifier.m_patchSize + 1;
-      uint8_t (*imagePatchArray)[imagePatchCols] =
-          malloc(sizeof(uint8_t) * imagePatchRows * imagePatchCols);
 
       int patchRows = imagePatchRows;
       int patchCols = imagePatchCols;
       float (*patchArray)[patchCols] =
           malloc(sizeof(float) * patchRows * patchCols);
 
-      // Copy a subarray
-      //
-      // Instead of creating an explicit copy, we could read from the
-      // original array and just offset the reads by the offsets the
-      // subarray we copy out is set off.
-      copySubArrayChar(ImageRows, ImageCols, Image, imagePatchRows,
-                       imagePatchCols, imagePatchArray,
-                       cy - classifier.m_patchSize,
-                       cx - classifier.m_patchSize);
-
-      normalizeSample(imagePatchRows, imagePatchCols, imagePatchArray,
+      normalizeSample(imagePatchRows, imagePatchCols, ImageRows, ImageCols, Image,
+		      cy - classifier.m_patchSize, cx - classifier.m_patchSize,
                       patchRows, patchCols, patchArray);
 
       // Reshape the C99 Array.
@@ -500,7 +507,6 @@ static void generateResponseMap(
                                bOut)));
 
       free(patchArray);
-      free(imagePatchArray);
       free(xOutArray);
     }
   }
