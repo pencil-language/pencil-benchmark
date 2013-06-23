@@ -21,6 +21,15 @@ static void copyMatFloatToArray(MatFloat In, int n, int m, float Out[][m]) {
       Out[i][j] = In.data[In.start + i * In.step + j];
 }
 
+static void copyMatCharToArray(MatChar In, int n, int m, uint8_t Out[][m]) {
+  assert(In.rows == n);
+  assert(In.cols == m);
+
+  for (int i = 0; i < In.rows; i++)
+    for (int j = 0; j < In.cols; j++)
+      Out[i][j] = In.data[In.start + i * In.step + j];
+}
+
 static void copyArrayToMatFloat(int n, int m, float In[][m], MatFloat Out) {
   assert(Out.rows == n);
   assert(Out.cols == m);
@@ -119,42 +128,37 @@ static void transposeFloat(MatFloat input, MatFloat *output) {
   return;
 }
 
-static float meanChar(MatChar input) {
-  assert(input.data);
+static float meanChar(int Rows, int Cols, uint8_t M[Rows][Cols]) {
   float sum = 0;
 
-  for (int i = 0; i < input.rows; i++)
-    for (int j = 0; j < input.cols; j++) {
-      sum += input.data[i * input.step + j + input.start];
+  for (int i = 0; i < Rows; i++)
+    for (int j = 0; j < Cols; j++) {
+      sum += M[i][j];
     }
 
-  return sum / (input.rows * input.cols);
+  return sum / (Rows * Cols);
 }
 
 static uint8_t min(uint8_t a, uint8_t b) { return a < b ? a : b; }
 
-static uint8_t minChar(MatChar input) {
-  assert(input.data);
-  int q, w;
+static uint8_t minChar(int Rows, int Cols, uint8_t M[Rows][Cols]) {
   uint8_t minvalue = 255;
 
-  for (q = 0; q < input.rows; q++)
-    for (w = 0; w < input.cols; w++)
-      minvalue = min(minvalue, input.data[q * input.step + w + input.start]);
+  for (int i = 0; i < Rows; i++)
+    for (int j = 0; j < Cols; j++)
+      minvalue = min(minvalue, M[i][j]);
 
   return minvalue;
 }
 
 static uint8_t max(uint8_t a, uint8_t b) { return a > b ? a : b; }
 
-static uint8_t maxChar(MatChar input) {
-  assert(input.data);
-  int q, w;
+static uint8_t maxChar(int Rows, int Cols, uint8_t M[Rows][Cols]) {
   uint8_t maxvalue = 0;
 
-  for (q = 0; q < input.rows; q++)
-    for (w = 0; w < input.cols; w++)
-      maxvalue = max(maxvalue, input.data[q * input.step + w + input.start]);
+  for (int i = 0; i < Rows; i++)
+    for (int j = 0; j < Cols; j++)
+      maxvalue = max(maxvalue, M[i][j]);
 
   return maxvalue;
 }
@@ -357,9 +361,14 @@ static void normalizeSample(MatChar image, MatFloat *result) {
   assert(result->cols == image.cols);
   assert(result->rows == image.rows);
 
-  float sampleMean = meanChar(image);
-  float sampleMin = minChar(image);
-  float sampleMax = maxChar(image);
+  int imageRows = image.rows;
+  int imageCols = image.cols;
+  uint8_t (*imageArray)[imageCols] = malloc(sizeof(uint8_t) * imageRows * imageCols);
+  copyMatCharToArray(image, imageRows, imageCols, imageArray);
+
+  float sampleMean = meanChar(imageRows, imageCols, imageArray);
+  float sampleMin = minChar(imageRows, imageCols, imageArray);
+  float sampleMax = maxChar(imageRows, imageCols, imageArray);
 
   sampleMax -= sampleMean;
   sampleMin -= sampleMean;
@@ -373,6 +382,8 @@ static void normalizeSample(MatChar image, MatFloat *result) {
                          -(1.0 / sampleMax) * sampleMean, result);
 
   *result = reshapeFloat(*result, image.rows * image.cols);
+
+  free(imageArray);
 
   return;
 }
