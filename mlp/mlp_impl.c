@@ -227,22 +227,6 @@ static void convertFromCharToFloatArray(int InRows, int InCols,
   return;
 }
 
-static MatFloat reshapeFloat(MatFloat self, int new_rows) {
-
-  assert(self.cols == self.step);
-  assert((self.cols * self.rows) % new_rows == 0);
-
-  MatFloat result;
-  result.rows = new_rows;
-  result.cols = self.cols * self.rows / new_rows;
-  assert(result.cols == 1);
-  result.step = result.cols;
-  result.start = self.start;
-  result.data = self.data;
-
-  return result;
-}
-
 void freeMatFloat(MatFloat *mat) {
   assert(mat->data);
   assert(mat->start == 0);
