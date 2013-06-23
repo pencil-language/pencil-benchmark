@@ -436,37 +436,31 @@ static void generateResponseMap(
   transposeFloat(m_URows, m_UCols, m_UArray, m_U_transposeRows,
                  m_U_transposeCols, m_U_transposeArray);
 
-  MatFloat m_U_transpose =
-      CreateMatFloat(classifier.m_U.cols, classifier.m_U.rows);
-
-  copyArrayToMatFloat(m_U_transposeRows, m_U_transposeCols, m_U_transposeArray,
-                      m_U_transpose);
-  // Subarray
-  //
-  // This function defines a sub array of a given 2D array. We need to
-  // represent this in some way.
-  MatFloat wIn_A = GetBlockFloat(classifier.m_wIn, 0, classifier.m_wIn.rows, 0,
-                                 classifier.m_wIn.cols - 1);
-  MatFloat wIn = CreateMatFloat(wIn_A.rows, m_U_transpose.cols);
-  gemmFloat(wIn_A, m_U_transpose, 1.0, wIn, 0.0, &wIn);
-
-  int wInRows = wIn.rows;
-  int wInCols = wIn.cols;
-  float (*wInArray)[wInCols] = malloc(sizeof(float) * wInRows * wInCols);
-  copyMatFloatToArray(wIn, wInRows, wInCols, wInArray);
-
   int m_wInRows = classifier.m_wIn.rows;
   int m_wInCols = classifier.m_wIn.cols;
   float (*m_wInArray)[m_wInCols] =
   malloc(sizeof(float) * m_wInRows * m_wInCols);
   copyMatFloatToArray(classifier.m_wIn, m_wInRows, m_wInCols, m_wInArray);
 
+  int wIn_ARows = m_wInRows;
+  int wIn_ACols = m_wInCols - 1;
+  float (*wIn_AArray)[wIn_ACols] = malloc(sizeof(float) * wIn_ARows * wIn_ACols);
+
+  copySubArrayFloat(m_wInRows, m_wInCols, m_wInArray, m_wInRows,
+                    m_wInCols - 1, wIn_AArray, 0, 0);
+
+  int wInRows = wIn_ARows;
+  int wInCols = m_U_transposeCols;
+  float (*wInArray)[wInCols] = malloc(sizeof(float) * wInRows * wInCols);
+  gemmFloatArray(wIn_ARows, wIn_ACols, wIn_AArray, m_U_transposeRows,
+                 m_U_transposeCols, m_U_transposeArray, 1.0, wInRows, wInCols,
+                 wInArray, 0.0, wInRows, wInCols, wInArray);
+
   int bInRows = m_wInRows;
   int bInCols = 1;
   float (*bInArray)[bInCols] = malloc(sizeof(float) * bInRows * bInCols);
   copySubArrayFloat(m_wInRows, m_wInCols, m_wInArray, bInRows,
                     bInCols, bInArray, 0, m_wInCols - 1);
-
 
   int m_wOutRows = classifier.m_wOut.rows;
   int m_wOutCols = classifier.m_wOut.cols;
@@ -546,14 +540,14 @@ static void generateResponseMap(
     }
   }
 
+  free(m_wInArray);
+  free(wIn_AArray);
   free(m_U_transposeArray);
   free(m_UArray);
   free(wInArray);
   free(m_wOutArray);
   free(wOut_tmpArray);
   free(wOutArray);
-  freeMatFloat(&wIn);
-  freeMatFloat(&m_U_transpose);
 
   return;
 }
