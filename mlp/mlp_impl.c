@@ -461,7 +461,7 @@ static void generateResponseMap(
   float (*bInArray)[bInCols] = malloc(sizeof(float) * bInRows * bInCols);
   copyMatFloatToArray(bIn, bInRows, bInCols, bInArray);
 
-  float bOut = GetValueFloat(classifier.m_wOut, 0, classifier.m_wOut.cols - 1);
+  float bOut = m_wOutArray[0][m_wOutCols - 1];
 
   for (int ncy = 0; ncy <= 2 * mapSize; ++ncy) {
     int cy = ncy + center.y - mapSize;
