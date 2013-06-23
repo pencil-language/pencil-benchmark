@@ -134,6 +134,17 @@ static void transposeFloat(MatFloat input, MatFloat *output) {
     for (w = 0; w < input.cols; w++)
       output->data[w * output->step + q + output->start] =
           input.data[q * input.step + w + input.start];
+}
+
+static void transposeFloatArray(int InRows, int InCols,
+                                float In[InRows][InCols], int OutRows,
+                                int OutCols, float Out[OutRows][OutCols]) {
+  assert(InRows == OutCols);
+  assert(OutCols == InRows);
+
+  for (int i = 0; i < InRows; i++)
+    for (int j = 0; j < InCols; j++)
+	Out[j][i] = In[i][j];
 
   return;
 }
@@ -385,6 +396,16 @@ static void copySubArrayChar(int arrayRows, int arrayCols,
       subArray[i][j] = Array[i + offsetRow][j + offsetCol];
 }
 
+static void copySubArrayFloat(int arrayRows, int arrayCols,
+                              float Array[arrayRows][arrayCols],
+                              int subArrayRows, int subArrayCols,
+                              float subArray[subArrayRows][subArrayCols],
+                              int offsetRow, int offsetCol) {
+  for (int i = 0; i < subArrayRows; i++)
+    for (int j = 0; j < subArrayCols; j++)
+      subArray[i][j] = Array[i + offsetRow][j + offsetCol];
+}
+
 /// @brief Calculate a single response map for an image.
 ///
 /// @param Image The image to process.
@@ -416,23 +437,29 @@ static void generateResponseMap(
       GetBlockFloat(classifier.m_wIn, 0, classifier.m_wIn.rows,
                     classifier.m_wIn.cols - 1, classifier.m_wIn.cols);
 
-  // Subarray
-  MatFloat wOut_tmp =
-      GetBlockFloat(classifier.m_wOut, 0, classifier.m_wOut.rows, 0,
-                    classifier.m_wOut.cols - 1);
+  int m_wOutRows = classifier.m_wOut.rows;
+  int m_wOutCols = classifier.m_wOut.cols;
+  float (*m_wOutArray)[m_wOutCols] =
+      malloc(sizeof(float) * m_wOutRows * m_wOutCols);
+  copyMatFloatToArray(classifier.m_wOut, m_wOutRows, m_wOutCols, m_wOutArray);
 
-  MatFloat wOut = CreateMatFloat(wOut_tmp.cols, wOut_tmp.rows);
-  transposeFloat(wOut_tmp, &wOut);
+  int wOut_tmpRows = m_wOutRows;
+  int wOut_tmpCols = m_wOutCols - 1;
+  float (*wOut_tmpArray)[wOut_tmpCols] = malloc(sizeof(float) * wOut_tmpRows * wOut_tmpCols);
+
+  copySubArrayFloat(m_wOutRows, m_wOutCols, m_wOutArray, wOut_tmpRows,
+                    wOut_tmpCols, wOut_tmpArray, 0, 0);
+
+  int wOutRows = wOut_tmpCols;
+  int wOutCols = wOut_tmpRows;
+  float (*wOutArray)[wOutCols] = malloc(sizeof(float) * wOutRows * wOutCols);
+  transposeFloatArray(wOut_tmpRows, wOut_tmpCols, wOut_tmpArray, wOutRows,
+                      wOutCols, wOutArray);
 
   int bInRows = bIn.rows;
   int bInCols = bIn.cols;
   float (*bInArray)[bInCols] = malloc(sizeof(float) * bInRows * bInCols);
   copyMatFloatToArray(bIn, bInRows, bInCols, bInArray);
-
-  int wOutRows = wOut.rows;
-  int wOutCols = wOut.cols;
-  float (*wOutArray)[wOutCols] = malloc(sizeof(float) * wOutRows * wOutCols);
-  copyMatFloatToArray(wOut, wOutRows, wOutCols, wOutArray);
 
   float bOut = GetValueFloat(classifier.m_wOut, 0, classifier.m_wOut.cols - 1);
 
@@ -505,8 +532,10 @@ static void generateResponseMap(
     }
   }
 
+  free(wInArray);
+  free(m_wOutArray);
+  free(wOut_tmpArray);
   free(wOutArray);
-  freeMatFloat(&wOut);
   freeMatFloat(&wIn);
   freeMatFloat(&m_U_transpose);
 
