@@ -427,22 +427,22 @@ static void generateResponseMap(
   // The problem here is that the size of the arrays is not know to
   // be identical for each respond map calculation. Hence, we can
   // not easily move those allocations out of the core computation.
-  int m_URows = classifier.m_U.rows;
-  int m_UCols = classifier.m_U.cols;
+  int m_URows = classifier.m_U.rows; // Always 121
+  int m_UCols = classifier.m_U.cols; // Varies between 17 and 30
   float (*m_UArray)[m_UCols] =
   malloc(sizeof(float) * m_URows * m_UCols);
   copyMatFloatToArray(classifier.m_U, m_URows, m_UCols, m_UArray);
 
   // Translate input arrays into C99 Arrays
-  int m_wInRows = classifier.m_wIn.rows;
-  int m_wInCols = classifier.m_wIn.cols;
+  int m_wInRows = classifier.m_wIn.rows; // Always 25
+  int m_wInCols = classifier.m_wIn.cols; // Varies between 17 and 31
   float (*m_wInArray)[m_wInCols] =
   malloc(sizeof(float) * m_wInRows * m_wInCols);
   copyMatFloatToArray(classifier.m_wIn, m_wInRows, m_wInCols, m_wInArray);
 
   // Translate input arrays into C99 Arrays
-  int m_wOutRows = classifier.m_wOut.rows;
-  int m_wOutCols = classifier.m_wOut.cols;
+  int m_wOutRows = classifier.m_wOut.rows; // Always 1
+  int m_wOutCols = classifier.m_wOut.cols; // Always 26
   float (*m_wOutArray)[m_wOutCols] =
       malloc(sizeof(float) * m_wOutRows * m_wOutCols);
   copyMatFloatToArray(classifier.m_wOut, m_wOutRows, m_wOutCols, m_wOutArray);
