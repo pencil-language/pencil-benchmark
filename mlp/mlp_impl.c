@@ -422,11 +422,31 @@ static void generateResponseMap(
     const Point2i center, int mapSize, mlp classifier,
     float ResponseMap[mapSize + mapSize + 1][mapSize + mapSize + 1]) {
 
+
+  // Translate input arrays into C99 Arrays.
+  //
+  // The problem here is that the size of the arrays is not know to
+  // be identical for each respond map calculation. Hence, we can
+  // not easily move those allocations out of the core computation.
   int m_URows = classifier.m_U.rows;
   int m_UCols = classifier.m_U.cols;
   float (*m_UArray)[m_UCols] =
   malloc(sizeof(float) * m_URows * m_UCols);
   copyMatFloatToArray(classifier.m_U, m_URows, m_UCols, m_UArray);
+
+  // Translate input arrays into C99 Arrays
+  int m_wInRows = classifier.m_wIn.rows;
+  int m_wInCols = classifier.m_wIn.cols;
+  float (*m_wInArray)[m_wInCols] =
+  malloc(sizeof(float) * m_wInRows * m_wInCols);
+  copyMatFloatToArray(classifier.m_wIn, m_wInRows, m_wInCols, m_wInArray);
+
+  // Translate input arrays into C99 Arrays
+  int m_wOutRows = classifier.m_wOut.rows;
+  int m_wOutCols = classifier.m_wOut.cols;
+  float (*m_wOutArray)[m_wOutCols] =
+      malloc(sizeof(float) * m_wOutRows * m_wOutCols);
+  copyMatFloatToArray(classifier.m_wOut, m_wOutRows, m_wOutCols, m_wOutArray);
 
   int m_U_transposeRows = m_UCols;
   int m_U_transposeCols = m_URows;
@@ -436,11 +456,6 @@ static void generateResponseMap(
   transposeFloat(m_URows, m_UCols, m_UArray, m_U_transposeRows,
                  m_U_transposeCols, m_U_transposeArray);
 
-  int m_wInRows = classifier.m_wIn.rows;
-  int m_wInCols = classifier.m_wIn.cols;
-  float (*m_wInArray)[m_wInCols] =
-  malloc(sizeof(float) * m_wInRows * m_wInCols);
-  copyMatFloatToArray(classifier.m_wIn, m_wInRows, m_wInCols, m_wInArray);
 
   int wIn_ARows = m_wInRows;
   int wIn_ACols = m_wInCols - 1;
@@ -461,12 +476,6 @@ static void generateResponseMap(
   float (*bInArray)[bInCols] = malloc(sizeof(float) * bInRows * bInCols);
   copySubArrayFloat(m_wInRows, m_wInCols, m_wInArray, bInRows,
                     bInCols, bInArray, 0, m_wInCols - 1);
-
-  int m_wOutRows = classifier.m_wOut.rows;
-  int m_wOutCols = classifier.m_wOut.cols;
-  float (*m_wOutArray)[m_wOutCols] =
-      malloc(sizeof(float) * m_wOutRows * m_wOutCols);
-  copyMatFloatToArray(classifier.m_wOut, m_wOutRows, m_wOutCols, m_wOutArray);
 
   int wOut_tmpRows = m_wOutRows;
   int wOut_tmpCols = m_wOutCols - 1;
