@@ -484,10 +484,9 @@ static void generateResponseMap(
       // can work on 2D arrays.
       int patchReshapedRows = imagePatchRows * imagePatchCols;
       int patchReshapedCols = 1;
-      float (*patchReshapedArray)[patchReshapedCols] = patchArray;
 
       gemmFloatArray(wInRows, wInCols, wInArray, patchReshapedRows, patchReshapedCols,
-                     patchReshapedArray, -1.0, bInRows, bInCols, bInArray, -1.0,
+                     patchArray, -1.0, bInRows, bInCols, bInArray, -1.0,
                      xOutRows, xOutCols, xOutArray);
 
       expFloat(xOutRows, xOutCols, xOutArray);
