@@ -13,25 +13,22 @@
 #include "mlp_impl.h"
 
 static void copyMatFloatToArray(MatFloat In, int n, int m, float Out[][m]) {
-  assert(In.start == 0);
   assert(In.rows == n);
   assert(In.cols == m);
-  assert(In.step == m);
 
   for (int i = 0; i < In.rows; i++)
     for (int j = 0; j < In.cols; j++)
-      Out[i][j] = In.data[i * In.step + j];
+      Out[i][j] = In.data[In.start + i * In.step + j];
 }
 
 static void copyArrayToMatFloat(int n, int m, float In[][m], MatFloat Out) {
-  assert(Out.start == 0);
   assert(Out.rows == n);
   assert(Out.cols == m);
   assert(Out.step == m);
 
   for (int i = 0; i < n; i++)
     for (int j = 0; j < m; j++)
-      Out.data[i * Out.step + j] = In[i][j];
+      Out.data[Out.start + i * Out.step + j] = In[i][j];
 }
 
 void printArray(int n, int m, float Array[n][m]) {
@@ -228,6 +225,7 @@ static MatFloat reshapeFloat(MatFloat self, int new_rows) {
   MatFloat result;
   result.rows = new_rows;
   result.cols = self.cols * self.rows / new_rows;
+  assert(result.cols == 1);
   result.step = result.cols;
   result.start = self.start;
   result.data = self.data;
@@ -280,6 +278,29 @@ static void gemmFloat(MatFloat A, MatFloat B, float alpha, MatFloat C,
 
       result->data[q * result->step + w + result->start] =
           alpha * sum + beta * C.data[q * C.step + w + C.start];
+    }
+
+  return;
+}
+
+// returns alpha*A*B + beta * C
+static void gemmFloatArray(int ARows, int ACols, float A[ARows][ACols],
+                           int BRows, int BCols, float B[ARows][BCols],
+                           float alpha, int CRows, int CCols,
+                           float C[CRows][CCols], float beta, int ResRows,
+                           int ResCols, float Res[ResRows][ResCols]) {
+  assert(ARows == CRows);
+  assert(ACols == BRows);
+  assert(BCols == CCols);
+  assert(CRows == ResRows);
+  assert(CCols == ResCols);
+
+  for (int i = 0; i < CRows; i++)
+    for (int j = 0; j < CCols; j++) {
+      Res[i][j] = beta * C[i][j];
+      for (int k = 0; k < ACols; k++) {
+        Res[i][j] += alpha * A[i][k] * B[k][j];
+      }
     }
 
   return;
@@ -381,6 +402,12 @@ static void generateResponseMap(
   MatFloat wIn = CreateMatFloat(wIn_A.rows, m_U_transpose.cols);
   gemmFloat(wIn_A, m_U_transpose, 1.0, wIn, 0.0, &wIn);
 
+  int wInRows = wIn.rows;
+  int wInCols = wIn.cols;
+  float (*wInArray)[wInCols] = malloc(sizeof(float) * wInRows * wInCols);
+  copyMatFloatToArray(wIn, wInRows, wInCols, wInArray);
+  copyArrayToMatFloat(wInRows, wInCols, wInArray, wIn);
+
   // Subarray
   MatFloat bIn =
       GetBlockFloat(classifier.m_wIn, 0, classifier.m_wIn.rows,
@@ -390,8 +417,14 @@ static void generateResponseMap(
   MatFloat wOut_tmp =
       GetBlockFloat(classifier.m_wOut, 0, classifier.m_wOut.rows, 0,
                     classifier.m_wOut.cols - 1);
+
   MatFloat wOut = CreateMatFloat(wOut_tmp.cols, wOut_tmp.rows);
   transposeFloat(wOut_tmp, &wOut);
+
+  int bInRows = bIn.rows;
+  int bInCols = bIn.cols;
+  float (*bInArray)[bInCols] = malloc(sizeof(float) * bInRows * bInCols);
+  copyMatFloatToArray(bIn, bInRows, bInCols, bInArray);
   int wOutRows = wOut.rows;
   int wOutCols = wOut.cols;
   float (*wOutArray)[wOutCols] = malloc(sizeof(float) * wOutRows * wOutCols);
@@ -432,11 +465,15 @@ static void generateResponseMap(
       // define some kind of 2D dot product.
       normalizeSample(imagePatch, &patch);
 
-      MatFloat xOut = CreateMatFloat(bIn.rows, bIn.cols);
+      int patchRows = patch.rows;
+      int patchCols = patch.cols;
+      float (*patchArray)[patchCols] = malloc(sizeof(float) * patchRows * patchCols);
 
-      gemmFloat(wIn, patch, -1.0, bIn, -1.0, &xOut);
+      copyMatFloatToArray(patch, patchRows, patchCols, patchArray);
 
-      copyMatFloatToArray(xOut, xOutRows, xOutCols, xOutArray);
+      gemmFloatArray(wInRows, wInCols, wInArray, patchRows, patchCols,
+                     patchArray, -1.0, bInRows, bInCols, bInArray, -1.0,
+                     xOutRows, xOutCols, xOutArray);
 
       expFloat(xOutRows, xOutCols, xOutArray);
       addFloat(xOutRows, xOutCols, xOutArray, 1.0f);
@@ -449,7 +486,6 @@ static void generateResponseMap(
                                bOut)));
 
       free(xOutArray);
-      freeMatFloat(&xOut);
       freeMatFloat(&patch);
     }
   }
