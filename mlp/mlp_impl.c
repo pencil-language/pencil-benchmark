@@ -480,6 +480,74 @@ static float generateResponseMapPatch(
   return result;
 }
 
+// This function has identical behavior as the generateResponseMapPatch
+// function, but it does not need to allocate any memory.
+static float generateResponseMapPatchNoMemory(
+    int mapSize, int ncx, int ncy, int bInRows, int bInCols,
+    float bInArray[bInRows][bInCols], mlp classifier, int ImageRows,
+    int ImageCols, uint8_t Image[ImageRows][ImageCols], Point2i center,
+    int wInRows, int wInCols, float wInArray[wInCols][wInRows], int wOutRows,
+    int wOutCols, float wOutArray[wOutRows][wOutCols], float bOut) {
+  int cy = ncy + center.y - mapSize;
+  int cx = ncx + center.x - mapSize;
+
+  // We allocate memory within the program.
+  //
+  // This is a temporary array, that is just used within this loop.
+  // Requering the user to declare this outside cause problems:
+  //
+  //   a) We bloat the code, as this array needs to be propagated
+  //      up to this location.
+  //   b) We introduce memory dependences, that would not be here
+  //      if we would create different temporary arrays for
+  //      different parallel execution streams.
+  int xOutRows = bInRows;
+  int xOutCols = bInCols;
+  float (*xOutArray)[xOutCols] = malloc(sizeof(float) * xOutRows * xOutCols);
+
+  int imagePatchRows =
+      2 * classifier.m_patchSize + 1; // m_patchSize is always 5
+  int imagePatchCols = 2 * classifier.m_patchSize + 1;
+
+  int patchRows = imagePatchRows;
+  int patchCols = imagePatchCols;
+  float (*patchArray)[patchCols] =
+      malloc(sizeof(float) * patchRows * patchCols);
+
+  normalizeSample(imagePatchRows, imagePatchCols, ImageRows, ImageCols, Image,
+                  cy - classifier.m_patchSize, cx - classifier.m_patchSize,
+                  patchRows, patchCols, patchArray);
+
+  // Reshape the C99 Array.
+  //
+  // This reshaping linearizes the array. It would be interesting to see if/why
+  // this is
+  // necessary.
+  //
+  int patchReshapedRows = imagePatchRows * imagePatchCols; // is always 121
+  int patchReshapedCols = 1;
+
+  gemmFloatArray(wInRows, wInCols, wInArray, patchReshapedRows,
+                 patchReshapedCols, patchArray, -1.0, bInRows, bInCols,
+                 bInArray, -1.0, xOutRows, xOutCols, xOutArray);
+
+  expFloat(xOutRows, xOutCols, xOutArray);
+  addFloat(xOutRows, xOutCols, xOutArray, 1.0f);
+  divideFloat(2.0f, xOutRows, xOutCols, xOutArray);
+  addFloat(xOutRows, xOutCols, xOutArray, -1.0f);
+
+  float result;
+  result =
+      -dotProduct(wOutRows, wOutCols, xOutRows, xOutCols, wOutArray, xOutArray);
+
+  result -= bOut;
+  result = 1.0f / (1.0f + expf(result));
+
+  free(patchArray);
+  free(xOutArray);
+  return result;
+}
+
 /// @brief Calculate a single response map for an image.
 ///
 /// @param Image The image to process.
@@ -583,10 +651,18 @@ static void generateResponseMap(
 
   for (int ncy = 0; ncy <= 2 * mapSize; ++ncy) {
     for (int ncx = 0; ncx <= 2 * mapSize; ++ncx) {
+
+#ifdef NOMEMORY
+      ResponseMap[ncy][ncx] = generateResponseMapPatchNoMemory(
+          mapSize, ncx, ncy, bInRows, bInCols, bInArray, classifier,
+          ImageRows, ImageCols, Image, center, wInRows, wInCols, wInArray,
+          wOutRows, wOutCols, wOutArray, bOut);
+#else
       ResponseMap[ncy][ncx] = generateResponseMapPatch(
           mapSize, ncx, ncy, bInRows, bInCols, bInArray, classifier,
           ImageRows, ImageCols, Image, center, wInRows, wInCols, wInArray,
           wOutRows, wOutCols, wOutArray, bOut);
+#endif
     }
   }
 
