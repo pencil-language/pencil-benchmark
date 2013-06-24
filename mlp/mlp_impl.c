@@ -582,25 +582,26 @@ static void generateResponseMap(
   // The problem here is that the size of the arrays is not know to
   // be identical for each respond map calculation. Hence, we can
   // not easily move those allocations out of the core computation.
+  assert(classifier.m_U.start == 0);
+  assert(classifier.m_U.cols == classifier.m_U.step);
   int m_URows = classifier.m_U.rows; // Always 121
   int m_UCols = classifier.m_U.cols; // Varies between 17 and 30
-  float (*m_UArray)[m_UCols] =
-  malloc(sizeof(float) * m_URows * m_UCols);
-  copyMatFloatToArray(classifier.m_U, m_URows, m_UCols, m_UArray);
+  float (*m_UArray)[m_UCols] = (void*)classifier.m_U.data;
+
 
   // Translate input arrays into C99 Arrays
+  assert(classifier.m_wIn.start == 0);
+  assert(classifier.m_wIn.cols == classifier.m_wIn.step);
   int m_wInRows = classifier.m_wIn.rows; // Always 25
   int m_wInCols = classifier.m_wIn.cols; // Varies between 17 and 31
-  float (*m_wInArray)[m_wInCols] =
-  malloc(sizeof(float) * m_wInRows * m_wInCols);
-  copyMatFloatToArray(classifier.m_wIn, m_wInRows, m_wInCols, m_wInArray);
+  float (*m_wInArray)[m_wInCols] = (void*)classifier.m_wIn.data;
 
   // Translate input arrays into C99 Arrays
+  assert(classifier.m_wOut.start == 0);
+  assert(classifier.m_wOut.cols == classifier.m_wOut.step);
   int m_wOutRows = classifier.m_wOut.rows; // Always 1
   int m_wOutCols = classifier.m_wOut.cols; // Always 26
-  float (*m_wOutArray)[m_wOutCols] =
-      malloc(sizeof(float) * m_wOutRows * m_wOutCols);
-  copyMatFloatToArray(classifier.m_wOut, m_wOutRows, m_wOutCols, m_wOutArray);
+  float (*m_wOutArray)[m_wOutCols] = (void*)classifier.m_wOut.data;
 
   // This is a temporary array.
   //
@@ -687,12 +688,9 @@ static void generateResponseMap(
     }
   }
 
-  free(m_wInArray);
   free(wIn_AArray);
   free(m_U_transposeArray);
-  free(m_UArray);
   free(wInArray);
-  free(m_wOutArray);
   free(wOut_tmpArray);
   free(wOutArray);
 
