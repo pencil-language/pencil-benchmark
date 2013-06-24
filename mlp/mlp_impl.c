@@ -546,9 +546,10 @@ static float generateResponseMapPatchNoMemory(
   //
   int patchReshapedRows = imagePatchRows * imagePatchCols; // is always 121
   int patchReshapedCols = 1;
+  float (*patchReshapedArray)[patchReshapedCols] = patchArray;
 
   gemmFloatArray(wInRows, wInCols, wInArray, patchReshapedRows,
-                 patchReshapedCols, patchArray, -1.0, bInRows, bInCols,
+                 patchReshapedCols, patchReshapedArray, -1.0, bInRows, bInCols,
                  bInArray, -1.0, xOutRows, xOutCols, xOutArray);
 
   expFloat(xOutRows, xOutCols, xOutArray);
