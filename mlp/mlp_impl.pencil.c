@@ -554,7 +554,11 @@ static void generateResponseMap(
         for (int j = 0; j < xOutCols; j++)
           xOutArray[i][j] = 1.0f + xOutArray[i][j];
 
-      divideFloat(2.0f, xOutRows, xOutCols, xOutArray);
+      /* divideFloat(2.0f, xOutRows, xOutCols, xOutArray); */
+       for (int i = 0; i < xOutRows; i++)
+        for (int j = 0; j < xOutCols; j++)
+          xOutArray[i][j] = 2.0f / xOutArray[i][j];
+
 
       /* addFloat(xOutRows, xOutCols, xOutArray, -1.0f); */
       for (int i = 0; i < xOutRows; i++)
