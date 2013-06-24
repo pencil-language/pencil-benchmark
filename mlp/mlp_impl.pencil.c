@@ -547,7 +547,11 @@ static void generateResponseMap(
                      patchArray, -1.0, bInRows, bInCols, bInArray, -1.0,
                      xOutRows, xOutCols, xOutArray);
 
-      expFloat(xOutRows, xOutCols, xOutArray);
+      /* expFloat(xOutRows, xOutCols, xOutArray); */
+      for (int i = 0; i < xOutRows; i++)
+        for (int j = 0; j < xOutCols; j++)
+          xOutArray[i][j] = expf(xOutArray[i][j]);
+
 
       /* addFloat(xOutRows, xOutCols, xOutArray, 1.0f); */
        for (int i = 0; i < xOutRows; i++)
