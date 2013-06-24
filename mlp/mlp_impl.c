@@ -531,10 +531,12 @@ static float generateResponseMapPatchNoMemory(
   if (sampleMax == 0.0)
     sampleMax = 1.0;
 
-  convertFromCharToFloatArray(
-      ImageRows, ImageCols, Image, imageOffsetRow, imageOffsetCol,
-      1.0 / sampleMax, -(1.0 / sampleMax) * sampleMean, patchRows, patchCols,
-      patchArray);
+  float quotient = 1.0f / sampleMax;
+  float shift = -(1.0f / sampleMax) * sampleMean;
+
+  for (int i = 0; i < patchRows; i++)
+    for (int j = 0; j < patchCols; j++)
+      patchArray[i][j] = quotient * (float)Image[i + imageOffsetRow][j + imageOffsetCol] + shift;
 
   // Reshape the C99 Array.
   //
