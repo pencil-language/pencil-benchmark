@@ -534,7 +534,7 @@ static void generateResponseMap(
       int xOutCols = bInCols;
       float (*xOutArray)[xOutCols] = malloc(sizeof(float) * xOutRows * xOutCols);
 
-      int imagePatchRows = 2 * classifier.m_patchSize + 1;
+      int imagePatchRows = 2 * classifier.m_patchSize + 1; // m_patchSize is always 5
       int imagePatchCols = 2 * classifier.m_patchSize + 1;
 
       int patchRows = imagePatchRows;
@@ -548,9 +548,10 @@ static void generateResponseMap(
 
       // Reshape the C99 Array.
       //
-      // Is this necessary or can we write the later functions such that they
-      // can work on 2D arrays.
-      int patchReshapedRows = imagePatchRows * imagePatchCols;
+      // This reshaping linearizes the array. It would be interesting to see if/why this is
+      // necessary.
+      //
+      int patchReshapedRows = imagePatchRows * imagePatchCols; // is always 121
       int patchReshapedCols = 1;
 
       gemmFloatArray(wInRows, wInCols, wInArray, patchReshapedRows, patchReshapedCols,
