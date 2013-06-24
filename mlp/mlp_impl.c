@@ -514,9 +514,27 @@ static float generateResponseMapPatchNoMemory(
   float (*patchArray)[patchCols] =
       malloc(sizeof(float) * patchRows * patchCols);
 
-  normalizeSample(imagePatchRows, imagePatchCols, ImageRows, ImageCols, Image,
-                  cy - classifier.m_patchSize, cx - classifier.m_patchSize,
-                  patchRows, patchCols, patchArray);
+  int imageOffsetRow = cy - classifier.m_patchSize;
+  int imageOffsetCol = cx - classifier.m_patchSize;
+  float sampleMean = meanChar(imagePatchRows, imagePatchCols, ImageRows,
+                              ImageCols, Image, imageOffsetRow, imageOffsetCol);
+  float sampleMin = minChar(imagePatchRows, imagePatchCols, ImageRows,
+                            ImageCols, Image, imageOffsetRow, imageOffsetCol);
+  float sampleMax = maxChar(imagePatchRows, imagePatchCols, ImageRows,
+                            ImageCols, Image, imageOffsetRow, imageOffsetCol);
+
+  sampleMax -= sampleMean;
+  sampleMin -= sampleMean;
+
+  sampleMax = fmaxf(fabsf(sampleMin), fabsf(sampleMax));
+
+  if (sampleMax == 0.0)
+    sampleMax = 1.0;
+
+  convertFromCharToFloatArray(
+      ImageRows, ImageCols, Image, imageOffsetRow, imageOffsetCol,
+      1.0 / sampleMax, -(1.0 / sampleMax) * sampleMean, patchRows, patchCols,
+      patchArray);
 
   // Reshape the C99 Array.
   //
