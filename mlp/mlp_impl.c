@@ -285,7 +285,7 @@ static void gemmFloat(MatFloat A, MatFloat B, float alpha, MatFloat C,
 
 // returns alpha*A*B + beta * C
 static void gemmFloatArray(int ARows, int ACols, float A[ARows][ACols],
-                           int BRows, int BCols, float B[ARows][BCols],
+                           int BRows, int BCols, float B[BRows][BCols],
                            float alpha, int CRows, int CCols,
                            float C[CRows][CCols], float beta, int ResRows,
                            int ResCols, float Res[ResRows][ResCols]) {
