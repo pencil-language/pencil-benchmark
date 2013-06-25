@@ -482,10 +482,13 @@ static float generateResponseMapPatchNoMemory(
 
     }
 
-  float result;
-  result =
-      -dotProduct(wOutRows, wOutCols, xOutRows, xOutCols, wOutArray, xOutArray);
+  float result = 0;
 
+  for (int i = 0; i < wOutRows; i++) {
+    result += wOutArray[i][0] * xOutArray[i][0];
+  }
+
+  result = - result;
   result -= bOut;
   result = 1.0f / (1.0f + expf(result));
 
