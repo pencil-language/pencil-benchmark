@@ -53,12 +53,11 @@ static void copyArrayToMatChar(int n, int m, uint8_t In[][m], MatChar Out) {
 void printArray(int n, int m, float Array[n][m]) {
   printf("%s = [\n", "NAME");
 
-  int q, w;
 
-  for (q = 0; q < n; q++) {
+  for (int q = 0; q < n; q++) {
     printf("[ ");
-    for (w = 0; w < m; w++) {
-      printf("%f, ", Array[n][m]);
+    for (int w = 0; w < m; w++) {
+      printf("%.40f, ", Array[q][w]);
     }
     printf(" ]\n");
   }
