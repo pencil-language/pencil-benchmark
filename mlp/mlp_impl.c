@@ -180,46 +180,6 @@ static uint8_t maxChar(int subImageRows, int subImageCols, int imageRows,
   return maxvalue;
 }
 
-static MatChar GetBlockChar(MatChar self, int row_from, int row_to,
-                            int col_from, int col_to) {
-  assert(row_from >= 0);
-  assert(col_from >= 0);
-  assert(row_from < row_to);
-  assert(col_from < col_to);
-  assert(row_to <= self.rows);
-  assert(col_to <= self.cols);
-  assert(self.data);
-
-  MatChar result;
-  result.rows = row_to - row_from;
-  result.cols = col_to - col_from;
-  result.step = self.step;
-  result.start = self.start + row_from * self.step + col_from;
-  result.data = self.data;
-
-  return result;
-}
-
-static MatFloat GetBlockFloat(MatFloat self, int row_from, int row_to,
-                              int col_from, int col_to) {
-  assert(row_from >= 0);
-  assert(col_from >= 0);
-  assert(row_from < row_to);
-  assert(col_from < col_to);
-  assert(row_to <= self.rows);
-  assert(col_to <= self.cols);
-  assert(self.data);
-
-  MatFloat result;
-  result.rows = row_to - row_from;
-  result.cols = col_to - col_from;
-  result.step = self.step;
-  result.start = self.start + row_from * self.step + col_from;
-  result.data = self.data;
-
-  return result;
-}
-
 static void convertFromCharToFloatArray(int imageRows, int imageCols,
                                         uint8_t In[imageRows][imageCols],
 					int imageOffsetRow, int imageOffsetCol,
@@ -254,32 +214,6 @@ void freeMatChar(MatChar *mat) {
   mat->cols = 0;
   mat->step = 0;
   mat->start = 0;
-  return;
-}
-
-// returns alpha*A*B + beta * C
-static void gemmFloat(MatFloat A, MatFloat B, float alpha, MatFloat C,
-                      float beta, MatFloat *result) {
-  assert(A.rows == C.rows);
-  assert(A.cols == B.rows);
-  assert(B.cols == C.cols);
-  assert(C.rows == result->rows);
-  assert(C.cols == result->cols);
-
-  float sum = 0;
-
-  for (int q = 0; q < C.rows; q++)
-    for (int w = 0; w < C.cols; w++) {
-      sum = 0;
-      for (int e = 0; e < A.cols; e++) {
-        sum += A.data[q * A.step + e + A.start] *
-                      B.data[e * B.step + w + B.start];
-      }
-
-      result->data[q * result->step + w + result->start] =
-          alpha * sum + beta * C.data[q * C.step + w + C.start];
-    }
-
   return;
 }
 
@@ -337,11 +271,6 @@ float GetValueFloat(MatFloat self, int row, int col) {
   return self.data[row * self.step + col + self.start];
 }
 
-static void SetValueFloat(MatFloat *self, int row, int col, float value) {
-  self->data[row * self->step + col + self->start] = value;
-  return;
-}
-
 static float dotProduct(int LeftRows, int LeftCols, int RightRows,
                         int RightCols, float Left[][LeftCols],
                         float Right[][RightCols]) {
@@ -392,16 +321,6 @@ static void normalizeSample(int subImageRows, int subImageCols, int imageRows,
                               -(1.0 / sampleMax) * sampleMean, resultRows,
                               resultCols, resultArray);
   return;
-}
-
-static void copySubArrayChar(int arrayRows, int arrayCols,
-                             uint8_t Array[arrayRows][arrayCols],
-                             int subArrayRows, int subArrayCols,
-                             uint8_t subArray[subArrayRows][subArrayCols],
-                             int offsetRow, int offsetCol) {
-  for (int i = 0; i < subArrayRows; i++)
-    for (int j = 0; j < subArrayCols; j++)
-      subArray[i][j] = Array[i + offsetRow][j + offsetCol];
 }
 
 static void copySubArrayFloat(int arrayRows, int arrayCols,
