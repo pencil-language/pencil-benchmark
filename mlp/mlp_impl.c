@@ -441,11 +441,15 @@ static float generateResponseMapPatchNoMemory(
   float result = 0;
 
   for (int i = 0; i < bInRows; i++) {
-    for (int j = 0; j < bInCols ; j++) {
+    for (int j = 0; j < bInCols; j++) { // This loop seems to have a single
+                                        // iteration? Is this always true?
       float xOutArray;
       xOutArray = beta * bInArray[i][j];
       for (int k = 0; k < wInCols; k++) {
-        xOutArray += alpha * wInArray[i][k] * (quotient * Image[k / imagePatchCols + imageOffsetRow][ k % imagePatchRows + j + imageOffsetCol] + shift);
+        xOutArray += alpha * wInArray[i][k] *
+                     (quotient * Image[k / imagePatchCols + imageOffsetRow][
+                                     k % imagePatchRows + j + imageOffsetCol] +
+                      shift);
       }
       xOutArray = expf(xOutArray);
       xOutArray = xOutArray + 1.0f;
