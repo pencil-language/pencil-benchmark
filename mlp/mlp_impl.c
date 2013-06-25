@@ -409,20 +409,6 @@ static float generateResponseMapPatchNoMemory(
   int cy = ncy + center.y - mapSize;
   int cx = ncx + center.x - mapSize;
 
-  // We allocate memory within the program.
-  //
-  // This is a temporary array, that is just used within this loop.
-  // Requering the user to declare this outside cause problems:
-  //
-  //   a) We bloat the code, as this array needs to be propagated
-  //      up to this location.
-  //   b) We introduce memory dependences, that would not be here
-  //      if we would create different temporary arrays for
-  //      different parallel execution streams.
-  int xOutRows = bInRows;
-  int xOutCols = bInCols;
-  float (*xOutArray)[xOutCols] = malloc(sizeof(float) * xOutRows * xOutCols);
-
   int imagePatchRows =
       2 * classifier.m_patchSize + 1; // m_patchSize is always 5
   int imagePatchCols = 2 * classifier.m_patchSize + 1;
@@ -468,24 +454,21 @@ static float generateResponseMapPatchNoMemory(
 
   float alpha = -1.0;
   float beta = -1.0;
-
-  for (int i = 0; i < bInRows; i++)
-    for (int j = 0; j < bInCols ; j++) {
-      xOutArray[i][j] = beta * bInArray[i][j];
-      for (int k = 0; k < wInCols; k++) {
-        xOutArray[i][j] += alpha * wInArray[i][k] * patchReshapedArray[k][j];
-      }
-      xOutArray[i][j] = expf(xOutArray[i][j]);
-      xOutArray[i][j] = xOutArray[i][j] + 1.0f;
-      xOutArray[i][j] = 2.0f / xOutArray[i][j];
-      xOutArray[i][j] = xOutArray[i][j] + -1.0f;
-
-    }
-
   float result = 0;
 
-  for (int i = 0; i < wOutRows; i++) {
-    result += wOutArray[i][0] * xOutArray[i][0];
+  for (int i = 0; i < bInRows; i++) {
+    for (int j = 0; j < bInCols ; j++) {
+      float xOutArray;
+      xOutArray = beta * bInArray[i][j];
+      for (int k = 0; k < wInCols; k++) {
+        xOutArray += alpha * wInArray[i][k] * patchReshapedArray[k][j];
+      }
+      xOutArray = expf(xOutArray);
+      xOutArray = xOutArray + 1.0f;
+      xOutArray = 2.0f / xOutArray;
+      xOutArray = xOutArray + -1.0f;
+      result += wOutArray[i][0] * xOutArray;
+    }
   }
 
   result = - result;
@@ -493,7 +476,6 @@ static float generateResponseMapPatchNoMemory(
   result = 1.0f / (1.0f + expf(result));
 
   free(patchArray);
-  free(xOutArray);
   return result;
 }
 
