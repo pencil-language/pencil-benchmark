@@ -404,7 +404,7 @@ static float generateResponseMapPatchNoMemory(
     int mapSize, int ncx, int ncy, int bInRows, int bInCols,
     float bInArray[bInRows][bInCols], mlp classifier, int ImageRows,
     int ImageCols, uint8_t Image[ImageRows][ImageCols], Point2i center,
-    int wInRows, int wInCols, float wInArray[wInCols][wInRows], int wOutRows,
+    int wInRows, int wInCols, float wInArray[wInRows][wInCols], int wOutRows,
     int wOutCols, float wOutArray[wOutRows][wOutCols], float bOut) {
   int cy = ncy + center.y - mapSize;
   int cx = ncx + center.x - mapSize;
@@ -466,9 +466,16 @@ static float generateResponseMapPatchNoMemory(
   int patchReshapedCols = 1;
   float (*patchReshapedArray)[patchReshapedCols] = patchArray;
 
-  gemmFloatArray(wInRows, wInCols, wInArray, patchReshapedRows,
-                 patchReshapedCols, patchReshapedArray, -1.0, bInRows, bInCols,
-                 bInArray, -1.0, xOutRows, xOutCols, xOutArray);
+  float alpha = -1.0;
+  float beta = -1.0;
+
+  for (int i = 0; i < bInRows; i++)
+    for (int j = 0; j < bInCols ; j++) {
+      xOutArray[i][j] = beta * bInArray[i][j];
+      for (int k = 0; k < wInCols; k++) {
+        xOutArray[i][j] += alpha * wInArray[i][k] * patchReshapedArray[k][j];
+      }
+    }
 
   expFloat(xOutRows, xOutCols, xOutArray);
   addFloat(xOutRows, xOutCols, xOutArray, 1.0f);
