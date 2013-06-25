@@ -415,8 +415,6 @@ static float generateResponseMapPatchNoMemory(
 
   int patchRows = imagePatchRows;
   int patchCols = imagePatchCols;
-  float (*patchArray)[patchCols] =
-      malloc(sizeof(float) * patchRows * patchCols);
 
   int imageOffsetRow = cy - classifier.m_patchSize;
   int imageOffsetCol = cx - classifier.m_patchSize;
@@ -438,20 +436,6 @@ static float generateResponseMapPatchNoMemory(
   float quotient = 1.0f / sampleMax;
   float shift = -(1.0f / sampleMax) * sampleMean;
 
-  for (int i = 0; i < patchRows; i++)
-    for (int j = 0; j < patchCols; j++)
-      patchArray[i][j] = quotient * (float)Image[i + imageOffsetRow][j + imageOffsetCol] + shift;
-
-  // Reshape the C99 Array.
-  //
-  // This reshaping linearizes the array. It would be interesting to see if/why
-  // this is
-  // necessary.
-  //
-  int patchReshapedRows = imagePatchRows * imagePatchCols; // is always 121
-  int patchReshapedCols = 1;
-  float (*patchReshapedArray)[patchReshapedCols] = patchArray;
-
   float alpha = -1.0;
   float beta = -1.0;
   float result = 0;
@@ -461,7 +445,7 @@ static float generateResponseMapPatchNoMemory(
       float xOutArray;
       xOutArray = beta * bInArray[i][j];
       for (int k = 0; k < wInCols; k++) {
-        xOutArray += alpha * wInArray[i][k] * patchReshapedArray[k][j];
+        xOutArray += alpha * wInArray[i][k] * (quotient * Image[k / imagePatchCols + imageOffsetRow][ k % imagePatchRows + j + imageOffsetCol] + shift);
       }
       xOutArray = expf(xOutArray);
       xOutArray = xOutArray + 1.0f;
@@ -475,7 +459,6 @@ static float generateResponseMapPatchNoMemory(
   result -= bOut;
   result = 1.0f / (1.0f + expf(result));
 
-  free(patchArray);
   return result;
 }
 
