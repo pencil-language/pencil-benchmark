@@ -475,12 +475,12 @@ static float generateResponseMapPatchNoMemory(
       for (int k = 0; k < wInCols; k++) {
         xOutArray[i][j] += alpha * wInArray[i][k] * patchReshapedArray[k][j];
       }
-    }
+      xOutArray[i][j] = expf(xOutArray[i][j]);
+      xOutArray[i][j] = xOutArray[i][j] + 1.0f;
+      xOutArray[i][j] = 2.0f / xOutArray[i][j];
+      xOutArray[i][j] = xOutArray[i][j] + -1.0f;
 
-  expFloat(xOutRows, xOutCols, xOutArray);
-  addFloat(xOutRows, xOutCols, xOutArray, 1.0f);
-  divideFloat(2.0f, xOutRows, xOutCols, xOutArray);
-  addFloat(xOutRows, xOutCols, xOutArray, -1.0f);
+    }
 
   float result;
   result =
