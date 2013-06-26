@@ -435,8 +435,14 @@ static float generateResponseMapPatchNoMemory(
 
   int imageOffsetRow = cy - classifier.m_patchSize;
   int imageOffsetCol = cx - classifier.m_patchSize;
-  float sampleMean = meanChar(imagePatchRows, imagePatchCols, ImageRows,
-                              ImageCols, Image, imageOffsetRow, imageOffsetCol);
+
+  float sum = 0;
+  for (int i = 0; i < imagePatchRows; i++)
+    for (int j = 0; j < imagePatchCols; j++) {
+      sum += Image[i + imageOffsetRow][j + imageOffsetCol];
+    }
+  float sampleMean = sum / (imagePatchRows * imagePatchCols);
+
   float sampleMin = minChar(imagePatchRows, imagePatchCols, ImageRows,
                             ImageCols, Image, imageOffsetRow, imageOffsetCol);
   float sampleMax = maxChar(imagePatchRows, imagePatchCols, ImageRows,
