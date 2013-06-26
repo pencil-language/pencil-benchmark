@@ -423,6 +423,7 @@ static float generateResponseMapPatchNoMemory(
     int ImageCols, uint8_t Image[ImageRows][ImageCols], Point2i center,
     int wInRows, int wInCols, float wInArray[wInRows][wInCols], int wOutRows,
     int wOutCols, float wOutArray[wOutRows][wOutCols], float bOut) {
+#pragma scop
   int cy = ncy + center.y - mapSize;
   int cx = ncx + center.x - mapSize;
 
@@ -490,6 +491,7 @@ static float generateResponseMapPatchNoMemory(
   result -= bOut;
   result = 1.0f / (1.0f + expf(result));
 
+#pragma endscop
   return result;
 }
 
@@ -504,14 +506,8 @@ static void generateResponseMap(
     int ImageRows, int ImageCols, uint8_t Image[ImageRows][ImageCols],
     const Point2i center, int mapSize, mlp classifier,
     float ResponseMap[mapSize + mapSize + 1][mapSize + mapSize + 1],
-    int m_URows, int m_UCols, float m_UArray[m_URows][m_UCols]) {
-
-  // Translate input arrays into C99 Arrays
-  assert(classifier.m_wIn.start == 0);
-  assert(classifier.m_wIn.cols == classifier.m_wIn.step);
-  int m_wInRows = classifier.m_wIn.rows; // Always 25
-  int m_wInCols = classifier.m_wIn.cols; // Varies between 17 and 31
-  float (*m_wInArray)[m_wInCols] = (void*)classifier.m_wIn.data;
+    int m_URows, int m_UCols, float m_UArray[m_URows][m_UCols],
+    int m_wInRows, int m_wInCols, float m_wInArray[m_wInRows][m_wInCols]) {
 
   // Translate input arrays into C99 Arrays
   assert(classifier.m_wOut.start == 0);
@@ -653,7 +649,10 @@ void calculateRespondMaps(
     generateResponseMap(ImageRows, ImageCols, Image, center, MapSize,
                         m_classifiers[i], ResponseMaps[i],
 			m_classifiers[i].m_U.rows, m_classifiers[i].m_U.cols,
-			m_classifiers[i].m_U.data);
+			m_classifiers[i].m_U.data,
+			m_classifiers[i].m_wIn.rows,
+			m_classifiers[i].m_wIn.cols,
+			m_classifiers[i].m_wIn.data);
   }
 
   return;
