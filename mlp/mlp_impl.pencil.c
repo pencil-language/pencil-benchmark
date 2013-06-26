@@ -414,38 +414,101 @@ static void copySubArrayFloat(int arrayRows, int arrayCols,
       subArray[i][j] = Array[i + offsetRow][j + offsetCol];
 }
 
+
+// This function has identical behavior as the generateResponseMapPatch
+// function, but it does not need to allocate any memory.
+static float generateResponseMapPatchNoMemory(
+    int mapSize, int ncx, int ncy, int bInRows, int bInCols,
+    float bInArray[bInRows][bInCols], mlp classifier, int ImageRows,
+    int ImageCols, uint8_t Image[ImageRows][ImageCols], Point2i center,
+    int wInRows, int wInCols, float wInArray[wInRows][wInCols], int wOutRows,
+    int wOutCols, float wOutArray[wOutRows][wOutCols], float bOut) {
+  int cy = ncy + center.y - mapSize;
+  int cx = ncx + center.x - mapSize;
+
+  int imagePatchRows =
+      2 * classifier.m_patchSize + 1; // m_patchSize is always 5
+  int imagePatchCols = 2 * classifier.m_patchSize + 1;
+
+  int patchRows = imagePatchRows;
+  int patchCols = imagePatchCols;
+
+  int imageOffsetRow = cy - classifier.m_patchSize;
+  int imageOffsetCol = cx - classifier.m_patchSize;
+  float sampleMean = meanChar(imagePatchRows, imagePatchCols, ImageRows,
+                              ImageCols, Image, imageOffsetRow, imageOffsetCol);
+  float sampleMin = minChar(imagePatchRows, imagePatchCols, ImageRows,
+                            ImageCols, Image, imageOffsetRow, imageOffsetCol);
+  float sampleMax = maxChar(imagePatchRows, imagePatchCols, ImageRows,
+                            ImageCols, Image, imageOffsetRow, imageOffsetCol);
+
+  sampleMax -= sampleMean;
+  sampleMin -= sampleMean;
+
+  sampleMax = fmaxf(fabsf(sampleMin), fabsf(sampleMax));
+
+  if (sampleMax == 0.0)
+    sampleMax = 1.0;
+
+  float quotient = 1.0f / sampleMax;
+  float shift = -(1.0f / sampleMax) * sampleMean;
+
+  float alpha = -1.0;
+  float beta = -1.0;
+  float result = 0;
+
+  for (int i = 0; i < bInRows; i++) {
+    for (int j = 0; j < bInCols; j++) { // This loop seems to have a single
+                                        // iteration? Is this always true?
+      float xOutArray;
+      xOutArray = beta * bInArray[i][j];
+      for (int k = 0; k < wInCols; k++) {
+        xOutArray += alpha * wInArray[i][k] *
+                     (quotient * Image[k / imagePatchCols + imageOffsetRow][
+                                     k % imagePatchRows + j + imageOffsetCol] +
+                      shift);
+      }
+      xOutArray = expf(xOutArray);
+      xOutArray = xOutArray + 1.0f;
+      xOutArray = 2.0f / xOutArray;
+      xOutArray = xOutArray + -1.0f;
+      result += wOutArray[i][0] * xOutArray;
+    }
+  }
+
+  result = - result;
+  result -= bOut;
+  result = 1.0f / (1.0f + expf(result));
+
+  return result;
+}
+
+
+
+
+
 /// @brief Calculate a single response map for an image.
 ///
 /// @param Image The image to process.
 static void generateResponseMap(
     int ImageRows, int ImageCols, uint8_t Image[ImageRows][ImageCols],
     const Point2i center, int mapSize, mlp classifier,
-    float ResponseMap[mapSize + mapSize + 1][mapSize + mapSize + 1]) {
-
-  // Translate input arrays into C99 Arrays.
-  //
-  // The problem here is that the size of the arrays is not know to
-  // be identical for each respond map calculation. Hence, we can
-  // not easily move those allocations out of the core computation.
-  int m_URows = classifier.m_U.rows; // Always 121
-  int m_UCols = classifier.m_U.cols; // Varies between 17 and 30
-  float (*m_UArray)[m_UCols] =
-  malloc(sizeof(float) * m_URows * m_UCols);
-  copyMatFloatToArray(classifier.m_U, m_URows, m_UCols, m_UArray);
+    float ResponseMap[mapSize + mapSize + 1][mapSize + mapSize + 1],
+    int m_URows, int m_UCols, float m_UArray[m_URows][m_UCols]) {
 
   // Translate input arrays into C99 Arrays
+  assert(classifier.m_wIn.start == 0);
+  assert(classifier.m_wIn.cols == classifier.m_wIn.step);
   int m_wInRows = classifier.m_wIn.rows; // Always 25
   int m_wInCols = classifier.m_wIn.cols; // Varies between 17 and 31
-  float (*m_wInArray)[m_wInCols] =
-  malloc(sizeof(float) * m_wInRows * m_wInCols);
-  copyMatFloatToArray(classifier.m_wIn, m_wInRows, m_wInCols, m_wInArray);
+  float (*m_wInArray)[m_wInCols] = (void*)classifier.m_wIn.data;
 
   // Translate input arrays into C99 Arrays
+  assert(classifier.m_wOut.start == 0);
+  assert(classifier.m_wOut.cols == classifier.m_wOut.step);
   int m_wOutRows = classifier.m_wOut.rows; // Always 1
   int m_wOutCols = classifier.m_wOut.cols; // Always 26
-  float (*m_wOutArray)[m_wOutCols] =
-      malloc(sizeof(float) * m_wOutRows * m_wOutCols);
-  copyMatFloatToArray(classifier.m_wOut, m_wOutRows, m_wOutCols, m_wOutArray);
+  float (*m_wOutArray)[m_wOutCols] = (void*)classifier.m_wOut.data;
 
   // This is a temporary array.
   //
@@ -515,78 +578,18 @@ static void generateResponseMap(
 
   float bOut = m_wOutArray[0][m_wOutCols - 1];
 
-  int xOutRows = bInRows;
-  int xOutCols = bInCols;
-  float (*xOutArray)[xOutCols] = malloc(sizeof(float) * xOutRows * xOutCols);
-
-  int imagePatchRows = 2 * classifier.m_patchSize + 1;
-  int imagePatchCols = 2 * classifier.m_patchSize + 1;
-
-  int patchRows = imagePatchRows;
-  int patchCols = imagePatchCols;
-  float (*patchArray)[patchCols] =
-     malloc(sizeof(float) * patchRows * patchCols);
-
-#pragma scop
   for (int ncy = 0; ncy <= 2 * mapSize; ++ncy) {
-    int cy = ncy + center.y - mapSize;
     for (int ncx = 0; ncx <= 2 * mapSize; ++ncx) {
-      int cx = ncx + center.x - mapSize;
-      normalizeSample(imagePatchRows, imagePatchCols, ImageRows, ImageCols, Image,
-		      cy - classifier.m_patchSize, cx - classifier.m_patchSize,
-                      patchRows, patchCols, patchArray);
-
-      // Reshape the C99 Array.
-      //
-      // Is this necessary or can we write the later functions such that they
-      // can work on 2D arrays.
-      int patchReshapedRows = imagePatchRows * imagePatchCols;
-      int patchReshapedCols = 1;
-
-      gemmFloatArray(wInRows, wInCols, wInArray, patchReshapedRows, patchReshapedCols,
-                     patchArray, -1.0, bInRows, bInCols, bInArray, -1.0,
-                     xOutRows, xOutCols, xOutArray);
-
-      /* expFloat(xOutRows, xOutCols, xOutArray); */
-      for (int i = 0; i < xOutRows; i++)
-        for (int j = 0; j < xOutCols; j++)
-          xOutArray[i][j] = expf(xOutArray[i][j]);
-
-
-      /* addFloat(xOutRows, xOutCols, xOutArray, 1.0f); */
-       for (int i = 0; i < xOutRows; i++)
-        for (int j = 0; j < xOutCols; j++)
-          xOutArray[i][j] = 1.0f + xOutArray[i][j];
-
-      /* divideFloat(2.0f, xOutRows, xOutCols, xOutArray); */
-       for (int i = 0; i < xOutRows; i++)
-        for (int j = 0; j < xOutCols; j++)
-          xOutArray[i][j] = 2.0f / xOutArray[i][j];
-
-
-      /* addFloat(xOutRows, xOutCols, xOutArray, -1.0f); */
-      for (int i = 0; i < xOutRows; i++)
-        for (int j = 0; j < xOutCols; j++)
-          xOutArray[i][j] = -1.0f + xOutArray[i][j];
-
-
-      ResponseMap[ncy][ncx] =
-          (1.0f / (1.0f + expf(-dotProduct(wOutRows, wOutCols, xOutRows,
-                                           xOutCols, wOutArray, xOutArray) -
-                               bOut)));
+      ResponseMap[ncy][ncx] = generateResponseMapPatchNoMemory(
+          mapSize, ncx, ncy, bInRows, bInCols, bInArray, classifier,
+          ImageRows, ImageCols, Image, center, wInRows, wInCols, wInArray,
+          wOutRows, wOutCols, wOutArray, bOut);
     }
   }
-#pragma scop  
 
-  free(patchArray);
-  free(xOutArray);
-
-  free(m_wInArray);
   free(wIn_AArray);
   free(m_U_transposeArray);
-  free(m_UArray);
   free(wInArray);
-  free(m_wOutArray);
   free(wOut_tmpArray);
   free(wOutArray);
 
@@ -638,7 +641,9 @@ void calculateRespondMaps(
     center.y = cvRound(shape_y);
 
     generateResponseMap(ImageRows, ImageCols, Image, center, MapSize,
-                        m_classifiers[i], ResponseMaps[i]);
+                        m_classifiers[i], ResponseMaps[i],
+			m_classifiers[i].m_U.rows, m_classifiers[i].m_U.cols,
+			m_classifiers[i].m_U.data);
   }
 
   return;
