@@ -449,8 +449,11 @@ static float generateResponseMapPatchNoMemory(
       minvalue = min(minvalue, Image[i + imageOffsetRow][j+imageOffsetCol]);
   float sampleMin = minvalue;
 
-  float sampleMax = maxChar(imagePatchRows, imagePatchCols, ImageRows,
-                            ImageCols, Image, imageOffsetRow, imageOffsetCol);
+  uint8_t maxvalue = 0;
+  for (int i = 0; i < imagePatchRows; i++)
+    for (int j = 0; j < imagePatchCols; j++)
+      maxvalue = max(maxvalue, Image[i + imageOffsetRow][j+imageOffsetCol]);
+  float sampleMax = maxvalue;
 
   sampleMax -= sampleMean;
   sampleMin -= sampleMean;
