@@ -430,9 +430,6 @@ static float generateResponseMapPatchNoMemory(
       2 * classifier.m_patchSize + 1; // m_patchSize is always 5
   int imagePatchCols = 2 * classifier.m_patchSize + 1;
 
-  int patchRows = imagePatchRows;
-  int patchCols = imagePatchCols;
-
   int imageOffsetRow = cy - classifier.m_patchSize;
   int imageOffsetCol = cx - classifier.m_patchSize;
 
