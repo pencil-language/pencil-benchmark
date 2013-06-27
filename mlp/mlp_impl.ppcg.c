@@ -451,7 +451,7 @@ void calculateRespondMaps(
     int m_UCols = m_classifiers[i].m_U.cols;
 
     // Reshape the flat array m_classifiers[i].m_U.data into a 2D array
-    float (*m_UArray)[m_UCols] = m_classifiers[i].m_U.data;
+    float (*m_UArray)[m_UCols] = (void*) m_classifiers[i].m_U.data;
 
     shape_x = GetValueFloat(shape, 2 * i, 0);
     shape_y = GetValueFloat(shape, 2 * i + 1, 0);
