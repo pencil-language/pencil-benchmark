@@ -428,13 +428,8 @@ void calculateRespondMaps(
     uint8_t Image[ImageRows][ImageCols], MatFloat shape, mlp m_classifiers[],
     float ResponseMaps[][mapSize + mapSize + 1][mapSize + mapSize + 1]) {
 
-  // The response maps calculated in this loop are in general calculated
-  // from non-overlapping parts of the image. However, even if those parts
-  // would overlap, this loop is still parallel, as memory is either only
-  // read from or, if it is written to, each iteration writes into a distinct
-  // subarray. When translating this to GPU code, we could map this loop to
-  // distinct thread groups.
-  for (int i = 0; i < m_visibleLandmarks_size; i++) {
+    // Parallel loop
+    for (int i = 0; i < m_visibleLandmarks_size; i++) {
 
     // This array is interesting as it gives the coordinates of the different
     // subimages that we need to process. It is not trivially polyhedral, as
@@ -552,7 +547,7 @@ void calculateRespondMaps(
 	  int cx = ncx + center.x - mapSize;
 
 	  int imagePatchRows =
-	      2 * m_classifiers[i].m_patchSize + 1; // m_patchSize is always 5
+	      2 * m_classifiers[i].m_patchSize + 1;
 	  int imagePatchCols = 2 * m_classifiers[i].m_patchSize + 1;
 
 	  int imageOffsetRow = cy - m_classifiers[i].m_patchSize;
@@ -593,8 +588,8 @@ void calculateRespondMaps(
 	  float result = 0;
 
 	  for (int l = 0; l < bInRows; l++) {
-	    for (int j = 0; j < bInCols; j++) { // This loop seems to have a single
-						// iteration? Is this always true?
+	    for (int j = 0; j < bInCols; j++) {
+					
 	      float xOutArray;
 	      xOutArray = beta * bInArray[l][j];
 	      for (int k = 0; k < wInCols; k++) {
