@@ -495,33 +495,68 @@ static float generateResponseMapPatchNoMemory(
   return result;
 }
 
+static int cvRound(float value) {
+  return (int)(value + (value >= 0 ? 0.5 : -0.5));
+}
 
+// Calculate a set of respone maps for a given image.
+//
+// @param Image The image to process
+// @param responseMaps A pointer at which results of the calculation,
+//                     the response maps, are stored.
+void calculateRespondMaps(
+    int m_visibleLandmarks_size, int mapSize, int ImageRows, int ImageCols,
+    uint8_t Image[ImageRows][ImageCols], MatFloat shape, mlp m_classifiers[],
+    float ResponseMaps[][mapSize + mapSize + 1][mapSize + mapSize + 1]) {
 
+  // The response maps calculated in this loop are in general calculated
+  // from non-overlapping parts of the image. However, even if those parts
+  // would overlap, this loop is still parallel, as memory is either only
+  // read from or, if it is written to, each iteration writes into a distinct
+  // subarray. When translating this to GPU code, we could map this loop to
+  // distinct thread groups.
+  for (int i = 0; i < m_visibleLandmarks_size; i++) {
 
+    // This array is interesting as it gives the coordinates of the different
+    // subimages that we need to process. It is not trivially polyhedral, as
+    // when inlined, it is an indirection array, that makes all loop bounds
+    // data-dependent. However, it is read only and basically used as a
+    // two-dimensional set of parameters.
+    //
+    // TODO: I do not see why 'shape' is defined using floats. Also, this
+    //       is a trivial case where we could use a C99 array to represent
+    //       the matrix.
+    //       Finally, Point2i is non-polyhedral but a plain structure. We
+    //       could represent it as a 2-element array, but it may actually
+    //       be worth supporting such simple structures in ppcg.
+    //
+    Point2i center;
+    float shape_x;
+    float shape_y;
+    int m_URows = m_classifiers[i].m_U.rows;
+    int m_UCols = m_classifiers[i].m_U.cols;
 
-/// @brief Calculate a single response map for an image.
-///
-/// @param Image The image to process.
-// TODO_PENCIL: inline this function in order to get outermost parallelism
-static void generateResponseMap(
-    int ImageRows, int ImageCols, uint8_t Image[ImageRows][ImageCols],
-    const Point2i center, int mapSize, mlp classifier,
-    float ResponseMap[mapSize + mapSize + 1][mapSize + mapSize + 1],
-    int m_URows, int m_UCols, float m_UArray[m_URows][m_UCols]) {
+    // Reshape the flat array m_classifiers[i].m_U.data into a 2D array
+    float (*m_UArray)[m_UCols] = m_classifiers[i].m_U.data;
+
+    shape_x = GetValueFloat(shape, 2 * i, 0);
+    shape_y = GetValueFloat(shape, 2 * i + 1, 0);
+    center.x = cvRound(shape_x);
+    center.y = cvRound(shape_y);
 
   // Translate input arrays into C99 Arrays
-  assert(classifier.m_wIn.start == 0);
-  assert(classifier.m_wIn.cols == classifier.m_wIn.step);
-  int m_wInRows = classifier.m_wIn.rows; // Always 25
-  int m_wInCols = classifier.m_wIn.cols; // Varies between 17 and 31
-  float (*m_wInArray)[m_wInCols] = (void*)classifier.m_wIn.data;
+  assert(m_classifiers[i].m_wIn.start == 0);
+  assert(m_classifiers[i].m_wIn.cols == m_classifiers[i].m_wIn.step);
+  int m_wInRows = m_classifiers[i].m_wIn.rows;
+  int m_wInCols = m_classifiers[i].m_wIn.cols;
+  float (*m_wInArray)[m_wInCols] = (void*)m_classifiers[i].m_wIn.data;
 
   // Translate input arrays into C99 Arrays
-  assert(classifier.m_wOut.start == 0);
-  assert(classifier.m_wOut.cols == classifier.m_wOut.step);
-  int m_wOutRows = classifier.m_wOut.rows; // Always 1
-  int m_wOutCols = classifier.m_wOut.cols; // Always 26
-  float (*m_wOutArray)[m_wOutCols] = (void*)classifier.m_wOut.data;
+  assert(m_classifiers[i].m_wOut.start == 0);
+  assert(m_classifiers[i].m_wOut.cols == m_classifiers[i].m_wOut.step);
+  int m_wOutRows = m_classifiers[i].m_wOut.rows;
+  int m_wOutCols = m_classifiers[i].m_wOut.cols;
+  float (*m_wOutArray)[m_wOutCols] = (void*)m_classifiers[i].m_wOut.data;
 
   // This is a temporary array.
   //
@@ -598,29 +633,29 @@ static void generateResponseMap(
 	  int cx = ncx + center.x - mapSize;
 
 	  int imagePatchRows =
-	      2 * classifier.m_patchSize + 1; // m_patchSize is always 5
-	  int imagePatchCols = 2 * classifier.m_patchSize + 1;
+	      2 * m_classifiers[i].m_patchSize + 1; // m_patchSize is always 5
+	  int imagePatchCols = 2 * m_classifiers[i].m_patchSize + 1;
 
-	  int imageOffsetRow = cy - classifier.m_patchSize;
-	  int imageOffsetCol = cx - classifier.m_patchSize;
+	  int imageOffsetRow = cy - m_classifiers[i].m_patchSize;
+	  int imageOffsetCol = cx - m_classifiers[i].m_patchSize;
 
 	  float sum = 0;
-	  for (int i = 0; i < imagePatchRows; i++)
+	  for (int l = 0; l < imagePatchRows; l++)
 	    for (int j = 0; j < imagePatchCols; j++) {
-	      sum += Image[i + imageOffsetRow][j + imageOffsetCol];
+	      sum += Image[l + imageOffsetRow][j + imageOffsetCol];
 	    }
 	  float sampleMean = sum / (imagePatchRows * imagePatchCols);
 
 	  uint8_t minvalue = 255;
-	  for (int i = 0; i < imagePatchRows; i++)
+	  for (int l = 0; l < imagePatchRows; l++)
 	    for (int j = 0; j < imagePatchCols; j++)
-	      minvalue = min(minvalue, Image[i + imageOffsetRow][j+imageOffsetCol]);
+	      minvalue = min(minvalue, Image[l + imageOffsetRow][j+imageOffsetCol]);
 	  float sampleMin = minvalue;
 
 	  uint8_t maxvalue = 0;
-	  for (int i = 0; i < imagePatchRows; i++)
+	  for (int l = 0; l < imagePatchRows; l++)
 	    for (int j = 0; j < imagePatchCols; j++)
-	      maxvalue = max(maxvalue, Image[i + imageOffsetRow][j+imageOffsetCol]);
+	      maxvalue = max(maxvalue, Image[l + imageOffsetRow][j+imageOffsetCol]);
 	  float sampleMax = maxvalue;
 
 	  sampleMax -= sampleMean;
@@ -638,13 +673,13 @@ static void generateResponseMap(
 	  float beta = -1.0;
 	  float result = 0;
 
-	  for (int i = 0; i < bInRows; i++) {
+	  for (int l = 0; l < bInRows; l++) {
 	    for (int j = 0; j < bInCols; j++) { // This loop seems to have a single
 						// iteration? Is this always true?
 	      float xOutArray;
-	      xOutArray = beta * bInArray[i][j];
+	      xOutArray = beta * bInArray[l][j];
 	      for (int k = 0; k < wInCols; k++) {
-		xOutArray += alpha * wInArray[i][k] *
+		xOutArray += alpha * wInArray[l][k] *
 			     (quotient * Image[k / imagePatchCols + imageOffsetRow][
 					     k % imagePatchRows + j + imageOffsetCol] +
 			      shift);
@@ -653,7 +688,7 @@ static void generateResponseMap(
 	      xOutArray = xOutArray + 1.0f;
 	      xOutArray = 2.0f / xOutArray;
 	      xOutArray = xOutArray + -1.0f;
-	      result += wOutArray[i][0] * xOutArray;
+	      result += wOutArray[l][0] * xOutArray;
 	    }
 	  }
 
@@ -661,13 +696,7 @@ static void generateResponseMap(
 	  result -= bOut;
 	  result = 1.0f / (1.0f + expf(result));
 
-
-      ResponseMap[ncy][ncx] = result; 
-      
-      /*generateResponseMapPatchNoMemory(
-          mapSize, ncx, ncy, bInRows, bInCols, bInArray, classifier,
-          ImageRows, ImageCols, Image, center, wInRows, wInCols, wInArray,
-          wOutRows, wOutCols, wOutArray, bOut);*/
+          ResponseMaps[i][ncy][ncx] = result; 
     }
   }
 
@@ -676,58 +705,6 @@ static void generateResponseMap(
   free(wInArray);
   free(wOut_tmpArray);
   free(wOutArray);
-
-  return;
-}
-
-static int cvRound(float value) {
-  return (int)(value + (value >= 0 ? 0.5 : -0.5));
-}
-
-// Calculate a set of respone maps for a given image.
-//
-// @param Image The image to process
-// @param responseMaps A pointer at which results of the calculation,
-//                     the response maps, are stored.
-void calculateRespondMaps(
-    int m_visibleLandmarks_size, int MapSize, int ImageRows, int ImageCols,
-    uint8_t Image[ImageRows][ImageCols], MatFloat shape, mlp m_classifiers[],
-    float ResponseMaps[][MapSize + MapSize + 1][MapSize + MapSize + 1]) {
-
-  // The response maps calculated in this loop are in general calculated
-  // from non-overlapping parts of the image. However, even if those parts
-  // would overlap, this loop is still parallel, as memory is either only
-  // read from or, if it is written to, each iteration writes into a distinct
-  // subarray. When translating this to GPU code, we could map this loop to
-  // distinct thread groups.
-  for (int i = 0; i < m_visibleLandmarks_size; i++) {
-
-    // This array is interesting as it gives the coordinates of the different
-    // subimages that we need to process. It is not trivially polyhedral, as
-    // when inlined, it is an indirection array, that makes all loop bounds
-    // data-dependent. However, it is read only and basically used as a
-    // two-dimensional set of parameters.
-    //
-    // TODO: I do not see why 'shape' is defined using floats. Also, this
-    //       is a trivial case where we could use a C99 array to represent
-    //       the matrix.
-    //       Finally, Point2i is non-polyhedral but a plain structure. We
-    //       could represent it as a 2-element array, but it may actually
-    //       be worth supporting such simple structures in ppcg.
-    //
-    Point2i center;
-    float shape_x;
-    float shape_y;
-
-    shape_x = GetValueFloat(shape, 2 * i, 0);
-    shape_y = GetValueFloat(shape, 2 * i + 1, 0);
-    center.x = cvRound(shape_x);
-    center.y = cvRound(shape_y);
-// TODO_PENCIL:  m_classifiers[i].m_U.data should be an array not a flat pointer
-    generateResponseMap(ImageRows, ImageCols, Image, center, MapSize,
-                        m_classifiers[i], ResponseMaps[i],
-			m_classifiers[i].m_U.rows, m_classifiers[i].m_U.cols,
-			m_classifiers[i].m_U.data);
   }
 
   return;
