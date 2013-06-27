@@ -452,8 +452,6 @@ void calculateRespondMaps(
     int m_UCols = m_classifiers[i].m_U.cols;
 
     // Reshape the flat array m_classifiers[i].m_U.data into a 2D array
-    // TODO_ppcg: Move to the caller site as a 3D array and add a 3D array
-    // as an argument to this function,
     float (*m_UArray)[m_UCols] = (void*) m_classifiers[i].m_U.data;
 
     shape_x = GetValueFloat(shape, 2 * i, 0);
@@ -466,8 +464,6 @@ void calculateRespondMaps(
   assert(m_classifiers[i].m_wIn.cols == m_classifiers[i].m_wIn.step);
   int m_wInRows = m_classifiers[i].m_wIn.rows;
   int m_wInCols = m_classifiers[i].m_wIn.cols;
-  // TODO_ppcg: move to the caller side, and add a 3D array as an argument
-  // to this function
   float (*m_wInArray)[m_wInCols] = (void*)m_classifiers[i].m_wIn.data;
 
   // Translate input arrays into C99 Arrays
@@ -489,8 +485,13 @@ void calculateRespondMaps(
   float (*m_U_transposeArray)[m_U_transposeCols] =
   malloc(sizeof(float) * m_U_transposeRows * m_U_transposeCols);
 
-  transposeFloat(m_URows, m_UCols, m_UArray, m_U_transposeRows,
-                 m_U_transposeCols, m_U_transposeArray);
+/*  transposeFloat(m_URows, m_UCols, m_UArray, m_U_transposeRows,
+                 m_U_transposeCols, m_U_transposeArray);*/
+  for (int i = 0; i < m_URows; i++)
+    for (int j = 0; j < m_UCols; j++)
+	m_U_transposeArray[j][i] = m_UArray[i][j];
+
+
 
   // A sub array.
   //
