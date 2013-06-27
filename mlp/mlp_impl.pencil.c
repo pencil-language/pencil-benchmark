@@ -423,7 +423,7 @@ static float generateResponseMapPatchNoMemory(
     int ImageCols, uint8_t Image[ImageRows][ImageCols], Point2i center,
     int wInRows, int wInCols, float wInArray[wInRows][wInCols], int wOutRows,
     int wOutCols, float wOutArray[wOutRows][wOutCols], float bOut) {
-#pragma scop
+
   int cy = ncy + center.y - mapSize;
   int cx = ncx + center.x - mapSize;
 
@@ -491,7 +491,7 @@ static float generateResponseMapPatchNoMemory(
   result -= bOut;
   result = 1.0f / (1.0f + expf(result));
 
-#pragma endscop
+
   return result;
 }
 
@@ -502,12 +502,19 @@ static float generateResponseMapPatchNoMemory(
 /// @brief Calculate a single response map for an image.
 ///
 /// @param Image The image to process.
+// TODO_PENCIL: inline this function in order to get outermost parallelism
 static void generateResponseMap(
     int ImageRows, int ImageCols, uint8_t Image[ImageRows][ImageCols],
     const Point2i center, int mapSize, mlp classifier,
     float ResponseMap[mapSize + mapSize + 1][mapSize + mapSize + 1],
-    int m_URows, int m_UCols, float m_UArray[m_URows][m_UCols],
-    int m_wInRows, int m_wInCols, float m_wInArray[m_wInRows][m_wInCols]) {
+    int m_URows, int m_UCols, float m_UArray[m_URows][m_UCols]) {
+
+  // Translate input arrays into C99 Arrays
+  assert(classifier.m_wIn.start == 0);
+  assert(classifier.m_wIn.cols == classifier.m_wIn.step);
+  int m_wInRows = classifier.m_wIn.rows; // Always 25
+  int m_wInCols = classifier.m_wIn.cols; // Varies between 17 and 31
+  float (*m_wInArray)[m_wInCols] = (void*)classifier.m_wIn.data;
 
   // Translate input arrays into C99 Arrays
   assert(classifier.m_wOut.start == 0);
@@ -586,10 +593,81 @@ static void generateResponseMap(
 
   for (int ncy = 0; ncy <= 2 * mapSize; ++ncy) {
     for (int ncx = 0; ncx <= 2 * mapSize; ++ncx) {
-      ResponseMap[ncy][ncx] = generateResponseMapPatchNoMemory(
+
+	  int cy = ncy + center.y - mapSize;
+	  int cx = ncx + center.x - mapSize;
+
+	  int imagePatchRows =
+	      2 * classifier.m_patchSize + 1; // m_patchSize is always 5
+	  int imagePatchCols = 2 * classifier.m_patchSize + 1;
+
+	  int imageOffsetRow = cy - classifier.m_patchSize;
+	  int imageOffsetCol = cx - classifier.m_patchSize;
+
+	  float sum = 0;
+	  for (int i = 0; i < imagePatchRows; i++)
+	    for (int j = 0; j < imagePatchCols; j++) {
+	      sum += Image[i + imageOffsetRow][j + imageOffsetCol];
+	    }
+	  float sampleMean = sum / (imagePatchRows * imagePatchCols);
+
+	  uint8_t minvalue = 255;
+	  for (int i = 0; i < imagePatchRows; i++)
+	    for (int j = 0; j < imagePatchCols; j++)
+	      minvalue = min(minvalue, Image[i + imageOffsetRow][j+imageOffsetCol]);
+	  float sampleMin = minvalue;
+
+	  uint8_t maxvalue = 0;
+	  for (int i = 0; i < imagePatchRows; i++)
+	    for (int j = 0; j < imagePatchCols; j++)
+	      maxvalue = max(maxvalue, Image[i + imageOffsetRow][j+imageOffsetCol]);
+	  float sampleMax = maxvalue;
+
+	  sampleMax -= sampleMean;
+	  sampleMin -= sampleMean;
+
+	  sampleMax = fmaxf(fabsf(sampleMin), fabsf(sampleMax));
+
+	  if (sampleMax == 0.0)
+	    sampleMax = 1.0;
+
+	  float quotient = 1.0f / sampleMax;
+	  float shift = -(1.0f / sampleMax) * sampleMean;
+
+	  float alpha = -1.0;
+	  float beta = -1.0;
+	  float result = 0;
+
+	  for (int i = 0; i < bInRows; i++) {
+	    for (int j = 0; j < bInCols; j++) { // This loop seems to have a single
+						// iteration? Is this always true?
+	      float xOutArray;
+	      xOutArray = beta * bInArray[i][j];
+	      for (int k = 0; k < wInCols; k++) {
+		xOutArray += alpha * wInArray[i][k] *
+			     (quotient * Image[k / imagePatchCols + imageOffsetRow][
+					     k % imagePatchRows + j + imageOffsetCol] +
+			      shift);
+	      }
+	      xOutArray = expf(xOutArray);
+	      xOutArray = xOutArray + 1.0f;
+	      xOutArray = 2.0f / xOutArray;
+	      xOutArray = xOutArray + -1.0f;
+	      result += wOutArray[i][0] * xOutArray;
+	    }
+	  }
+
+	  result = - result;
+	  result -= bOut;
+	  result = 1.0f / (1.0f + expf(result));
+
+
+      ResponseMap[ncy][ncx] = result; 
+      
+      /*generateResponseMapPatchNoMemory(
           mapSize, ncx, ncy, bInRows, bInCols, bInArray, classifier,
           ImageRows, ImageCols, Image, center, wInRows, wInCols, wInArray,
-          wOutRows, wOutCols, wOutArray, bOut);
+          wOutRows, wOutCols, wOutArray, bOut);*/
     }
   }
 
@@ -645,14 +723,11 @@ void calculateRespondMaps(
     shape_y = GetValueFloat(shape, 2 * i + 1, 0);
     center.x = cvRound(shape_x);
     center.y = cvRound(shape_y);
-
+// TODO_PENCIL:  m_classifiers[i].m_U.data should be an array not a flat pointer
     generateResponseMap(ImageRows, ImageCols, Image, center, MapSize,
                         m_classifiers[i], ResponseMaps[i],
 			m_classifiers[i].m_U.rows, m_classifiers[i].m_U.cols,
-			m_classifiers[i].m_U.data,
-			m_classifiers[i].m_wIn.rows,
-			m_classifiers[i].m_wIn.cols,
-			m_classifiers[i].m_wIn.data);
+			m_classifiers[i].m_U.data);
   }
 
   return;
