@@ -429,6 +429,7 @@ void calculateRespondMaps(
     float ResponseMaps[][mapSize + mapSize + 1][mapSize + mapSize + 1]) {
 
     // Parallel loop
+#pragma scop	
     for (int i = 0; i < m_visibleLandmarks_size; i++) {
 
     // This array is interesting as it gives the coordinates of the different
@@ -620,6 +621,7 @@ void calculateRespondMaps(
   free(wOut_tmpArray);
   free(wOutArray);
   }
+#pragma endscop
 
   return;
 }
