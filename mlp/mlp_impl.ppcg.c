@@ -485,13 +485,9 @@ void calculateRespondMaps(
   float (*m_U_transposeArray)[m_U_transposeCols] =
   malloc(sizeof(float) * m_U_transposeRows * m_U_transposeCols);
 
-/*  transposeFloat(m_URows, m_UCols, m_UArray, m_U_transposeRows,
-                 m_U_transposeCols, m_U_transposeArray);*/
   for (int i = 0; i < m_URows; i++)
     for (int j = 0; j < m_UCols; j++)
 	m_U_transposeArray[j][i] = m_UArray[i][j];
-
-
 
   // A sub array.
   //
@@ -541,8 +537,10 @@ void calculateRespondMaps(
   int wOutRows = wOut_tmpCols;
   int wOutCols = wOut_tmpRows;
   float (*wOutArray)[wOutCols] = malloc(sizeof(float) * wOutRows * wOutCols);
-  transposeFloat(wOut_tmpRows, wOut_tmpCols, wOut_tmpArray, wOutRows, wOutCols,
-                 wOutArray);
+
+  for (int i = 0; i < wOut_tmpRows; i++)
+    for (int j = 0; j < wOut_tmpCols; j++)
+	wOutArray[j][i] = wOut_tmpArray[i][j];
 
   float bOut = m_wOutArray[0][m_wOutCols - 1];
 
