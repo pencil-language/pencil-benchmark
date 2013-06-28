@@ -370,23 +370,13 @@ void calculateRespondMaps(
       }
     }
 
-  // A sub array.
-  //
-  // Instead of explicitly calculating this, it would be nice if ppcg
-  // could just be told that we only access a subset of this array.
-  int wOut_tmpRows = m_wOutRows;
-  int wOut_tmpCols = m_wOutCols - 1;
-  float (*wOut_tmpArray)[wOut_tmpCols] = malloc(sizeof(float) * wOut_tmpRows * wOut_tmpCols);
-  copySubArrayFloat(m_wOutRows, m_wOutCols, m_wOutArray, wOut_tmpRows,
-                    wOut_tmpCols, wOut_tmpArray, 0, 0);
-
   int wOutRows = wOut_tmpCols;
   int wOutCols = wOut_tmpRows;
   float (*wOutArray)[wOutCols] = malloc(sizeof(float) * wOutRows * wOutCols);
 
   for (int i = 0; i < wOut_tmpRows; i++)
     for (int j = 0; j < wOut_tmpCols; j++)
-	wOutArray[j][i] = wOut_tmpArray[i][j];
+	wOutArray[j][i] = m_wOutArray[i][j];
 
   float bOut = m_wOutArray[0][m_wOutCols - 1];
 
@@ -466,7 +456,6 @@ void calculateRespondMaps(
 
   free(m_U_transposeArray);
   free(wInArray);
-  free(wOut_tmpArray);
   free(wOutArray);
   }
 #pragma endscop
