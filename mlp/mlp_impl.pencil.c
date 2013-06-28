@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include "pencil.h"
 
 #include "mlp_impl.h"
 
@@ -606,8 +607,7 @@ static int cvRound(float value) {
 void calculateRespondMaps(
     int m_visibleLandmarks_size, int MapSize, int ImageRows, int ImageCols,
     uint8_t Image[ImageRows][ImageCols], MatFloat shape, mlp m_classifiers[],
-    float ResponseMaps[][MapSize + MapSize + 1][MapSize + MapSize + 1])
-    __attribute__((pencil)) {
+    float ResponseMaps[][MapSize + MapSize + 1][MapSize + MapSize + 1]) PENCIL {
 
 #pragma indepdent  
     for (int i = 0; i < m_visibleLandmarks_size; i++) {
