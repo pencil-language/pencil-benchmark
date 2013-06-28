@@ -218,6 +218,28 @@ void freeMatChar(MatChar *mat) {
 }
 
 // returns alpha*A*B + beta * C
+static void gemmFloatArray_subArray(int ARows, int ACols, float A[ARows][ACols],
+                           int BRows, int BCols, float B[BRows][BCols],
+                           float alpha, int CRows, int CCols,
+                           float C[CRows][CCols], float beta, int ResRows,
+                           int ResCols, float Res[ResRows][ResCols]) {
+  assert(BCols == CCols);
+  assert(CRows == ResRows);
+  assert(CCols == ResCols);
+
+  for (int i = 0; i < CRows; i++)
+    for (int j = 0; j < CCols; j++) {
+      Res[i][j] = beta * C[i][j];
+      for (int k = 0; k < ACols-1; k++) {
+        Res[i][j] += alpha * A[i][k] * B[k][j];
+      }
+    }
+
+  return;
+}
+
+
+// returns alpha*A*B + beta * C
 static void gemmFloatArray(int ARows, int ACols, float A[ARows][ACols],
                            int BRows, int BCols, float B[BRows][BCols],
                            float alpha, int CRows, int CCols,
@@ -516,27 +538,15 @@ static void generateResponseMap(
   transposeFloat(m_URows, m_UCols, m_UArray, m_U_transposeRows,
                  m_U_transposeCols, m_U_transposeArray);
 
-  // A sub array.
-  //
-  // Instead of explicitly calculating this, it would be nice if ppcg
-  // could just be told that we only access a subset of this array.
-  //
-  // Also the size of this array is data-dependent
-  int wIn_ARows = m_wInRows;
-  int wIn_ACols = m_wInCols - 1;
-  float (*wIn_AArray)[wIn_ACols] = malloc(sizeof(float) * wIn_ARows * wIn_ACols);
-  copySubArrayFloat(m_wInRows, m_wInCols, m_wInArray, m_wInRows,
-                    m_wInCols - 1, wIn_AArray, 0, 0);
-
   // A temporary array.
   //
   // Why again can this not be precomputed?
   //
   // The size of this array seems to be constant for all test cases.
-  int wInRows = wIn_ARows;
+  int wInRows = m_wInRows;
   int wInCols = m_U_transposeCols;
   float (*wInArray)[wInCols] = malloc(sizeof(float) * wInRows * wInCols);
-  gemmFloatArray(wIn_ARows, wIn_ACols, wIn_AArray, m_U_transposeRows,
+  gemmFloatArray_subArray(m_wInRows, m_wInCols, m_wInArray, m_U_transposeRows,
                  m_U_transposeCols, m_U_transposeArray, 1.0, wInRows, wInCols,
                  wInArray, 0.0, wInRows, wInCols, wInArray);
 
@@ -586,7 +596,6 @@ static void generateResponseMap(
     }
   }
 
-  free(wIn_AArray);
   free(m_U_transposeArray);
   free(wInArray);
   free(wOut_tmpArray);
