@@ -499,9 +499,13 @@ void calculateRespondMaps(
 
   // The following gemm uses m_wInArray[][] directly instead of using a sub
   // array of m_wInArray[][], it has been modified accordingly.
-  gemmFloatArray(m_wInRows, m_wInCols, m_wInArray, m_U_transposeRows,
-                 m_U_transposeCols, m_U_transposeArray, 1.0, wInRows, wInCols,
-                 wInArray, 0.0, wInRows, wInCols, wInArray);
+  for (int i = 0; i < wInRows; i++)
+    for (int j = 0; j < wInCols; j++) {
+      wInArray[i][j] = 0;
+      for (int k = 0; k < m_wInCols-1; k++) {
+        wInArray[i][j] += m_wInArray[i][k] * m_U_transposeArray[k][j];
+      }
+    }
 
   // A sub array.
   //
