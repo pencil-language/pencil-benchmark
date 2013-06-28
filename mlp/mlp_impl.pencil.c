@@ -581,18 +581,10 @@ static void generateResponseMap(
 
   for (int ncy = 0; ncy <= 2 * mapSize; ++ncy) {
     for (int ncx = 0; ncx <= 2 * mapSize; ++ncx) {
-
-#ifdef NOMEMORY
       ResponseMap[ncy][ncx] = generateResponseMapPatchNoMemory(
           mapSize, ncx, ncy, bInRows, bInCols, bInArray, classifier,
           ImageRows, ImageCols, Image, center, wInRows, wInCols, wInArray,
           wOutRows, wOutCols, wOutArray, bOut);
-#else
-      ResponseMap[ncy][ncx] = generateResponseMapPatch(
-          mapSize, ncx, ncy, bInRows, bInCols, bInArray, classifier,
-          ImageRows, ImageCols, Image, center, wInRows, wInCols, wInArray,
-          wOutRows, wOutCols, wOutArray, bOut);
-#endif
     }
   }
 
