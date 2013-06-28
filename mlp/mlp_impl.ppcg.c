@@ -374,17 +374,6 @@ void calculateRespondMaps(
   //
   // Instead of explicitly calculating this, it would be nice if ppcg
   // could just be told that we only access a subset of this array.
-  int bInRows = m_wInRows;
-  int bInCols = 1;
-  float (*bInArray)[bInCols] = malloc(sizeof(float) * bInRows * bInCols);
-  copySubArrayFloat(m_wInRows, m_wInCols, m_wInArray, bInRows,
-                    bInCols, bInArray, 0, m_wInCols - 1);
-
-
-  // A sub array.
-  //
-  // Instead of explicitly calculating this, it would be nice if ppcg
-  // could just be told that we only access a subset of this array.
   int wOut_tmpRows = m_wOutRows;
   int wOut_tmpCols = m_wOutCols - 1;
   float (*wOut_tmpArray)[wOut_tmpCols] = malloc(sizeof(float) * wOut_tmpRows * wOut_tmpCols);
@@ -448,11 +437,11 @@ void calculateRespondMaps(
 	  float beta = -1.0;
 	  float result = 0;
 
-	  for (int l = 0; l < bInRows; l++) {
-	    for (int j = 0; j < bInCols; j++) {
+	  for (int l = 0; l < m_wInRows; l++) {
+	    for (int j = 0; j < 1; j++) {
 					
 	      float xOutArray;
-	      xOutArray = beta * bInArray[l][j];
+	      xOutArray = beta *  m_wInArray[l][j + m_wInCols - 1];
 	      for (int k = 0; k < wInCols; k++) {
 		xOutArray += alpha * wInArray[l][k] *
 			     (quotient * Image[k / imagePatchCols + imageOffsetRow][
