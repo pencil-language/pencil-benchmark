@@ -606,7 +606,8 @@ static int cvRound(float value) {
 void calculateRespondMaps(
     int m_visibleLandmarks_size, int MapSize, int ImageRows, int ImageCols,
     uint8_t Image[ImageRows][ImageCols], MatFloat shape, mlp m_classifiers[],
-    float ResponseMaps[][MapSize + MapSize + 1][MapSize + MapSize + 1]) {
+    float ResponseMaps[][MapSize + MapSize + 1][MapSize + MapSize + 1])
+    __attribute__((pencil)) {
 
 #pragma indepdent  
     for (int i = 0; i < m_visibleLandmarks_size; i++) {
