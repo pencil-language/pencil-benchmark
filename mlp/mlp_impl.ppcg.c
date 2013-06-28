@@ -290,7 +290,6 @@ static void gemmFloatArray(int ARows, int ACols, float A[ARows][ACols],
                            float C[CRows][CCols], float beta, int ResRows,
                            int ResCols, float Res[ResRows][ResCols]) {
   assert(ARows == CRows);
-  assert(ACols == BRows);
   assert(BCols == CCols);
   assert(CRows == ResRows);
   assert(CCols == ResCols);
@@ -298,7 +297,7 @@ static void gemmFloatArray(int ARows, int ACols, float A[ARows][ACols],
   for (int i = 0; i < CRows; i++)
     for (int j = 0; j < CCols; j++) {
       Res[i][j] = beta * C[i][j];
-      for (int k = 0; k < ACols; k++) {
+      for (int k = 0; k < ACols-1; k++) {
         Res[i][j] += alpha * A[i][k] * B[k][j];
       }
     }
@@ -489,27 +488,18 @@ void calculateRespondMaps(
     for (int j = 0; j < m_UCols; j++)
 	m_U_transposeArray[j][i] = m_UArray[i][j];
 
-  // A sub array.
-  //
-  // Instead of explicitly calculating this, it would be nice if ppcg
-  // could just be told that we only access a subset of this array.
-  //
-  // Also the size of this array is data-dependent
-  int wIn_ARows = m_wInRows;
-  int wIn_ACols = m_wInCols - 1;
-  float (*wIn_AArray)[wIn_ACols] = malloc(sizeof(float) * wIn_ARows * wIn_ACols);
-  copySubArrayFloat(m_wInRows, m_wInCols, m_wInArray, m_wInRows,
-                    m_wInCols - 1, wIn_AArray, 0, 0);
-
   // A temporary array.
   //
   // Why again can this not be precomputed?
   //
   // The size of this array seems to be constant for all test cases.
-  int wInRows = wIn_ARows;
+  int wInRows = m_wInRows;
   int wInCols = m_U_transposeCols;
   float (*wInArray)[wInCols] = malloc(sizeof(float) * wInRows * wInCols);
-  gemmFloatArray(wIn_ARows, wIn_ACols, wIn_AArray, m_U_transposeRows,
+
+  // The following gemm uses m_wInArray[][] directly instead of using a sub
+  // array of m_wInArray[][], it has been modified accordingly.
+  gemmFloatArray(m_wInRows, m_wInCols, m_wInArray, m_U_transposeRows,
                  m_U_transposeCols, m_U_transposeArray, 1.0, wInRows, wInCols,
                  wInArray, 0.0, wInRows, wInCols, wInArray);
 
@@ -618,7 +608,6 @@ void calculateRespondMaps(
     }
   }
 
-  free(wIn_AArray);
   free(m_U_transposeArray);
   free(wInArray);
   free(wOut_tmpArray);
