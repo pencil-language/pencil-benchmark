@@ -495,34 +495,15 @@ static void generateResponseMap(
     int ImageRows, int ImageCols,
     uint8_t Image[static const restrict ImageRows][ImageCols],
     const Point2i center, int mapSize, mlp classifier,
-    float ResponseMap[static const restrict mapSize + mapSize + 1][mapSize + mapSize + 1])
+    float ResponseMap[static const restrict mapSize + mapSize + 1][mapSize + mapSize + 1],
+    int m_URows, int m_UCols,
+    float m_UArray[static const restrict m_URows][m_UCols],
+    int m_wInRows, int m_wInCols,
+    float m_wInArray[static const restrict m_wInRows][m_wInCols],
+    int m_wOutRows, int m_wOutCols,
+    float m_wOutArray[static const restrict m_wOutRows][m_wOutCols] 
+    )
     PENCIL {
-
-  // Translate input arrays into C99 Arrays.
-  //
-  // The problem here is that the size of the arrays is not know to
-  // be identical for each respond map calculation. Hence, we can
-  // not easily move those allocations out of the core computation.
-  assert(classifier.m_U.start == 0);
-  assert(classifier.m_U.cols == classifier.m_U.step);
-  int m_URows = classifier.m_U.rows; // Always 121
-  int m_UCols = classifier.m_U.cols; // Varies between 17 and 30
-  float (*m_UArray)[m_UCols] = (void*)classifier.m_U.data;
-
-
-  // Translate input arrays into C99 Arrays
-  assert(classifier.m_wIn.start == 0);
-  assert(classifier.m_wIn.cols == classifier.m_wIn.step);
-  int m_wInRows = classifier.m_wIn.rows; // Always 25
-  int m_wInCols = classifier.m_wIn.cols; // Varies between 17 and 31
-  float (*m_wInArray)[m_wInCols] = (void*)classifier.m_wIn.data;
-
-  // Translate input arrays into C99 Arrays
-  assert(classifier.m_wOut.start == 0);
-  assert(classifier.m_wOut.cols == classifier.m_wOut.step);
-  int m_wOutRows = classifier.m_wOut.rows; // Always 1
-  int m_wOutCols = classifier.m_wOut.cols; // Always 26
-  float (*m_wOutArray)[m_wOutCols] = (void*)classifier.m_wOut.data;
 
   // This is a temporary array.
   //
@@ -534,7 +515,7 @@ static void generateResponseMap(
   int m_U_transposeRows = m_UCols;
   int m_U_transposeCols = m_URows;
   float (*m_U_transposeArray)[m_U_transposeCols] =
-  malloc(sizeof(float) * m_U_transposeRows * m_U_transposeCols);
+     malloc(sizeof(float) * m_U_transposeRows * m_U_transposeCols);
 
   transposeFloat(m_URows, m_UCols, m_UArray, m_U_transposeRows,
                  m_U_transposeCols, m_U_transposeArray);
@@ -639,7 +620,11 @@ void calculateRespondMaps(
     center.y = cvRound(shape_y);
 
     generateResponseMap(ImageRows, ImageCols, Image, center, MapSize,
-                        m_classifiers[i], ResponseMaps[i]);
+                        m_classifiers[i], ResponseMaps[i], m_classifiers[i].m_U.rows,
+			m_classifiers[i].m_U.cols, m_classifiers[i].m_U.data,
+			m_classifiers[i].m_wIn.rows, m_classifiers[i].m_wIn.cols,
+			m_classifiers[i].m_wIn.data, m_classifiers[i].m_wOut.rows,
+			m_classifiers[i].m_wOut.cols, m_classifiers[i].m_wOut.data);
   }
 
   return;
