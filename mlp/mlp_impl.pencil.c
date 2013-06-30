@@ -68,24 +68,8 @@ void printArray(int n, int m, float Array[n][m]) {
   return;
 }
 
-float GetValueFloat(MatFloat self, int row, int col);
-
-void printMatFloat(MatFloat mat, char *name) {
-  printf("%s = [\n", name);
-
-  int q, w;
-
-  for (q = 0; q < mat.rows; q++) {
-    printf("[ ");
-    for (w = 0; w < mat.cols; w++) {
-      printf("%f, ", GetValueFloat(mat, q, w));
-    }
-    printf(" ]\n");
-  }
-
-  printf("]\n");
-
-  return;
+float GetValueFloat(MatFloat self, int row, int col) {
+  return self.data[row * self.step + col + self.start];
 }
 
 void freeMLP(mlp *classifier) {
@@ -302,10 +286,6 @@ static void divideFloat(float Val, int rows, int cols,
       Mat[i][j] = Val / Mat[i][j];
 
   return;
-}
-
-float GetValueFloat(MatFloat self, int row, int col) {
-  return self.data[row * self.step + col + self.start];
 }
 
 static float dotProduct(int LeftRows, int LeftCols, int RightRows,
