@@ -68,8 +68,9 @@ void printArray(int n, int m, float Array[n][m]) {
   return;
 }
 
-float GetValueFloat(MatFloat self, int row, int col) {
-  return self.data[row * self.step + col + self.start];
+float GetValueFloat(int N, int M, float A[static const restrict N][M],
+		    int row, int col, int offset) PENCIL {
+  return A[row][col + offset];
 }
 
 void freeMLP(mlp *classifier) {
@@ -607,8 +608,9 @@ static int cvRound(float value) {
 //                     the response maps, are stored.
 void calculateRespondMaps(
     int m_visibleLandmarks_size, int MapSize, int ImageRows, int ImageCols,
-    uint8_t Image[static const restrict ImageRows][ImageCols], MatFloat shape,
-    mlp m_classifiers[const restrict],
+    uint8_t Image[static const restrict ImageRows][ImageCols], int shape_rows,
+    int shape_cols, float shape_data[static const restrict shape_rows][shape_cols],
+    int shape_start, mlp m_classifiers[const restrict],
     float ResponseMaps[const restrict][MapSize + MapSize + 1][MapSize + MapSize + 1]) PENCIL {
 
 #pragma indepdent  
@@ -631,8 +633,8 @@ void calculateRespondMaps(
     float shape_x;
     float shape_y;
 
-    shape_x = GetValueFloat(shape, 2 * i, 0);
-    shape_y = GetValueFloat(shape, 2 * i + 1, 0);
+    shape_x = GetValueFloat(shape_rows, shape_cols, shape_data, 2 * i, 0, shape_start);
+    shape_y = GetValueFloat(shape_rows, shape_cols, shape_data, 2 * i + 1, 0, shape_start);
     center.x = cvRound(shape_x);
     center.y = cvRound(shape_y);
 
@@ -661,7 +663,8 @@ void calculateMaps(int NumLandMarks, int MapSize, MatChar Image, MatFloat Shape,
   copyMatCharToArray(Image, ImageRows, ImageCols, ImageArray);
 
   calculateRespondMaps(NumLandMarks, MapSize, ImageRows, ImageCols, ImageArray,
-                       Shape, Classifiers, ResponseMaps);
+		  Shape.step, Shape.cols, (float (*) [Shape.cols]) Shape.data,
+		  Shape.start, Classifiers, ResponseMaps);
 
   for (int i = 0; i < NumLandMarks; ++i)
     copyArrayToMatFloat(Width, Width, ResponseMaps[i],
