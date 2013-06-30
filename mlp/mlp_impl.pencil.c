@@ -127,9 +127,10 @@ MatChar CreateMatChar(int rows, int cols) {
 }
 
 static void transposeFloat(int InRows, int InCols,
-                                float In[InRows][InCols], int OutRows,
-                                int OutCols, float Out[OutRows][OutCols])
-				PENCIL {
+                           float In[static const restrict InRows][InCols],
+			   int OutRows, int OutCols,
+			   float Out[static const restrict OutRows][OutCols])
+			   PENCIL {
   assert(InRows == OutCols);
   assert(OutCols == InRows);
 
@@ -141,7 +142,8 @@ static void transposeFloat(int InRows, int InCols,
 }
 
 static float meanChar(int subImageRows, int subImageCols, int imageRows,
-		      int imageCols, uint8_t image[imageRows][imageCols],
+		      int imageCols,
+		      uint8_t image[static const restrict imageRows][imageCols],
 		      int imageOffsetRow, int imageOffsetCol) PENCIL {
   float sum = 0;
 
@@ -156,7 +158,8 @@ static float meanChar(int subImageRows, int subImageCols, int imageRows,
 static uint8_t min(uint8_t a, uint8_t b) { return a < b ? a : b; }
 
 static uint8_t minChar(int subImageRows, int subImageCols, int imageRows,
-		       int imageCols, uint8_t image[imageRows][imageCols],
+		       int imageCols,
+		       uint8_t image[static const restrict imageRows][imageCols],
 		       int imageOffsetRow, int imageOffsetCol) PENCIL {
   uint8_t minvalue = 255;
 
@@ -170,7 +173,8 @@ static uint8_t minChar(int subImageRows, int subImageCols, int imageRows,
 static uint8_t max(uint8_t a, uint8_t b) { return a > b ? a : b; }
 
 static uint8_t maxChar(int subImageRows, int subImageCols, int imageRows,
-		       int imageCols, uint8_t image[imageRows][imageCols],
+		       int imageCols,
+		       uint8_t image[static const restrict imageRows][imageCols],
 		       int imageOffsetRow, int imageOffsetCol) PENCIL {
   uint8_t maxvalue = 0;
 
@@ -182,11 +186,11 @@ static uint8_t maxChar(int subImageRows, int subImageCols, int imageRows,
 }
 
 static void convertFromCharToFloatArray(int imageRows, int imageCols,
-                                        uint8_t In[imageRows][imageCols],
+                                        uint8_t In[static const restrict imageRows][imageCols],
 					int imageOffsetRow, int imageOffsetCol,
                                         float quotient, float shift,
                                         int OutRows, int OutCols,
-                                        float Out[OutRows][OutCols]) {
+                                        float Out[static const restrict OutRows][OutCols]) {
 
   for (int i = 0; i < OutRows; i++)
     for (int j = 0; j < OutCols; j++)
@@ -219,11 +223,14 @@ void freeMatChar(MatChar *mat) {
 }
 
 // returns alpha*A*B + beta * C
-static void gemmFloatArray_subArray(int ARows, int ACols, float A[ARows][ACols],
-                           int BRows, int BCols, float B[BRows][BCols],
+static void gemmFloatArray_subArray(int ARows, int ACols,
+		           float A[static const restrict ARows][ACols],
+                           int BRows, int BCols,
+			   float B[static const restrict BRows][BCols],
                            float alpha, int CRows, int CCols,
-                           float C[CRows][CCols], float beta, int ResRows,
-                           int ResCols, float Res[ResRows][ResCols]) PENCIL {
+                           float C[static const restrict CRows][CCols],
+			   float beta, int ResRows, int ResCols,
+			   float Res[static const restrict ResRows][ResCols]) PENCIL {
   assert(BCols == CCols);
   assert(CRows == ResRows);
   assert(CCols == ResCols);
@@ -241,11 +248,15 @@ static void gemmFloatArray_subArray(int ARows, int ACols, float A[ARows][ACols],
 
 
 // returns alpha*A*B + beta * C
-static void gemmFloatArray(int ARows, int ACols, float A[ARows][ACols],
-                           int BRows, int BCols, float B[BRows][BCols],
+static void gemmFloatArray(int ARows, int ACols,
+		           float A[static const restrict ARows][ACols],
+                           int BRows, int BCols,
+			   float B[static const restrict BRows][BCols],
                            float alpha, int CRows, int CCols,
-                           float C[CRows][CCols], float beta, int ResRows,
-                           int ResCols, float Res[ResRows][ResCols]) {
+                           float C[static const restrict CRows][CCols],
+			   float beta, int ResRows,
+                           int ResCols,
+			   float Res[static const restrict ResRows][ResCols]) {
   assert(ARows == CRows);
   assert(ACols == BRows);
   assert(BCols == CCols);
@@ -263,7 +274,8 @@ static void gemmFloatArray(int ARows, int ACols, float A[ARows][ACols],
   return;
 }
 
-static void expFloat(int rows, int cols, float Mat[rows][cols]) {
+static void expFloat(int rows, int cols,
+		     float Mat[static const restrict rows][cols]) {
 
   for (int i = 0; i < rows; i++)
     for (int j = 0; j < cols; j++)
@@ -272,7 +284,8 @@ static void expFloat(int rows, int cols, float Mat[rows][cols]) {
   return;
 }
 
-static void addFloat(int rows, int cols, float Mat[rows][cols], float Val) {
+static void addFloat(int rows, int cols,
+		     float Mat[static const restrict rows][cols], float Val) {
 
   for (int i = 0; i < rows; i++)
     for (int j = 0; j < cols; j++)
@@ -281,7 +294,8 @@ static void addFloat(int rows, int cols, float Mat[rows][cols], float Val) {
   return;
 }
 
-static void divideFloat(float Val, int rows, int cols, float Mat[rows][cols]) {
+static void divideFloat(float Val, int rows, int cols,
+		        float Mat[static const restrict rows][cols]) {
 
   for (int i = 0; i < rows; i++)
     for (int j = 0; j < cols; j++)
@@ -295,8 +309,8 @@ float GetValueFloat(MatFloat self, int row, int col) {
 }
 
 static float dotProduct(int LeftRows, int LeftCols, int RightRows,
-                        int RightCols, float Left[][LeftCols],
-                        float Right[][RightCols]) {
+                        int RightCols, float Left[const restrict][LeftCols],
+                        float Right[const restrict][RightCols]) {
   assert(LeftCols == 1);
   assert(RightCols == 1);
   assert(LeftRows == RightRows);
@@ -347,9 +361,9 @@ static void normalizeSample(int subImageRows, int subImageCols, int imageRows,
 }
 
 static void copySubArrayFloat(int arrayRows, int arrayCols,
-                              float Array[arrayRows][arrayCols],
+                              float Array[static const restrict arrayRows][arrayCols],
                               int subArrayRows, int subArrayCols,
-                              float subArray[subArrayRows][subArrayCols],
+                              float subArray[static const restrict subArrayRows][subArrayCols],
                               int offsetRow, int offsetCol) PENCIL {
   for (int i = 0; i < subArrayRows; i++)
     for (int j = 0; j < subArrayCols; j++)
@@ -426,10 +440,13 @@ static float generateResponseMapPatch(
 // function, but it does not need to allocate any memory.
 static float generateResponseMapPatchNoMemory(
     int mapSize, int ncx, int ncy, int bInRows, int bInCols,
-    float bInArray[bInRows][bInCols], mlp classifier, int ImageRows,
-    int ImageCols, uint8_t Image[ImageRows][ImageCols], Point2i center,
-    int wInRows, int wInCols, float wInArray[wInRows][wInCols], int wOutRows,
-    int wOutCols, float wOutArray[wOutRows][wOutCols], float bOut) PENCIL {
+    float bInArray[static const restrict bInRows][bInCols],
+    mlp classifier, int ImageRows,
+    int ImageCols, uint8_t Image[static const restrict ImageRows][ImageCols],
+    Point2i center, int wInRows, int wInCols,
+    float wInArray[static const restrict wInRows][wInCols], int wOutRows,
+    int wOutCols, float wOutArray[static const restrict wOutRows][wOutCols],
+    float bOut) PENCIL {
   int cy = ncy + center.y - mapSize;
   int cx = ncx + center.x - mapSize;
 
@@ -494,9 +511,11 @@ static float generateResponseMapPatchNoMemory(
 ///
 /// @param Image The image to process.
 static void generateResponseMap(
-    int ImageRows, int ImageCols, uint8_t Image[ImageRows][ImageCols],
+    int ImageRows, int ImageCols,
+    uint8_t Image[static const restrict ImageRows][ImageCols],
     const Point2i center, int mapSize, mlp classifier,
-    float ResponseMap[mapSize + mapSize + 1][mapSize + mapSize + 1]) PENCIL {
+    float ResponseMap[static const restrict mapSize + mapSize + 1][mapSize + mapSize + 1])
+    PENCIL {
 
   // Translate input arrays into C99 Arrays.
   //
@@ -608,8 +627,9 @@ static int cvRound(float value) {
 //                     the response maps, are stored.
 void calculateRespondMaps(
     int m_visibleLandmarks_size, int MapSize, int ImageRows, int ImageCols,
-    uint8_t Image[ImageRows][ImageCols], MatFloat shape, mlp m_classifiers[],
-    float ResponseMaps[][MapSize + MapSize + 1][MapSize + MapSize + 1]) PENCIL {
+    uint8_t Image[static const restrict ImageRows][ImageCols], MatFloat shape,
+    mlp m_classifiers[const restrict],
+    float ResponseMaps[const restrict][MapSize + MapSize + 1][MapSize + MapSize + 1]) PENCIL {
 
 #pragma indepdent  
     for (int i = 0; i < m_visibleLandmarks_size; i++) {
