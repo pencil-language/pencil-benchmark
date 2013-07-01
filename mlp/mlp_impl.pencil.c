@@ -431,8 +431,7 @@ static float generateResponseMapPatchNoMemory(
   int cy = ncy + center.y - mapSize;
   int cx = ncx + center.x - mapSize;
 
-  int imagePatchRows =
-      2 * classifier.m_patchSize + 1; // m_patchSize is always 5
+  int imagePatchRows = 2 * classifier.m_patchSize + 1;
   int imagePatchCols = 2 * classifier.m_patchSize + 1;
 
   int patchRows = imagePatchRows;
@@ -498,64 +497,57 @@ static void generateResponseMap(
     float ResponseMap[static const restrict mapSize + mapSize + 1][mapSize + mapSize + 1],
     int m_URows, int m_UCols,
     float m_UArray[static const restrict m_URows][m_UCols],
+    float m_U_transposeArray[static const restrict m_UCols][m_URows], //temp array
     int m_wInRows, int m_wInCols,
     float m_wInArray[static const restrict m_wInRows][m_wInCols],
+    float wInArray[static const restrict m_wInRows][m_URows], //temp array
+    float bInArray[static const restrict m_wInRows][1], //temp array
     int m_wOutRows, int m_wOutCols,
-    float m_wOutArray[static const restrict m_wOutRows][m_wOutCols] 
+    float m_wOutArray[static const restrict m_wOutRows][m_wOutCols],
+    float wOut_tmpArray[static const restrict m_wOutRows][m_wOutCols - 1], //temp array
+    float wOutArray[static const restrict m_wOutRows][m_wOutCols - 1] //temp array
     )
     PENCIL {
 
-  // This is a temporary array.
-  //
-  // Also, I wonder if this computation can not be precalculated? Or that
-  // we could keep track of the index dimensions being transposed and we
-  // just access the elements at their previous locations?
-  //
-  // Also, the size of this array varies / is data-dependent.
   int m_U_transposeRows = m_UCols;
   int m_U_transposeCols = m_URows;
-  float (* restrict m_U_transposeArray)[m_U_transposeCols] =
-     malloc(sizeof(float) * m_U_transposeRows * m_U_transposeCols);
 
   transposeFloat(m_URows, m_UCols, m_UArray, m_U_transposeRows,
                  m_U_transposeCols, m_U_transposeArray);
 
-  // A temporary array.
-  //
-  // Why again can this not be precomputed?
-  //
-  // The size of this array seems to be constant for all test cases.
   int wInRows = m_wInRows;
   int wInCols = m_U_transposeCols;
-  float (* restrict wInArray)[wInCols] = malloc(sizeof(float) * wInRows * wInCols);
+  
   gemmFloatArray_subArray(m_wInRows, m_wInCols, m_wInArray, m_U_transposeRows,
                  m_U_transposeCols, m_U_transposeArray, 1.0, wInRows, wInCols,
                  wInArray, 0.0, wInRows, wInCols, wInArray);
 
   // A sub array.
   //
-  // Instead of explicitly calculating this, it would be nice if ppcg
-  // could just be told that we only access a subset of this array.
+  // Instead of explicitly calculating this, we agreed during the Paris
+  // F2F meeting to modify this part of the program so that it works on
+  // the original array and to use offsets to determine the subarray,
   int bInRows = m_wInRows;
   int bInCols = 1;
-  float (* restrict bInArray)[bInCols] = malloc(sizeof(float) * bInRows * bInCols);
+  
   copySubArrayFloat(m_wInRows, m_wInCols, m_wInArray, bInRows,
                     bInCols, bInArray, 0, m_wInCols - 1);
 
 
   // A sub array.
   //
-  // Instead of explicitly calculating this, it would be nice if ppcg
-  // could just be told that we only access a subset of this array.
+  // Instead of explicitly calculating this, we agreed during the Paris
+  // F2F meeting to modify this part of the program so that it works on
+  // the original array and to use offsets to determine the subarray,
   int wOut_tmpRows = m_wOutRows;
   int wOut_tmpCols = m_wOutCols - 1;
-  float (* restrict wOut_tmpArray)[wOut_tmpCols] = malloc(sizeof(float) * wOut_tmpRows * wOut_tmpCols);
+  
   copySubArrayFloat(m_wOutRows, m_wOutCols, m_wOutArray, wOut_tmpRows,
                     wOut_tmpCols, wOut_tmpArray, 0, 0);
 
   int wOutRows = wOut_tmpCols;
   int wOutCols = wOut_tmpRows;
-  float (* restrict wOutArray)[wOutCols] = malloc(sizeof(float) * wOutRows * wOutCols);
+
   transposeFloat(wOut_tmpRows, wOut_tmpCols, wOut_tmpArray, wOutRows, wOutCols,
                  wOutArray);
 
@@ -570,11 +562,6 @@ static void generateResponseMap(
     }
   }
 
-  free(m_U_transposeArray);
-  free(wInArray);
-  free(wOut_tmpArray);
-  free(wOutArray);
-
   return;
 }
 
@@ -588,43 +575,50 @@ static int cvRound(float value) {
 // @param responseMaps A pointer at which results of the calculation,
 //                     the response maps, are stored.
 void calculateRespondMaps(
-    int m_visibleLandmarks_size, int MapSize, int ImageRows, int ImageCols,
-    uint8_t Image[static const restrict ImageRows][ImageCols], int shape_rows,
-    int shape_cols, float shape_data[static const restrict shape_rows][shape_cols],
-    int shape_start, mlp m_classifiers[const restrict],
-    float ResponseMaps[const restrict][MapSize + MapSize + 1][MapSize + MapSize + 1]) PENCIL {
+    int m_visibleLandmarks_size,
+    int MapSize,
+    int ImageRows, int ImageCols,
+    uint8_t Image[static const restrict ImageRows][ImageCols],
+    int shape_rows, int shape_cols,
+    float shape_data[static const restrict shape_rows][shape_cols],
+    int shape_start,
+    mlp m_classifiers[const restrict],
+    float ResponseMaps[const restrict][MapSize + MapSize + 1][MapSize + MapSize + 1],
+    int max_m_U_transposeRows, int max_m_U_transposeCols,
+    float m_U_transposeArray[static const restrict m_visibleLandmarks_size][max_m_U_transposeRows][max_m_U_transposeCols],
+    int max_wInRows, int max_wInCols,
+    float wInArray[static const restrict m_visibleLandmarks_size][max_wInRows][max_wInCols],
+    int max_bInRows, int max_bInCols,
+    float bInArray[static const restrict m_visibleLandmarks_size][max_bInRows][max_bInCols],
+    int max_wOut_tmpRows, int max_wOut_tmpCols,
+    float wOut_tmpArray[static const restrict m_visibleLandmarks_size][max_wOut_tmpRows][max_wOut_tmpCols],
+    int max_wOutRows, int max_wOutCols,
+    float wOutArray[static const restrict m_visibleLandmarks_size][max_wOutRows][max_wOutCols])
+    PENCIL {
 
 #pragma indepdent  
-    for (int i = 0; i < m_visibleLandmarks_size; i++) {
+    for (int i = 0; i < m_visibleLandmarks_size; i++)
+    {
+      Point2i center;
+      float shape_x;
+      float shape_y;
 
-    // This array is interesting as it gives the coordinates of the different
-    // subimages that we need to process. It is not trivially polyhedral, as
-    // when inlined, it is an indirection array, that makes all loop bounds
-    // data-dependent. However, it is read only and basically used as a
-    // two-dimensional set of parameters.
-    //
-    // TODO: I do not see why 'shape' is defined using floats. Also, this
-    //       is a trivial case where we could use a C99 array to represent
-    //       the matrix.
-    //       Finally, Point2i is non-polyhedral but a plain structure. We
-    //       could represent it as a 2-element array, but it may actually
-    //       be worth supporting such simple structures in ppcg.
-    //
-    Point2i center;
-    float shape_x;
-    float shape_y;
+      shape_x = GetValueFloat(shape_rows, shape_cols, shape_data, 2 * i, 0, shape_start);
+      shape_y = GetValueFloat(shape_rows, shape_cols, shape_data, 2 * i + 1, 0, shape_start);
+      center.x = cvRound(shape_x);
+      center.y = cvRound(shape_y);
 
-    shape_x = GetValueFloat(shape_rows, shape_cols, shape_data, 2 * i, 0, shape_start);
-    shape_y = GetValueFloat(shape_rows, shape_cols, shape_data, 2 * i + 1, 0, shape_start);
-    center.x = cvRound(shape_x);
-    center.y = cvRound(shape_y);
-
-    generateResponseMap(ImageRows, ImageCols, Image, center, MapSize,
-                        m_classifiers[i], ResponseMaps[i], m_classifiers[i].m_U.rows,
-			m_classifiers[i].m_U.cols, m_classifiers[i].m_U.data,
-			m_classifiers[i].m_wIn.rows, m_classifiers[i].m_wIn.cols,
-			m_classifiers[i].m_wIn.data, m_classifiers[i].m_wOut.rows,
-			m_classifiers[i].m_wOut.cols, m_classifiers[i].m_wOut.data);
+      generateResponseMap(ImageRows, ImageCols, Image, center, MapSize,
+                          m_classifiers[i], ResponseMaps[i], m_classifiers[i].m_U.rows,
+    			  m_classifiers[i].m_U.cols, m_classifiers[i].m_U.data,
+			  m_U_transposeArray[i],
+			  m_classifiers[i].m_wIn.rows, m_classifiers[i].m_wIn.cols,	
+			  m_classifiers[i].m_wIn.data,
+			  wInArray[i],
+			  bInArray[i],
+			  m_classifiers[i].m_wOut.rows,
+			  m_classifiers[i].m_wOut.cols, m_classifiers[i].m_wOut.data,
+			  wOut_tmpArray[i], wOutArray[i]);
   }
 
   return;
@@ -647,9 +641,60 @@ void calculateMaps(int NumLandMarks, int MapSize, MatChar Image, MatFloat Shape,
       malloc(sizeof(uint8_t) * ImageRows * ImageCols);
   copyMatCharToArray(Image, ImageRows, ImageCols, ImageArray);
 
+  int max_m_U_transposeRows = 0;
+  int max_m_U_transposeCols = 0;
+  int max_wInRows = 0;
+  int max_wInCols = 0;
+  int max_bInRows = 0;
+  int max_wOut_tmpRows = 0;
+  int max_wOut_tmpCols = 0;
+  int max_wOutRows = 0;
+  int max_wOutCols = 0;
+
+  // Allocate all the temporary arrays used in the PENCIL code here,
+  // but we need first to calculate the maximal possible size of these arrays.
+  for (int i = 0; i < NumLandMarks; i++) {
+	  int m_UCols = Classifiers[i].m_U.cols;
+	  int m_URows = Classifiers[i].m_U.rows;
+	  int m_wInCols = Classifiers[i].m_wIn.cols;
+	  int m_wInRows = Classifiers[i].m_wIn.cols;
+	  int m_wOutRows = Classifiers[i].m_wOut.rows;
+	  int m_wOutCols = Classifiers[i].m_wOut.cols;
+
+	  max_m_U_transposeRows = max(m_UCols, max_m_U_transposeRows);
+	  max_m_U_transposeCols = max(m_URows, max_m_U_transposeCols);
+
+	  max_wInRows = max(m_wInRows, max_wInRows);
+	  max_wInCols = max(max_m_U_transposeCols, max_wInCols);
+
+	  max_bInRows = max(m_wInRows, max_bInRows);
+
+	  max_wOut_tmpRows = max(m_wOutRows, max_wOut_tmpRows);
+	  max_wOut_tmpCols = max(m_wOutCols - 1, max_wOut_tmpCols);
+
+	  max_wOutRows = max(max_wOut_tmpCols, max_wOutRows);
+	  max_wOutCols = max(max_wOut_tmpRows, max_wOutCols);
+  }
+
+  float (* restrict m_U_transposeArray)[max_m_U_transposeRows][max_m_U_transposeCols] =
+	     malloc(sizeof(float) * NumLandMarks * max_m_U_transposeRows * max_m_U_transposeCols);
+  float (* restrict wInArray)[max_wInRows][max_wInCols] =
+	  malloc(sizeof(float) * NumLandMarks * max_wInRows * max_wInCols);
+  float (* restrict bInArray)[max_bInRows][1] =
+	  malloc(sizeof(float) * NumLandMarks * max_bInRows * 1);
+  float (* restrict wOut_tmpArray)[max_wOut_tmpRows][max_wOut_tmpCols] =
+	  malloc(sizeof(float) * NumLandMarks * max_wOut_tmpRows * max_wOut_tmpCols);
+  float (* restrict wOutArray)[max_wOutRows][max_wOutCols] =
+	  malloc(sizeof(float) * NumLandMarks * max_wOutRows * max_wOutCols);
+
   calculateRespondMaps(NumLandMarks, MapSize, ImageRows, ImageCols, ImageArray,
 		  Shape.step, Shape.cols, (float (*) [Shape.cols]) Shape.data,
-		  Shape.start, Classifiers, ResponseMaps);
+		  Shape.start, Classifiers, ResponseMaps,
+		  max_m_U_transposeRows, max_m_U_transposeCols, m_U_transposeArray,
+		  max_wInRows, max_wInCols, wInArray,
+		  max_bInRows, 1, bInArray,
+		  max_wOut_tmpRows, max_wOut_tmpCols, wOut_tmpArray,
+		  max_wOutRows, max_wOutCols, wOutArray);
 
   for (int i = 0; i < NumLandMarks; ++i)
     copyArrayToMatFloat(Width, Width, ResponseMaps[i],
