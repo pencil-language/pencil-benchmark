@@ -514,7 +514,7 @@ static void generateResponseMap(
   // Also, the size of this array varies / is data-dependent.
   int m_U_transposeRows = m_UCols;
   int m_U_transposeCols = m_URows;
-  float (*m_U_transposeArray)[m_U_transposeCols] =
+  float (* restrict m_U_transposeArray)[m_U_transposeCols] =
      malloc(sizeof(float) * m_U_transposeRows * m_U_transposeCols);
 
   transposeFloat(m_URows, m_UCols, m_UArray, m_U_transposeRows,
@@ -527,7 +527,7 @@ static void generateResponseMap(
   // The size of this array seems to be constant for all test cases.
   int wInRows = m_wInRows;
   int wInCols = m_U_transposeCols;
-  float (*wInArray)[wInCols] = malloc(sizeof(float) * wInRows * wInCols);
+  float (* restrict wInArray)[wInCols] = malloc(sizeof(float) * wInRows * wInCols);
   gemmFloatArray_subArray(m_wInRows, m_wInCols, m_wInArray, m_U_transposeRows,
                  m_U_transposeCols, m_U_transposeArray, 1.0, wInRows, wInCols,
                  wInArray, 0.0, wInRows, wInCols, wInArray);
@@ -538,7 +538,7 @@ static void generateResponseMap(
   // could just be told that we only access a subset of this array.
   int bInRows = m_wInRows;
   int bInCols = 1;
-  float (*bInArray)[bInCols] = malloc(sizeof(float) * bInRows * bInCols);
+  float (* restrict bInArray)[bInCols] = malloc(sizeof(float) * bInRows * bInCols);
   copySubArrayFloat(m_wInRows, m_wInCols, m_wInArray, bInRows,
                     bInCols, bInArray, 0, m_wInCols - 1);
 
@@ -549,13 +549,13 @@ static void generateResponseMap(
   // could just be told that we only access a subset of this array.
   int wOut_tmpRows = m_wOutRows;
   int wOut_tmpCols = m_wOutCols - 1;
-  float (*wOut_tmpArray)[wOut_tmpCols] = malloc(sizeof(float) * wOut_tmpRows * wOut_tmpCols);
+  float (* restrict wOut_tmpArray)[wOut_tmpCols] = malloc(sizeof(float) * wOut_tmpRows * wOut_tmpCols);
   copySubArrayFloat(m_wOutRows, m_wOutCols, m_wOutArray, wOut_tmpRows,
                     wOut_tmpCols, wOut_tmpArray, 0, 0);
 
   int wOutRows = wOut_tmpCols;
   int wOutCols = wOut_tmpRows;
-  float (*wOutArray)[wOutCols] = malloc(sizeof(float) * wOutRows * wOutCols);
+  float (* restrict wOutArray)[wOutCols] = malloc(sizeof(float) * wOutRows * wOutCols);
   transposeFloat(wOut_tmpRows, wOut_tmpCols, wOut_tmpArray, wOutRows, wOutCols,
                  wOutArray);
 
