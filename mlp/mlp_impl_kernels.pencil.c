@@ -282,6 +282,8 @@ void calculateRespondMaps(
     int shape_start, mlp m_classifiers[const restrict],
     float ResponseMaps[const restrict][MapSize + MapSize + 1][MapSize + MapSize + 1]) PENCIL {
 
+// This loop is parallel, ppcg can find parallelism without the need for
+// the independent directive.
 #pragma indepdent  
     for (int i = 0; i < m_visibleLandmarks_size; i++) {
 
