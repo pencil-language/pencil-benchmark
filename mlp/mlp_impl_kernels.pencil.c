@@ -13,8 +13,7 @@
 static void transposeFloat(int InRows, int InCols,
                            float In[static const restrict InRows][InCols],
 			   int OutRows, int OutCols,
-			   float Out[static const restrict OutRows][OutCols])
-			   PENCIL {
+			   float Out[static const restrict OutRows][OutCols]) {
   __pencil_assert(InRows == OutCols);
   __pencil_assert(OutCols == InRows);
 
@@ -28,7 +27,7 @@ static void transposeFloat(int InRows, int InCols,
 static float meanChar(int subImageRows, int subImageCols, int imageRows,
 		      int imageCols,
 		      uint8_t image[static const restrict imageRows][imageCols],
-		      int imageOffsetRow, int imageOffsetCol) PENCIL {
+		      int imageOffsetRow, int imageOffsetCol)  {
   float sum = 0;
 
   for (int i = 0; i < subImageRows; i++)
@@ -44,7 +43,7 @@ static uint8_t min(uint8_t a, uint8_t b) { return a < b ? a : b; }
 static uint8_t minChar(int subImageRows, int subImageCols, int imageRows,
 		       int imageCols,
 		       uint8_t image[static const restrict imageRows][imageCols],
-		       int imageOffsetRow, int imageOffsetCol) PENCIL {
+		       int imageOffsetRow, int imageOffsetCol)  {
   uint8_t minvalue = 255;
 
   for (int i = 0; i < subImageRows; i++)
@@ -59,7 +58,7 @@ static uint8_t max(uint8_t a, uint8_t b) { return a > b ? a : b; }
 static uint8_t maxChar(int subImageRows, int subImageCols, int imageRows,
 		       int imageCols,
 		       uint8_t image[static const restrict imageRows][imageCols],
-		       int imageOffsetRow, int imageOffsetCol) PENCIL {
+		       int imageOffsetRow, int imageOffsetCol)  {
   uint8_t maxvalue = 0;
 
   for (int i = 0; i < subImageRows; i++)
@@ -77,7 +76,7 @@ static void gemmFloatArray_subArray(int ARows, int ACols,
                            float alpha, int CRows, int CCols,
                            float C[static const restrict CRows][CCols],
 			   float beta, int ResRows, int ResCols,
-			   float Res[static const restrict ResRows][ResCols]) PENCIL {
+			   float Res[static const restrict ResRows][ResCols])  {
   __pencil_assert(BCols == CCols);
   __pencil_assert(CRows == ResRows);
   __pencil_assert(CCols == ResCols);
@@ -97,7 +96,7 @@ static void copySubArrayFloat(int arrayRows, int arrayCols,
                               float Array[static const restrict arrayRows][arrayCols],
                               int subArrayRows, int subArrayCols,
                               float subArray[static const restrict subArrayRows][subArrayCols],
-                              int offsetRow, int offsetCol) PENCIL {
+                              int offsetRow, int offsetCol)  {
   for (int i = 0; i < subArrayRows; i++)
     for (int j = 0; j < subArrayCols; j++)
       subArray[i][j] = Array[i + offsetRow][j + offsetCol];
@@ -111,7 +110,7 @@ static float generateResponseMapPatchNoMemory(
     Point2i center, int wInRows, int wInCols,
     float wInArray[static const restrict wInRows][wInCols], int wOutRows,
     int wOutCols, float wOutArray[static const restrict wOutRows][wOutCols],
-    float bOut) PENCIL {
+    float bOut)  {
   int cy = ncy + center.y - mapSize;
   int cx = ncx + center.x - mapSize;
 
@@ -185,7 +184,7 @@ static void generateResponseMap(
     int m_wOutRows, int m_wOutCols,
     float m_wOutArray[static const restrict m_wOutRows][m_wOutCols] 
     )
-    PENCIL {
+     {
 
   // This is a temporary array.
   //
@@ -263,7 +262,7 @@ static int cvRound(float value) {
 }
 
 float GetValueFloat(int N, int M, float A[static const restrict N][M],
-		    int row, int col, int offset) PENCIL {
+		    int row, int col, int offset)  {
   return A[row][col + offset];
 }
 
@@ -277,7 +276,7 @@ void calculateRespondMaps(
     uint8_t Image[static const restrict ImageRows][ImageCols], int shape_rows,
     int shape_cols, float shape_data[static const restrict shape_rows][shape_cols],
     int shape_start, mlp m_classifiers[const restrict],
-    float ResponseMaps[const restrict][MapSize + MapSize + 1][MapSize + MapSize + 1]) PENCIL {
+    float ResponseMaps[const restrict][MapSize + MapSize + 1][MapSize + MapSize + 1])  {
 
 // This loop is parallel, ppcg can find parallelism without the need for
 // the independent directive.
