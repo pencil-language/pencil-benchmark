@@ -5,9 +5,7 @@
 // This is a c-implementation of the PCA->MLP response map calculation
 
 #include <math.h>
-#include <stdio.h>
 #include <assert.h>
-#include <stdlib.h>
 #include <stdint.h>
 #include "pencil.h"
 #include "mlp_impl.h"
@@ -135,7 +133,7 @@ static float generateResponseMapPatchNoMemory(
   sampleMax -= sampleMean;
   sampleMin -= sampleMean;
 
-  sampleMax = fmaxf(fabsf(sampleMin), fabsf(sampleMax));
+  sampleMax = fmax(fabs(sampleMin), fabs(sampleMax));
 
   if (sampleMax == 0.0)
     sampleMax = 1.0;
@@ -148,8 +146,7 @@ static float generateResponseMapPatchNoMemory(
   float result = 0;
 
   for (int i = 0; i < bInRows; i++) {
-    for (int j = 0; j < bInCols; j++) { // This loop seems to have a single
-                                        // iteration? Is this always true?
+    for (int j = 0; j < bInCols; j++) {
       float xOutArray;
       xOutArray = beta * bInArray[i][j];
       for (int k = 0; k < wInCols; k++) {
@@ -158,7 +155,7 @@ static float generateResponseMapPatchNoMemory(
                                      k % imagePatchRows + j + imageOffsetCol] +
                       shift);
       }
-      xOutArray = expf(xOutArray);
+      xOutArray = exp(xOutArray);
       xOutArray = xOutArray + 1.0f;
       xOutArray = 2.0f / xOutArray;
       xOutArray = xOutArray + -1.0f;
