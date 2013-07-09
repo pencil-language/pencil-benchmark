@@ -4,9 +4,6 @@
 // Copyright (c) RealEyes, 2013
 // This is a c-implementation of the PCA->MLP response map calculation
 
-#include <math.h>
-#include <assert.h>
-#include <stdint.h>
 #include "pencil.h"
 #include "mlp_impl.h"
 
@@ -26,7 +23,7 @@ static void transposeFloat(int InRows, int InCols,
 
 static float meanChar(int subImageRows, int subImageCols, int imageRows,
 		      int imageCols,
-		      uint8_t image[static const restrict imageRows][imageCols],
+		      unsigned char image[static const restrict imageRows][imageCols],
 		      int imageOffsetRow, int imageOffsetCol)  {
   float sum = 0;
 
@@ -38,13 +35,13 @@ static float meanChar(int subImageRows, int subImageCols, int imageRows,
   return sum / (subImageRows * subImageCols);
 }
 
-static uint8_t min(uint8_t a, uint8_t b) { return a < b ? a : b; }
+static unsigned char min(unsigned char a, unsigned char b) { return a < b ? a : b; }
 
-static uint8_t minChar(int subImageRows, int subImageCols, int imageRows,
+static unsigned char minChar(int subImageRows, int subImageCols, int imageRows,
 		       int imageCols,
-		       uint8_t image[static const restrict imageRows][imageCols],
+		       unsigned char image[static const restrict imageRows][imageCols],
 		       int imageOffsetRow, int imageOffsetCol)  {
-  uint8_t minvalue = 255;
+  unsigned char minvalue = 255;
 
   for (int i = 0; i < subImageRows; i++)
     for (int j = 0; j < subImageCols; j++)
@@ -53,13 +50,13 @@ static uint8_t minChar(int subImageRows, int subImageCols, int imageRows,
   return minvalue;
 }
 
-static uint8_t max(uint8_t a, uint8_t b) { return a > b ? a : b; }
+static unsigned char max(unsigned char a, unsigned char b) { return a > b ? a : b; }
 
-static uint8_t maxChar(int subImageRows, int subImageCols, int imageRows,
+static unsigned char maxChar(int subImageRows, int subImageCols, int imageRows,
 		       int imageCols,
-		       uint8_t image[static const restrict imageRows][imageCols],
+		       unsigned char image[static const restrict imageRows][imageCols],
 		       int imageOffsetRow, int imageOffsetCol)  {
-  uint8_t maxvalue = 0;
+  unsigned char maxvalue = 0;
 
   for (int i = 0; i < subImageRows; i++)
     for (int j = 0; j < subImageCols; j++)
@@ -106,7 +103,7 @@ static float generateResponseMapPatchNoMemory(
     int mapSize, int ncx, int ncy, int bInRows, int bInCols,
     float bInArray[static const restrict bInRows][bInCols],
     mlp classifier, int ImageRows,
-    int ImageCols, uint8_t Image[static const restrict ImageRows][ImageCols],
+    int ImageCols, unsigned char Image[static const restrict ImageRows][ImageCols],
     Point2i center, int wInRows, int wInCols,
     float wInArray[static const restrict wInRows][wInCols], int wOutRows,
     int wOutCols, float wOutArray[static const restrict wOutRows][wOutCols],
@@ -174,7 +171,7 @@ static float generateResponseMapPatchNoMemory(
 /// @param Image The image to process.
 static void generateResponseMap(
     int ImageRows, int ImageCols,
-    uint8_t Image[static const restrict ImageRows][ImageCols],
+    unsigned char Image[static const restrict ImageRows][ImageCols],
     const Point2i center, int mapSize, mlp classifier,
     float ResponseMap[static const restrict mapSize + mapSize + 1][mapSize + mapSize + 1],
     int m_URows, int m_UCols,
@@ -273,7 +270,7 @@ float GetValueFloat(int N, int M, float A[static const restrict N][M],
 //                     the response maps, are stored.
 void calculateRespondMaps(
     int m_visibleLandmarks_size, int MapSize, int ImageRows, int ImageCols,
-    uint8_t Image[static const restrict ImageRows][ImageCols], int shape_rows,
+    unsigned char Image[static const restrict ImageRows][ImageCols], int shape_rows,
     int shape_cols, float shape_data[static const restrict shape_rows][shape_cols],
     int shape_start, mlp m_classifiers[const restrict],
     float ResponseMaps[const restrict][MapSize + MapSize + 1][MapSize + MapSize + 1])  {
