@@ -12,7 +12,7 @@
 
 // UjoImro, 2012; this file is a bridge between gel and other linalg libraries
 
-#define WITH_IPP
+// #define WITH_IPP
 #define WITH_MKL
 
 #include "linalg.h"

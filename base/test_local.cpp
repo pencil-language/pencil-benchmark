@@ -6,6 +6,9 @@
 #include "opencl.hpp"
 #include "utility.hpp"
 
+// OpenCL includes
+#include "local.clh"
+
 const int rows = 10;
 const int cols = 15;
 
@@ -13,7 +16,7 @@ int main()
 {
 
     carp::opencl::device device;
-    device.compile( carp::string_vector("local.cl"), carp::string_vector("paint") );
+    device.source_compile( local_cl, local_cl_len, carp::string_vector("paint") );
 
     carp::opencl::image<float> cl_image(device, rows, cols);
     

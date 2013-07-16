@@ -264,6 +264,41 @@ namespace carp {
                 return;
             } // compile
 
+            void source_compile( const unsigned char * source,
+                                 const unsigned int source_len,
+                                 const std::vector<std::string> & kernelnames ) {
+                cl_int err;
+
+                size_t cl_code_len = source_len;
+                const char * csource = reinterpret_cast<const char*>(source);
+                cpProgram = clCreateProgramWithSource( cxGPUContext, 1, &csource, &cl_code_len, &err );
+                utility::checkerror(err, __FILE__, __LINE__ );
+
+                // building the OpenCL source code
+                err = clBuildProgram( cpProgram, 0, NULL, NULL, NULL, NULL );
+                if ( err!=CL_SUCCESS )
+                {
+                    size_t len;
+                    std::vector<char> buffer(1048576);
+
+                    utility::checkerror( clGetProgramBuildInfo( cpProgram, cdDevice, CL_PROGRAM_BUILD_LOG, buffer.size(), buffer.data(), &len ), __FILE__, __LINE__ );
+                    
+                    std::cerr << buffer.data() << std::endl;
+                    throw std::runtime_error("error: OpenCL: The compilation has failed.");                    
+                }
+
+                // extracting the kernel entrances
+                for( const std::string & kernel_name : kernelnames )
+                {
+                    cl_int err;
+                    kernels[kernel_name].set( clCreateKernel( cpProgram, kernel_name.c_str(), &err ), cqCommandQueue );
+                    utility::checkerror( err, __FILE__, __LINE__ );
+                }
+
+                return;
+            } // source_compile
+
+            
             kernel & operator [] ( const std::string & filename ) {
                 return kernels[filename];
             } // operator[]

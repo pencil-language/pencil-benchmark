@@ -20,6 +20,9 @@
 #include "memory.hpp"
 #include "bench_mlp.hpp"
 
+// OpenCL includes
+#include "mlp_impl.clh"
+
 const int processed_frames = 100;
 const int local_memsize = 21 * KiB;
 
@@ -40,7 +43,7 @@ int main()
     std::vector<hack_t> packages;    
     conductor_t conductor; // the class for importing the input from the clm
     carp::opencl::device device;
-    device.compile( carp::string_vector("mlp_impl.cl"), carp::string_vector("calculateMaps") );
+    device.source_compile( mlp_impl_cl, mlp_impl_cl_len, carp::string_vector("calculateMaps") );
         
     int fail = 0;
     
