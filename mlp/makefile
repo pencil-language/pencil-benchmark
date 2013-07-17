@@ -11,6 +11,8 @@ all: $(TO_BUILD)
 GEL:
 	+make GEL
 
+CFLAGS+=-std=gnu99
+
 #bench_mlp.gch: bench_mlp.hpp $(BASEDIR)/core/memory.gch
 #	$(CXX) $(CXXFLAGS) -c bench_mlp.hpp -o bench_mlp.gch
 

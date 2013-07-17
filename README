@@ -1,4 +1,4 @@
-For compiling and running the test You are going to need OpenCV
+ For compiling and running the test You are going to need OpenCV
 (tested with 2.4.2) and boost.
 
 The input data for mlp testing is stored in file
