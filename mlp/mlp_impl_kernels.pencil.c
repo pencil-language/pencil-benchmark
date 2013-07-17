@@ -233,6 +233,13 @@ static void generateResponseMap(
   copySubArrayFloat(m_wOutRows, m_wOutCols, m_wOutArray, wOut_tmpRows,
                     wOut_tmpCols, wOut_tmpArray, 0, 0);
 
+  // printf("ERROR: Correct me!!\n");
+  // assert(1!=1);
+  // exit(1);  
+
+  // int wOut_tmpCols = 0;
+  // int wOut_tmpRows = 0;
+    
   int wOutRows = wOut_tmpCols;
   int wOutCols = wOut_tmpRows;
   float wOutArray[wOutRows][wOutCols];

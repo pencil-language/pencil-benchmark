@@ -4,6 +4,7 @@
 #ifndef __CARP__UTILITY__HPP__
 #define __CARP__UTILITY__HPP__
 
+#include <chrono>
 #include <iostream>
 #include <opencv2/core/core.hpp>
 #include <boost/preprocessor.hpp>
@@ -68,6 +69,16 @@ namespace carp {
     {
         return make_vector<std::string>(inputs...);        
     } // string_vector
+
+
+    
+    template <class T0>
+    std::chrono::microseconds::rep
+    microseconds( T0 t0 )
+    {
+        return std::chrono::duration_cast<std::chrono::microseconds>(t0).count();
+    }
+
     
 } // namespace carp
 

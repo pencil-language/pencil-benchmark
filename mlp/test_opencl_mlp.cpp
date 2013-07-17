@@ -103,7 +103,7 @@ int main()
                     carp::opencl::buffer(local_memsize)
                     ).groupsize( carp::make_vector<size_t>(gangsize),carp::make_vector<size_t>( gangsize * package.m_visibleLandmarks_size ) );
                 auto end = std::chrono::high_resolution_clock::now();
-                elapsed_time += microseconds(end - start);
+                elapsed_time += carp::microseconds(end - start);
                 
                 // copying the data back to the CPU
                 auto processed = clSelf.get();

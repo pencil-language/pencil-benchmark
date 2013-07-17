@@ -51,7 +51,7 @@ int main()
                 }
                     ); // tbb::parallel_for
             auto end = std::chrono::high_resolution_clock::now();
-            elapsed_time += microseconds(end - start);
+            elapsed_time += carp::microseconds(end - start);
 
             // testing the output
             for (int q=0; q<conductor.hack.m_visibleLandmarks_size; q++)
