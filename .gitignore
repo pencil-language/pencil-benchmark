@@ -5,3 +5,4 @@ response_dumps.bin
 response_dumps.xml
 test_mlp
 *.orig
+*.jpg
