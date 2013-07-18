@@ -36,9 +36,9 @@ int main()
 
     cv::Mat_<float> trans = cl_trans.get();
 
-    print_image( image, "image" );
+    carp::print_image( image, "image" );
     
-    print_image( trans, "trans" );
+    carp::print_image( trans, "trans" );
 
     for (int q = 0; q < image.rows; q++ )
         for ( int w = 0; w < image.cols; w++ )

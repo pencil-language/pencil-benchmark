@@ -15,42 +15,42 @@ const int GiB=1024*KiB;
 
 #define PRINT(var)  std::cout << "debug: " << BOOST_PP_STRINGIZE(var) << " = " << var << std::endl
 
-template<class T0>
-void
-print_image( cv::Mat_<T0> input, std::string name )
-{
-    std::cout << name << " = [" << std::endl;
-    
-    for (int q=0; q<input.rows; q++)
+namespace carp {    
+
+    template<class T0>
+    void
+    print_image( cv::Mat_<T0> input, std::string name )
     {
-        std::cout << "[ ";        
-        for (int w=0; w<input.cols; w++)
+        std::cout << name << " = [" << std::endl;
+    
+        for (int q=0; q<input.rows; q++)
         {
-            std::cout << input(q,w);
-            if (w<input.cols-1)
-                std::cout << ", ";
+            std::cout << "[ ";        
+            for (int w=0; w<input.cols; w++)
+            {
+                std::cout << input(q,w);
+                if (w<input.cols-1)
+                    std::cout << ", ";
+                else
+                    std::cout << " ";
+            }
+
+            if (q<input.rows-1)
+                std::cout << "], " << std::endl;
             else
-                std::cout << " ";
+                std::cout << "] " << std::endl;
         }
 
-        if (q<input.rows-1)
-            std::cout << "], " << std::endl;
-        else
-            std::cout << "] " << std::endl;
-    }
+        std::cout << "]" << std::endl;    
+    } // print_image
 
-    std::cout << "]" << std::endl;    
-} // print_image
-
-template <class T0>
-bool
-push( std::vector<T0> & self, T0 t0 )
-{
-    self.push_back(t0);
-    return true;
-} // push
-
-namespace carp {
+    template <class T0>
+    bool
+    push( std::vector<T0> & self, T0 t0 )
+    {
+        self.push_back(t0);
+        return true;
+    } // push
 
     template<class T0, class... Types>
     std::vector<T0>
@@ -58,7 +58,7 @@ namespace carp {
     {
         std::vector<T0> result;
         result.push_back(t0);        
-        bool err[] = { ::push( result, static_cast<T0>(inputs) )... };
+        bool err[] = { carp::push( result, static_cast<T0>(inputs) )... };
         return result;
     } // make_vector
 

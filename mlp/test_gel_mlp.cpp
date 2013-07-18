@@ -19,7 +19,7 @@ const int processed_frames = 100;
 
 int main()
 {
-    conductor_t conductor;
+    carp::conductor_t conductor;
     int fail = 0;
     long int elapsed_time = 0;
     int64_t maxnetallocated = 0;

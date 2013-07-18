@@ -3,6 +3,9 @@
 // Copyright (c) RealEyes, 2013
 // This version tests the responseMap calculation with input dumps
 
+#ifndef BENCH_MLP__HPP__
+#define BENCH_MLP__HPP__
+
 #include <tuple>
 #include <chrono>
 #include <string>
@@ -20,35 +23,6 @@
 #include "memory.hpp"
 #include "allocator.hpp"
 #include "serialization.hpp"
-
-clMat /*float*/convertCVToMatFloat /*float*/( void * self, carp::memory::allocator & pool, const cv::Mat_<double> & input );
-clMat /*uint8_t*/  convertCVToMatChar /*uint8_t*/  ( void * self, carp::memory::allocator & pool, const cv::Mat_<uint8_t> & input );
-
-
-template <class T0>
-void
-printMatCV( cv::Mat_<T0> & mat, std::string name )
-{
-    std::cout << std::setprecision(6) << std::fixed;
-    
-    std::cout << name << " = [\n";
-
-    int q,w;
-
-    for (q=0; q<mat.rows; q++)
-    {
-        std::cout << "[ ";
-        for( w=0; w<mat.cols; w++)
-        {
-            std::cout << static_cast<float>(mat(q,w)) << ", ";
-        }
-        std::cout << " ]\n";
-    }
-    
-    std::cout << "]\n";
-    
-    return;
-} // printMatFloat
 
 
 namespace {
@@ -74,108 +48,141 @@ namespace {
 
 } // unnamed namespace 
 
+namespace carp {    
 
-// patchsize, m_wIn, m_wOut, m_U, hidden_num, rho2
-template <class allocator>
-std::vector<calcpackage>
-convertHackToMlp ( char * self, std::vector<allocator> & pools, std::vector<int> & memory_segments, const hack_t & hack )
-{
-    assert(hack.m_visibleLandmarks_size==hack.m_classifiers.size());
-    assert(hack.m_visibleLandmarks_size==hack.responseMaps.size());
+    clMat /*float*/    convertCVToMatFloat /*float*/( void * self, carp::memory::allocator & pool, const cv::Mat_<double> & input );
+    clMat /*uint8_t*/  convertCVToMatChar /*uint8_t*/  ( void * self, carp::memory::allocator & pool, const cv::Mat_<uint8_t> & input );
 
-    int size = hack.m_visibleLandmarks_size;
-    std::vector<calcpackage> result(size);
-    
-    // we export each classifier
-    for (int q=0; q<size; q++)
+    template <class T0>
+    void
+    printMatCV( cv::Mat_<T0> & mat, std::string name )
     {
-        result[q].input.alignedImage = convertCVToMatChar( self + memory_segments[q], pools[q], hack.alignedImage );
-        result[q].input.shape        = convertCVToMatFloat( self + memory_segments[q], pools[q], hack.shape );
+        std::cout << std::setprecision(6) << std::fixed;
+    
+        std::cout << name << " = [\n";
+
+        int q,w;
+
+        for (q=0; q<mat.rows; q++)
+        {
+            std::cout << "[ ";
+            for( w=0; w<mat.cols; w++)
+            {
+                std::cout << static_cast<float>(mat(q,w)) << ", ";
+            }
+            std::cout << " ]\n";
+        }
+    
+        std::cout << "]\n";
+    
+        return;
+    } // printMatFloat
+
+
+    // patchsize, m_wIn, m_wOut, m_U, hidden_num, rho2
+    template <class allocator>
+    std::vector<calcpackage>
+    convertHackToMlp ( char * self, std::vector<allocator> & pools, std::vector<int> & memory_segments, const hack_t & hack )
+    {
+        assert(hack.m_visibleLandmarks_size==hack.m_classifiers.size());
+        assert(hack.m_visibleLandmarks_size==hack.responseMaps.size());
+
+        int size = hack.m_visibleLandmarks_size;
+        std::vector<calcpackage> result(size);
+    
+        // we export each classifier
+        for (int q=0; q<size; q++)
+        {
+            result[q].input.alignedImage = convertCVToMatChar( self + memory_segments[q], pools[q], hack.alignedImage );
+            result[q].input.shape        = convertCVToMatFloat( self + memory_segments[q], pools[q], hack.shape );
         
-        result[q].input.m_patchSize  = hack.m_classifiers[q].m_patchSize;
+            result[q].input.m_patchSize  = hack.m_classifiers[q].m_patchSize;
 
-        result[q].input.wIn = convertCVToMatFloat( self + memory_segments[q], pools[q],
-                                                   hack.m_classifiers[q].m_wIn( cv::Range(0, hack.m_classifiers[q].m_wIn.rows ), cv::Range(0, hack.m_classifiers[q].m_wIn.cols -1 ) )
-                                                   * hack.m_classifiers[q].m_U.t() );
+            result[q].input.wIn = convertCVToMatFloat( self + memory_segments[q], pools[q],
+                                                       hack.m_classifiers[q].m_wIn( cv::Range(0, hack.m_classifiers[q].m_wIn.rows ), cv::Range(0, hack.m_classifiers[q].m_wIn.cols -1 ) )
+                                                       * hack.m_classifiers[q].m_U.t() );
         
-        result[q].input.m_wOut = convertCVToMatFloat( self + memory_segments[q], pools[q], hack.m_classifiers[q].m_wOut );
-        result[q].input.bIn = convertCVToMatFloat( self + memory_segments[q], pools[q],
-                                                   hack.m_classifiers[q].m_wIn( cv::Range(0, hack.m_classifiers[q].m_wIn.rows), cv::Range(hack.m_classifiers[q].m_wIn.cols - 1, hack.m_classifiers[q].m_wIn.cols )));
+            result[q].input.m_wOut = convertCVToMatFloat( self + memory_segments[q], pools[q], hack.m_classifiers[q].m_wOut );
+            result[q].input.bIn = convertCVToMatFloat( self + memory_segments[q], pools[q],
+                                                       hack.m_classifiers[q].m_wIn( cv::Range(0, hack.m_classifiers[q].m_wIn.rows), cv::Range(hack.m_classifiers[q].m_wIn.cols - 1, hack.m_classifiers[q].m_wIn.cols )));
         
-        // result[q].tmp.xOuts          = CreateVectorMat( pools[q], gangsize );
-        // for ( int w = 0; w<gangsize; w++ )
-        // {
-        //     clMat xOut = CreateMatFloat( pools[q], hack.m_classifiers[q].m_wIn.rows, 1 );
-        //     ::SetMatToVector( self + memory_segments[q], result[q].tmp.xOuts, w, xOut );
-        //     clMat test = ::GetMatFromVector( self + memory_segments[q], result[q].tmp.xOuts, w );
-        //     assert(test.rows == xOut.rows );
-        //     assert(test.cols == xOut.cols );
-        //     assert(test.step == xOut.step );
-        //     assert(test.start == xOut.start );
-        // }
+            // result[q].tmp.xOuts          = CreateVectorMat( pools[q], gangsize );
+            // for ( int w = 0; w<gangsize; w++ )
+            // {
+            //     clMat xOut = CreateMatFloat( pools[q], hack.m_classifiers[q].m_wIn.rows, 1 );
+            //     ::SetMatToVector( self + memory_segments[q], result[q].tmp.xOuts, w, xOut );
+            //     clMat test = ::GetMatFromVector( self + memory_segments[q], result[q].tmp.xOuts, w );
+            //     assert(test.rows == xOut.rows );
+            //     assert(test.cols == xOut.cols );
+            //     assert(test.step == xOut.step );
+            //     assert(test.start == xOut.start );
+            // }
 
         
-        result[q].output.responseMap = carp::CreateMatFloat( pools[q], 2 * hack.m_mapSize + 1, 2 * hack.m_mapSize + 1 );
-    } // for q in m_visibleLandmarks_size
+            result[q].output.responseMap = carp::CreateMatFloat( pools[q], 2 * hack.m_mapSize + 1, 2 * hack.m_mapSize + 1 );
+        } // for q in m_visibleLandmarks_size
     
-    return result;
+        return result;
     
-} // convertHackToMlp
+    } // convertHackToMlp
 
-cv::Mat_<double> convertMatFloatToCV( void * self, clMat /*float*/input )
-{
-    cv::Mat_<double> result( input.rows, input.cols );
+    cv::Mat_<double> convertMatFloatToCV( void * self, clMat /*float*/input )
+    {
+        cv::Mat_<double> result( input.rows, input.cols );
     
-    for ( int q=0; q<input.rows; q++)
-        for ( int w=0; w<input.cols; w++ )
-            result(q,w) = reinterpret_cast<float*>(self)[ q * input.step + w + input.start ];
+        for ( int q=0; q<input.rows; q++)
+            for ( int w=0; w<input.cols; w++ )
+                result(q,w) = reinterpret_cast<float*>(self)[ q * input.step + w + input.start ];
     
-    return result;
-} // convertMatFloatToCV
+        return result;
+    } // convertMatFloatToCV
 
-template <class allocator>
-std::vector<clMat>
-allocateResponseMaps( void * self, std::vector<allocator> & pools, int mapSize, int size )
-{
-    std::vector<clMat> result(size);
+    template <class allocator>
+    std::vector<clMat>
+    allocateResponseMaps( void * self, std::vector<allocator> & pools, int mapSize, int size )
+    {
+        std::vector<clMat> result(size);
 
-    for ( int q=0; q<size; q++ )
-        result[q] = CreateMatFloat( pools[q], 2 * mapSize + 1, 2 * mapSize + 1 );
+        for ( int q=0; q<size; q++ )
+            result[q] = CreateMatFloat( pools[q], 2 * mapSize + 1, 2 * mapSize + 1 );
     
-    return result;
-}
+        return result;
+    }
 
-template <class allocator>
-void freeResponseMaps( void * self, std::vector<allocator> pools, std::vector<clMat> & responseMaps, int size )
-{
-    for ( int q=0; q<size; q++ )
-        freeMatFloat( pools[q], &(responseMaps[q]) );
+    template <class allocator>
+    void freeResponseMaps( void * self, std::vector<allocator> pools, std::vector<clMat> & responseMaps, int size )
+    {
+        for ( int q=0; q<size; q++ )
+            freeMatFloat( pools[q], &(responseMaps[q]) );
 
-    return;    
-}
+        return;    
+    }
 
 
-clMat /*uint8_t*/  convertCVToMatChar /*uint8_t*/  ( void * self, carp::memory::allocator & pool, const cv::Mat_<uint8_t> & input )
-{
-    clMat /*uint8_t*/  result = carp::CreateMatChar /*uint8_t*/ ( pool, input.rows, input.cols );
+    clMat /*uint8_t*/  convertCVToMatChar /*uint8_t*/  ( void * self, carp::memory::allocator & pool, const cv::Mat_<uint8_t> & input )
+    {
+        clMat /*uint8_t*/  result = carp::CreateMatChar /*uint8_t*/ ( pool, input.rows, input.cols );
 
-    for ( int q=0; q<input.rows; q++)
-        for ( int w=0; w<input.cols; w++ )
-            reinterpret_cast<uint8_t*>(self)[ q * result.step + w + result.start ] = input(q,w);
+        for ( int q=0; q<input.rows; q++)
+            for ( int w=0; w<input.cols; w++ )
+                reinterpret_cast<uint8_t*>(self)[ q * result.step + w + result.start ] = input(q,w);
     
-    return result;    
-} // convertCVToclMat /*uint8_t*/ 
+        return result;    
+    } // convertCVToclMat /*uint8_t*/ 
 
-clMat /*float*/convertCVToMatFloat /*float*/( void * self, carp::memory::allocator & pool, const cv::Mat_<double> & input )
-{
-    clMat /*float*/result = carp::CreateMatFloat( pool, input.rows, input.cols );
+    clMat /*float*/convertCVToMatFloat /*float*/( void * self, carp::memory::allocator & pool, const cv::Mat_<double> & input )
+    {
+        clMat /*float*/result = carp::CreateMatFloat( pool, input.rows, input.cols );
     
-    for ( int q=0; q<input.rows; q++)
-        for ( int w=0; w<input.cols; w++ )
-            reinterpret_cast<float*>(self)[ q * result.step + w + result.start ] = input(q,w);
+        for ( int q=0; q<input.rows; q++)
+            for ( int w=0; w<input.cols; w++ )
+                reinterpret_cast<float*>(self)[ q * result.step + w + result.start ] = input(q,w);
     
-    return result;    
-} // convertCVToMatFloat
+        return result;    
+    } // convertCVToMatFloat
 
+} // namespace carp
+
+#endif /* BENCH_MLP__HPP__ */
 
 // LuM end of file

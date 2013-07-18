@@ -34,7 +34,7 @@ const int processed_frames = PROCESSED_FRAMES;
 
 int main()
 {
-    conductor_t conductor;
+    carp::conductor_t conductor;
     int fail = 0;
     long int elapsed_time = 0;
     
@@ -51,11 +51,11 @@ int main()
         // here comes the function call
         {
             // preparing the inputs
-            MatChar alignedImage = convertCVToMatChar(conductor.hack.alignedImage);
-            MatFloat shape = convertCVToMatFloat(conductor.hack.shape);
-            mlp * m_classifiers = convertHackToMlp(conductor.hack);
+            MatChar alignedImage = carp::convertCVToMatChar(conductor.hack.alignedImage);
+            MatFloat shape = carp::convertCVToMatFloat(conductor.hack.shape);
+            mlp * m_classifiers = carp::convertHackToMlp(conductor.hack);
             MatFloat * responseMaps;
-            allocateResponseMaps( conductor.hack.m_mapSize, conductor.hack.m_visibleLandmarks_size, &responseMaps );
+            carp::allocateResponseMaps( conductor.hack.m_mapSize, conductor.hack.m_visibleLandmarks_size, &responseMaps );
 
             auto start = std::chrono::high_resolution_clock::now();
             calculateMaps(
@@ -72,14 +72,14 @@ int main()
             // releasing the inputs
             freeMatChar(&alignedImage);
             freeMatFloat(&shape);
-            freeClassifiers(&m_classifiers, conductor.hack.m_classifiers.size());
+            carp::freeClassifiers(&m_classifiers, conductor.hack.m_classifiers.size());
 
             // converting the outputs
             std::vector< cv::Mat_<double> > calculatedResults;
             for (int q=0; q<conductor.hack.m_visibleLandmarks_size; q++)
             {
                 cv::Mat_<double> nextResult;
-                nextResult = convertMatFloatToCV( responseMaps[q] );
+                nextResult = carp::convertMatFloatToCV( responseMaps[q] );
                 calculatedResults.push_back(nextResult);
             }
             
@@ -90,7 +90,7 @@ int main()
             }
             
             // releasing the outputs
-            freeResponseMaps( &responseMaps, conductor.hack.m_visibleLandmarks_size );
+            carp::freeResponseMaps( &responseMaps, conductor.hack.m_visibleLandmarks_size );
 
         }
     }

@@ -9,7 +9,7 @@
 #include "serialization.hpp"
 
 mlp *
-convertHackToMlp ( const hack_t & hack )
+carp::convertHackToMlp ( const carp::hack_t & hack )
 {
     assert(hack.m_visibleLandmarks_size==hack.m_classifiers.size());
     assert(hack.m_visibleLandmarks_size==hack.responseMaps.size());
@@ -21,9 +21,9 @@ convertHackToMlp ( const hack_t & hack )
     for (int q=0; q<hack.m_visibleLandmarks_size; q++)
     {
         result[q].m_patchSize = hack.m_classifiers[q].m_patchSize;
-        result[q].m_wIn       = convertCVToMatFloat(hack.m_classifiers[q].m_wIn);
-        result[q].m_wOut      = convertCVToMatFloat(hack.m_classifiers[q].m_wOut);
-        result[q].m_U         = convertCVToMatFloat(hack.m_classifiers[q].m_U);
+        result[q].m_wIn       = carp::convertCVToMatFloat(hack.m_classifiers[q].m_wIn);
+        result[q].m_wOut      = carp::convertCVToMatFloat(hack.m_classifiers[q].m_wOut);
+        result[q].m_U         = carp::convertCVToMatFloat(hack.m_classifiers[q].m_U);
         result[q].hidden_num  = hack.m_classifiers[q].hidden_num;
         result[q].rho2        = hack.m_classifiers[q].rho2;
     } // for q in m_visibleLandmarks_size
@@ -32,7 +32,7 @@ convertHackToMlp ( const hack_t & hack )
 } // convertHackToMlp
 
 void
-freeClassifiers( mlp * classifiers[], int size )
+carp::freeClassifiers( mlp * classifiers[], int size )
 {
     mlp * result = *classifiers;    
     for (int q=0; q<size; q++ )
@@ -45,7 +45,8 @@ freeClassifiers( mlp * classifiers[], int size )
 } // freeClassifiers
 
 
-MatChar convertCVToMatChar ( const cv::Mat_<uint8_t> & input )
+MatChar
+carp::convertCVToMatChar ( const cv::Mat_<uint8_t> & input )
 {
     MatChar result = CreateMatChar( input.rows, input.cols );
 
@@ -56,7 +57,8 @@ MatChar convertCVToMatChar ( const cv::Mat_<uint8_t> & input )
     return result;    
 } // convertCVToMatChar
 
-MatFloat convertCVToMatFloat (  const cv::Mat_<double> & input )
+MatFloat
+carp::convertCVToMatFloat (  const cv::Mat_<double> & input )
 {
     MatFloat result = CreateMatFloat( input.rows, input.cols );
     
@@ -68,7 +70,8 @@ MatFloat convertCVToMatFloat (  const cv::Mat_<double> & input )
 } // convertCVToMatFloat
 
 
-cv::Mat_<double> convertMatFloatToCV( MatFloat input )
+cv::Mat_<double>
+carp::convertMatFloatToCV( MatFloat input )
 {
     cv::Mat_<double> result( input.rows, input.cols );
     
@@ -80,7 +83,8 @@ cv::Mat_<double> convertMatFloatToCV( MatFloat input )
 } // convertMatFloatToCV
 
 
-void allocateResponseMaps( int mapSize, int size, MatFloat * responseMaps[] )
+void
+carp::allocateResponseMaps( int mapSize, int size, MatFloat * responseMaps[] )
 {
     *responseMaps = (MatFloat*)malloc( sizeof(MatFloat) * size );
     assert(*responseMaps);    
@@ -92,7 +96,8 @@ void allocateResponseMaps( int mapSize, int size, MatFloat * responseMaps[] )
     return;
 }
 
-void freeResponseMaps( MatFloat * responseMaps[], int size )
+void
+carp::freeResponseMaps( MatFloat * responseMaps[], int size )
 {
     MatFloat * result = *responseMaps;    
     assert(result);

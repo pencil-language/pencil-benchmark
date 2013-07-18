@@ -27,7 +27,7 @@ int main()
 
     cv::Mat_<int> image = cl_image.get();
 
-    print_image( image, "image" );
+    carp::print_image( image, "image" );
 
     for (int q = 0; q < image.rows; q++ )
         for ( int w = 0; w < image.cols; w++ )

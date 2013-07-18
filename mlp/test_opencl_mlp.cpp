@@ -40,8 +40,8 @@ namespace {
 
 int main()
 {
-    std::vector<hack_t> packages;    
-    conductor_t conductor; // the class for importing the input from the clm
+    std::vector<carp::hack_t> packages;    
+    carp::conductor_t conductor; // the class for importing the input from the clm
     carp::opencl::device device;
     device.source_compile( mlp_impl_cl, mlp_impl_cl_len, carp::string_vector("calculateMaps") );
         
@@ -52,7 +52,7 @@ int main()
           conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id)
         )
     {
-        hack_t hack;
+        carp::hack_t hack;
         
         PRINT(conductor.id);
         conductor.importer >> BOOST_SERIALIZATION_NVP(hack);
@@ -114,7 +114,7 @@ int main()
                 for (int q=0; q<package.m_visibleLandmarks_size; q++)
                 {
                     cv::Mat_<double> nextResult;
-                    nextResult = convertMatFloatToCV( results + segments[q], calcpackages[q].output.responseMap );
+                    nextResult = carp::convertMatFloatToCV( results + segments[q], calcpackages[q].output.responseMap );
                     calculatedResults.push_back(nextResult);                
                 }
                 
