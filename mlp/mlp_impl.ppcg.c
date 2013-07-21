@@ -370,6 +370,13 @@ void calculateRespondMaps(
       }
     }
 
+  printf("ERROR: Correct me!!\n");
+  assert(1!=1);
+  exit(1);  
+
+  int wOut_tmpCols = 0;
+  int wOut_tmpRows = 0;
+  
   int wOutRows = wOut_tmpCols;
   int wOutCols = wOut_tmpRows;
   float (*wOutArray)[wOutCols] = malloc(sizeof(float) * wOutRows * wOutCols);

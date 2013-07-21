@@ -7,7 +7,8 @@
 #include "opencl.hpp"
 #include "utility.hpp"
 
-
+// OpenCL includes
+#include "nesting.clh"
 
 const int rows = 10;
 const int cols = 15;
@@ -16,7 +17,7 @@ int main()
 {
 
     carp::opencl::device device;
-    device.compile( carp::string_vector("nesting.cl"), carp::string_vector("transposeFloat"));
+    device.source_compile( nesting_cl, nesting_cl_len, carp::string_vector("transposeFloat"));
 
     cv::Mat_<float> image(rows, cols);
     for ( int q=0; q<image.rows; q++ )

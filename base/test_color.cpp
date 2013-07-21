@@ -9,13 +9,16 @@
 #include "opencl.hpp"
 #include "utility.hpp"
 
+// OpenCL files
+#include "color.clh"
+
 const int rows = 10;
 const int cols = 15;
 
 int main()
 {
     carp::opencl::device device;
-    device.compile( carp::string_vector("color.cl"), carp::string_vector("color") );
+    device.source_compile( color_cl, color_cl_len, carp::string_vector("color") );
     
     carp::opencl::image<int> cl_image(device, 10, 25);
     

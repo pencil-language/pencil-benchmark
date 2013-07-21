@@ -6,16 +6,16 @@
 #include "allocator.hpp"
 
 
-void freeMLP( carp::memory::allocator & pool, mlp * classifier )
+void carp::freeMLP( carp::memory::allocator & pool, carp::mlp * classifier )
 {
-    freeMatFloat( pool, &classifier->m_wIn );
-    freeMatFloat( pool, &classifier->m_wOut );
-    freeMatFloat( pool, &classifier->m_U );
+    carp::freeMatFloat( pool, &classifier->m_wIn );
+    carp::freeMatFloat( pool, &classifier->m_wOut );
+    carp::freeMatFloat( pool, &classifier->m_U );
 } // freeMLP
 
 
 clMat /*float*/
-CreateMatFloat( carp::memory::allocator & pool, int rows, int cols )
+carp::CreateMatFloat( carp::memory::allocator & pool, int rows, int cols )
 {
     clMat /*float*/result; 
     assert(rows>0);
@@ -36,7 +36,7 @@ CreateMatFloat( carp::memory::allocator & pool, int rows, int cols )
 } // CreateMatFloat
 
 clMat /*uint8_t*/ 
-CreateMatChar /*uint8_t*/ ( carp::memory::allocator & pool, int rows, int cols )
+carp::CreateMatChar /*uint8_t*/ ( carp::memory::allocator & pool, int rows, int cols )
 {
     clMat /*float*/result; 
     assert(rows>0);
@@ -57,7 +57,7 @@ CreateMatChar /*uint8_t*/ ( carp::memory::allocator & pool, int rows, int cols )
 }
 
 clVector /* <clMat> */
-CreateVectorMat( carp::memory::allocator & pool, int nb_elements )
+carp::CreateVectorMat( carp::memory::allocator & pool, int nb_elements )
 {
     clVector result;
     assert(nb_elements>0);
@@ -71,7 +71,7 @@ CreateVectorMat( carp::memory::allocator & pool, int nb_elements )
        
     
 void
-freeMatFloat( carp::memory::allocator & pool, clMat /*float*/* mat )
+carp::freeMatFloat( carp::memory::allocator & pool, clMat /*float*/* mat )
 {
     pool.release(carp::memory::allocator::sizer(mat->start, float()));
     
@@ -83,7 +83,7 @@ freeMatFloat( carp::memory::allocator & pool, clMat /*float*/* mat )
 } // freeMatFloat
 
 void 
-freeMatChar /*uint8_t*/ ( carp::memory::allocator & pool, clMat /*uint8_t*/  * mat )
+carp::freeMatChar /*uint8_t*/ ( carp::memory::allocator & pool, clMat /*uint8_t*/  * mat )
 {
     pool.release(carp::memory::allocator::sizer(mat->start, uint8_t()));
     
@@ -95,7 +95,7 @@ freeMatChar /*uint8_t*/ ( carp::memory::allocator & pool, clMat /*uint8_t*/  * m
 } // freeclMat /*uint8_t*/
 
 void 
-freeVectorMat( carp::memory::allocator & pool, clVector * vec )
+carp::freeVectorMat( carp::memory::allocator & pool, clVector * vec )
 {
     pool.release(carp::memory::allocator::sizer(vec->start, clMat()));
     vec->size  = 0;        
