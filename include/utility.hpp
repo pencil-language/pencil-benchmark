@@ -5,7 +5,12 @@
 #define __CARP__UTILITY__HPP__
 
 #include <chrono>
+#include <string>
+#include <iomanip>
 #include <iostream>
+#include <opencv2/opencv.hpp>
+#include <opencv2/ocl/ocl.hpp>
+#include <boost/filesystem.hpp>
 #include <opencv2/core/core.hpp>
 #include <boost/preprocessor.hpp>
 
@@ -79,6 +84,69 @@ namespace carp {
         return std::chrono::duration_cast<std::chrono::microseconds>(t0).count();
     }
 
+
+    struct Timing
+    {
+        // Timing(const std::string& name, const std::chrono::milliseconds& cpu, const std::chrono::milliseconds& gpu)
+        //     : name(name)
+        //     , cpu(cpu)
+        //     , gpu(gpu)
+        //     {}
+        // std::string name;
+        // std::chrono::milliseconds cpu;
+        // std::chrono::milliseconds gpu;
+
+        static void printHeader()
+            {
+                std::cout << "    Operator - CPU_time - GPU_time - speedup" << std::endl;
+            }
+
+        static void print( const std::string & name, const long int & cpu, const long int & gpu )
+            {
+                auto speedup = static_cast<double>(cpu)/static_cast<double>(gpu);
+                std::cout << std::setw(12) << name << " - " << std::setw(6) << (cpu/1000000.) << "s - " << std::setw(6) << (gpu/1000000.) << "s - " << std::setw(7) << std::fixed << std::setprecision(3) << speedup << 'x' << std::endl;
+            } // print
+
+    }; // struct Timing
+
+
+    struct record_t {
+        std::string path;        
+        cv::Mat cpuimg;
+
+        record_t( const std::string & path, const cv::Mat & cpuimg )
+            : path(path), cpuimg(cpuimg) { }
+        
+    }; // record_t
+            
+    
+    template <class T0>
+    std::vector<record_t>
+    get_pool( T0 pathname )
+    {
+        boost::filesystem::path path(pathname);
+    
+        if ( (!boost::filesystem::exists(path)) or (!boost::filesystem::is_directory(path)) )
+            throw std::runtime_error( std::string("Directory `") + pathname + "' does not exists. The directory should contain the testing images.");
+
+        std::vector<record_t> pool;
+    
+        boost::filesystem::directory_iterator end_iter;
+        for ( boost::filesystem::directory_iterator iter(path); iter!= end_iter; ++iter )
+        {
+            if (boost::filesystem::is_regular_file(iter->status()))
+            {
+                std::string extension = iter->path().extension().string();
+                if ( (extension ==".jpg") or (extension==".jpeg") ) {
+                    PRINT(iter->path().string());                    
+                    pool.push_back(record_t(iter->path().string(), cv::imread(iter->path().string())));
+                }                
+            }
+        }
+
+        return pool;        
+    } // get_pool
+    
     
 } // namespace carp
 

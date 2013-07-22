@@ -3,6 +3,7 @@
 #ifndef SERIALIZATION__HPP__
 #define SERIALIZATION__HPP__
 
+#include <boost/filesystem.hpp>
 #include <boost/archive/xml_iarchive.hpp>
 
 #include "mlp.hpp"
@@ -40,9 +41,22 @@ namespace carp {
         } // serialize
     
     }; // struct hack_t
+
+    
+    class guard_t {
+    public:
+        guard_t() {
+            if ( !boost::filesystem::exists( "pool/response_dumps.xml" ) )
+            {
+                throw std::runtime_error("Can't find `pool/response_dumps.xml' file!");                
+            } // if
+        } // guard_t
+    }; // class guard_t
+
     
     class conductor_t {
     public:
+        guard_t guard;        
         int id;
         hack_t hack;
         std::ifstream dumpStream;
@@ -50,11 +64,14 @@ namespace carp {
     
     public:
     
-        conductor_t() : id(0), dumpStream("response_dumps.xml", std::ios::in | std::ios::binary ), importer(dumpStream)
+        conductor_t() : guard(), id(0), dumpStream("pool/response_dumps.xml", std::ios::in | std::ios::binary ), importer(dumpStream)
             { }; // conductor_t
     
     }; // conductor_t
 
+    
+        
+    
 } // namespace carp
 
     
