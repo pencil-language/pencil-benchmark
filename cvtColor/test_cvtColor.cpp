@@ -4,30 +4,23 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/ocl/ocl.hpp>
 
+#include "opencl.hpp"
 #include "utility.hpp"
+#include "cvt_color.clh"
 
 template<class T0>
 void
-time_cvtColor( T0 & pool, size_t iterations)
+time_cvtColor( carp::opencl::device & device, T0 & pool, size_t iterations)
 {
     cv::Mat host_gray;
-
-    // making a copy of the images on the gpu
-    
-    // PRINT("1");    
-    const auto cpu_start = std::chrono::high_resolution_clock::now();
-    for(int i = 1; i <= iterations; ++i)
-        for ( auto & record : pool )
-            cv::cvtColor( record.cpuimg, host_gray, CV_RGB2GRAY);
-    const auto cpu_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - cpu_start);
-
     cv::Mat cpu_gray;
     cv::Mat check;    
     
     long int elapsed_time_gpu = 0;
     long int elapsed_time_cpu = 0;
 
-    for(int i = 1; i <= iterations; ++i)
+    for(int i = 0; i < iterations; ++i) {
+        PRINT(i);        
         for ( auto & record : pool ) {
             PRINT(record.path);            
             // CPU Bench
@@ -39,24 +32,40 @@ time_cvtColor( T0 & pool, size_t iterations)
             }
             // GPU Bench
             {
-                cv::ocl::oclMat gpu_gray;                    
-                cv::ocl::oclMat gpuimg(record.cpuimg);                
+                cv::ocl::oclMat gpu_gray;
+                cv::ocl::oclMat gpuimg(record.cpuimg);
+                gpu_gray.create( gpuimg.rows, gpuimg.cols, CV_8U );
+                                
+                // int code = CV_BGR2GRAY;                
+                // int bidx = (code == CV_BGR2GRAY || code == CV_BGRA2GRAY) ? 0 : 2;
+                int bidx = 2;
                 auto start = std::chrono::high_resolution_clock::now();
-                cv::ocl::cvtColor( gpuimg, gpu_gray, CV_RGB2GRAY );
+                device["RGB2Gray"] (
+                    gpuimg.cols,
+                    gpuimg.rows ,
+                    static_cast<int>(gpuimg.step),
+                    static_cast<int>(gpu_gray.step),
+                    gpuimg.channels()+1,
+                    bidx,
+                    reinterpret_cast<cl_mem>(gpuimg.data),
+                    reinterpret_cast<cl_mem>(gpu_gray.data) 
+                    )
+                    .groupsize( carp::make_vector<size_t>(16,16), carp::make_vector<size_t>(record.cpuimg.cols,record.cpuimg.rows) );               
                 auto end = std::chrono::high_resolution_clock::now();
+                elapsed_time_gpu += carp::microseconds(end - start);
                 check = gpu_gray;
+                //check = gpuimg;
+                
             }
-
             // Verifying the results
             if ( cv::norm(check - cpu_gray) > 0.01 ) {
                 cv::imwrite( "gpu_img.png", check );
                 cv::imwrite( "cpu_img.png", cpu_gray );
-                throw std::runtime_error("The GPU results are not equivalent with the CPU results.");
+                throw std::runtime_error("The GPU results are not equivalent with the CPU results.");                
             }
-            
-            
         }
-
+    }
+    
     carp::Timing::print( "cvtColor", elapsed_time_cpu, elapsed_time_gpu );
     return;
 }
@@ -67,22 +76,17 @@ int main(int argc, char* argv[])
 
     std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;    
 
-
     auto pool = carp::get_pool("pool");
-    
-//     const cv::Mat img_large = cv::imread("pool/test1.jpg");
-//     cv::Mat img;
-//     cv::resize(img_large, img, cv::Size(5792, 5792));   //Larger: cv::ocl::cvtColor doesn't work (returns memory garbage on some parts of the picture)
 
-    size_t num_iterations = 1;
-// //    if (argc > 1)
-// //        num_iterations = std::stoi(argv[1]);
-
+    // Initializing OpenCL
+    cv::ocl::Context * context = cv::ocl::Context::getContext();
+    carp::opencl::device device(context);
+    device.source_compile( cvt_color_cl, cvt_color_cl_len, carp::string_vector("RGB2Gray") );
+    size_t num_iterations = 100;
     carp::Timing::printHeader();
-    
-    time_cvtColor(pool, num_iterations);
+    time_cvtColor( device, pool, num_iterations );
 
-    int i = 5;
+    return EXIT_SUCCESS;    
 } // main
 
 

@@ -146,7 +146,19 @@ namespace carp {
 
         return pool;        
     } // get_pool
+
     
+    template <class RT, class T0>
+    RT cast( const T0 & from )
+    {
+        std::stringstream stringstream;
+        RT to;    
+        stringstream << from;
+        stringstream >> to;
+        return to;    
+    } // gel_cast
+     
+
     
 } // namespace carp
 

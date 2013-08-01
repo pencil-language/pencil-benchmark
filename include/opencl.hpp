@@ -37,12 +37,13 @@ namespace carp {
             checkerror(
                 const cl_int & error,
                 const std::string & filename = __FILE__,
-                const int & line = __LINE__
-                ) throw (std::exception&) {
+                const int & line = __LINE__,
+                const std::string & info = ""
+                ) {
                 if ( error != CL_SUCCESS )
                     throw std::runtime_error( std::string("error: OpenCL: ") +
                                               carp::opencl::errors.at(error) +
-                                              "; line: " + std::to_string(line) + " in file " + filename );
+                                              ";  " + info + " line: " + std::to_string(line) + " in file " + filename );
             } // checkerror
 
             // this function is equivalent to the OpenCL example in the NVidia repository
@@ -65,7 +66,8 @@ namespace carp {
                 const std::vector<T0> & group_sizes,
                 const std::vector<T0> & global_sizes )
             {
-                assert(group_sizes.size()==global_sizes.size());
+                if (group_sizes.size()!=global_sizes.size())
+                    throw std::runtime_error("The groupsize and the worksize dimensions are different!" );
                 
                 std::vector<T0> result(group_sizes.size());
 
@@ -123,7 +125,7 @@ namespace carp {
 
                 kernel::preparator<MT0> parameter(mt0);                
                 
-                utility::checkerror( clSetKernelArg(cqKernel, pos, parameter.size(), parameter.ptr() ), __FILE__, __LINE__ );
+                utility::checkerror( clSetKernelArg(cqKernel, pos, parameter.size(), parameter.ptr() ), __FILE__, __LINE__, "(arg: " + carp::cast<std::string>(pos) + ") " );
                 pos++; // move the position of the parameter applied
                 return true;
             } // setparameter
@@ -160,8 +162,11 @@ namespace carp {
                 assert(cqKernel);
                 assert(cqCommandQueue);
                 std::vector<size_t> kernelsize = utility::roundup(groupsize, worksize);
+                PRINT("gs01");                
                 utility::checkerror(clEnqueueNDRangeKernel( cqCommandQueue, cqKernel, worksize.size(), NULL, kernelsize.data(), groupsize.data(), 0, NULL, NULL ), __FILE__, __LINE__ );
+                PRINT("gs02");
                 utility::checkerror(clFinish(cqCommandQueue), __FILE__, __LINE__ );
+                PRINT("gs03");
             } // groupsize 
             
             
@@ -187,12 +192,14 @@ namespace carp {
             cl_context cxGPUContext;        // OpenCL context
             cl_command_queue cqCommandQueue;// OpenCL command queue
             cl_platform_id cpPlatform;      // OpenCL platform
-            cl_device_id cdDevice;          // OpenCL device
+            std::vector<cl_device_id> devices;            
+            // cl_device_id cdDevice;          // OpenCL device
             cl_program cpProgram;           // OpenCL program
             kernels_t kernels; // OpenCL kernel            
             cl_uint num_platforms;          // The number of OpenCL platforms
             cl_uint num_devices;            // The number of OpenCL devices
 
+            bool automanage; // do we manage the context or do we borrow it from opencl
             device( const device & ){ } // device is not copyable
             
         public:
@@ -202,34 +209,86 @@ namespace carp {
 
                 utility::checkerror(clGetPlatformIDs(1, &cpPlatform, &num_platforms), __FILE__, __LINE__ );
                 assert(num_platforms==1);  // there is only one supported platform at the time
-                
-                utility::checkerror(clGetDeviceIDs(cpPlatform, CL_DEVICE_TYPE_GPU, 1, &cdDevice, &num_devices), __FILE__, __LINE__ );
-//                assert(num_devices==1);
 
-                cxGPUContext = clCreateContext( NULL, 1, &cdDevice, NULL, NULL, &err );
+                // getting the number of devices
+                utility::checkerror(clGetDeviceIDs(cpPlatform, CL_DEVICE_TYPE_GPU, 0, NULL, &num_devices), __FILE__, __LINE__ );
+                assert(num_devices>0);                
+                devices.resize(num_devices);
+                
+                utility::checkerror(clGetDeviceIDs(cpPlatform, CL_DEVICE_TYPE_GPU, devices.size(), devices.data(), NULL ), __FILE__, __LINE__ );
+                if (num_devices>1)
+                    PRINT("warning: more then one GPU device!");                
+               //                assert(num_devices==1);
+
+                cxGPUContext = clCreateContext( NULL, devices.size(), devices.data(), NULL, NULL, &err );
                 utility::checkerror( err, __FILE__, __LINE__ );
                 
-                cqCommandQueue = clCreateCommandQueue( cxGPUContext, cdDevice, /*CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE*/ 0,  &err ); // kernels are executed in order
+                cqCommandQueue = clCreateCommandQueue( cxGPUContext, devices[0], /*CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE*/ 0,  &err ); // kernels are executed in order
                 utility::checkerror( err, __FILE__, __LINE__ );
                 
             } // device
+
+            device( cl_context & cxGPUContext, cl_command_queue & cqCommandQueue )
+                : cxGPUContext(cxGPUContext),
+                  cqCommandQueue(cqCommandQueue),
+                  automanage(true),
+                  cpPlatform(NULL),
+                  cpProgram(NULL),
+                  num_platforms(0),
+                  num_devices(0)
+                { }
+
+            device( cv::ocl::Context * context )                
+                : cxGPUContext( reinterpret_cast<cl_context>(context->oclContext()) ),
+                  cqCommandQueue( reinterpret_cast<cl_command_queue>(context->oclCommandQueue()) ),
+                  automanage(false),
+                  cpPlatform(NULL),
+                  cpProgram(NULL),
+                  num_platforms(0),
+                  num_devices(0)
+                {
+                    if (!cxGPUContext)
+                        throw std::runtime_error("Invalid GPU context!");
+
+                    if (!cqCommandQueue)
+                        throw std::runtime_error("Invalid GPU queue!");
+
+                    utility::checkerror(clGetPlatformIDs(1, &cpPlatform, &num_platforms), __FILE__, __LINE__ );
+                    assert(num_platforms==1);  // there is only one supported platform at the time
+
+                    // getting the number of devices
+                    utility::checkerror(clGetDeviceIDs(cpPlatform, CL_DEVICE_TYPE_GPU, 0, NULL, &num_devices), __FILE__, __LINE__ );
+                    assert(num_devices>0);                
+                    devices.resize(num_devices);
                 
+                    utility::checkerror(clGetDeviceIDs(cpPlatform, CL_DEVICE_TYPE_GPU, devices.size(), devices.data(), NULL ), __FILE__, __LINE__ );
+                    if (num_devices>1)
+                        PRINT("warning: more then one GPU device!");                
+                    //                assert(num_devices==1);
+
+                } // device
+
             ~device() {
-                if(cpProgram) clReleaseProgram(cpProgram);
-                if(cqCommandQueue) clReleaseCommandQueue(cqCommandQueue);
-                if(cxGPUContext) clReleaseContext(cxGPUContext);
-                std::for_each( kernels.begin(), kernels.end(), [] ( kernels_t::allocator_type::value_type & kernel ) {// kernel->second.release();
-                    } );
+                // if(cpProgram) clReleaseProgram(cpProgram);
+                // if (automanage) {                    
+                //     if(cqCommandQueue) clReleaseCommandQueue(cqCommandQueue);
+                //     if(cxGPUContext) clReleaseContext(cxGPUContext);
+                // } // automanage
+
+                
             } // ~device
 
             void compile( const std::vector<std::string> & filenames,
-                          const std::vector<std::string> & kernelnames ) {
+                          const std::vector<std::string> & kernelnames,
+                          const std::string options = std::string("") ) {
                 cl_int err;
                 
                 // loading the sources
                 std::vector<std::string> sources;
                 std::vector<const char*> c_strs;
-                std::vector<size_t> lengths;                
+                std::vector<size_t> lengths;
+                const char * coptions = NULL;
+                if (options!="") coptions = options.c_str();
                 
                 for( const std::string & filename : filenames ) {                    
                     sources.push_back(utility::readfile(filename));
@@ -241,13 +300,13 @@ namespace carp {
                 utility::checkerror(err, __FILE__, __LINE__ );
 
                 // building the OpenCL source code
-                err = clBuildProgram( cpProgram, 0, NULL, NULL, NULL, NULL );
+                err = clBuildProgram( cpProgram, devices.size(), devices.data(), coptions, NULL, NULL );
                 if ( err!=CL_SUCCESS )
                 {
                     size_t len;
-                    std::vector<char> buffer(1048576);
+                    std::vector<char> buffer(1<<20);
 
-                    utility::checkerror( clGetProgramBuildInfo( cpProgram, cdDevice, CL_PROGRAM_BUILD_LOG, buffer.size(), buffer.data(), &len ), __FILE__, __LINE__ );
+                    utility::checkerror( clGetProgramBuildInfo( cpProgram, devices[0], CL_PROGRAM_BUILD_LOG, buffer.size(), buffer.data(), &len ), __FILE__, __LINE__ );
                     
                     std::cerr << buffer.data() << std::endl;
                     throw std::runtime_error("error: OpenCL: The compilation has failed.");                    
@@ -266,25 +325,27 @@ namespace carp {
 
             void source_compile( const unsigned char * source,
                                  const unsigned int source_len,
-                                 const std::vector<std::string> & kernelnames ) {
+                                 const std::vector<std::string> & kernelnames,
+                                 const std::string options = std::string("") ) {
                 cl_int err;
-
                 size_t cl_code_len = source_len;
                 const char * csource = reinterpret_cast<const char*>(source);
+                const char * coptions = NULL;
+                if (options!="") coptions = options.c_str();
+                
                 cpProgram = clCreateProgramWithSource( cxGPUContext, 1, &csource, &cl_code_len, &err );
                 utility::checkerror(err, __FILE__, __LINE__ );
-
                 // building the OpenCL source code
-                err = clBuildProgram( cpProgram, 0, NULL, NULL, NULL, NULL );
+                err = clBuildProgram( cpProgram, devices.size(), devices.data(), coptions, NULL, NULL );
                 if ( err!=CL_SUCCESS )
                 {
                     size_t len;
-                    std::vector<char> buffer(1048576);
+                    std::vector<char> buffer(1<<20);
 
-                    utility::checkerror( clGetProgramBuildInfo( cpProgram, cdDevice, CL_PROGRAM_BUILD_LOG, buffer.size(), buffer.data(), &len ), __FILE__, __LINE__ );
+                    utility::checkerror( clGetProgramBuildInfo( cpProgram, devices[0], CL_PROGRAM_BUILD_LOG, buffer.size(), buffer.data(), &len ), __FILE__, __LINE__ );
                     
                     std::cerr << buffer.data() << std::endl;
-                    throw std::runtime_error("error: OpenCL: The compilation has failed.");                    
+                    throw std::runtime_error("error: OpenCL: The compilation has failed.");
                 }
 
                 // extracting the kernel entrances
