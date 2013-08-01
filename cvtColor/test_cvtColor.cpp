@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
     cv::ocl::Context * context = cv::ocl::Context::getContext();
     carp::opencl::device device(context);
     device.source_compile( cvt_color_cl, cvt_color_cl_len, carp::string_vector("RGB2Gray") );
-    size_t num_iterations = 100;
+    size_t num_iterations = 10;
     carp::Timing::printHeader();
     time_cvtColor( device, pool, num_iterations );
 

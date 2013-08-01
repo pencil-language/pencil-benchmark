@@ -156,17 +156,17 @@ __kernel void boxFilter_C1_D0(__global const uchar * restrict src, __global ucha
     int src_y_off = src_offset / src_step;
     int dst_x_off = dst_offset % dst_step;
     int dst_y_off = dst_offset / dst_step;
-
+    
     int head_off = dst_x_off%4;
     int startX = ((gX * (THREADS-ksX+1)-anX) * 4) - head_off + src_x_off;
     int startY = (gY << 1) - anY + src_y_off;
     int dst_startX = (gX * (THREADS-ksX+1) * 4) - head_off + dst_x_off;
     int dst_startY = (gY << 1) + dst_y_off;
-
+    
     uint4 data[ksY+1];
     __local uint4 temp[2][THREADS];
 
-#ifdef BORDER_CONSTANT
+// #ifdef BORDER_CONSTANT
 
     for(int i=0; i < ksY+1; i++)
     {
@@ -191,42 +191,42 @@ __kernel void boxFilter_C1_D0(__global const uchar * restrict src, __global ucha
         }
     }
 
-#else
-    int not_all_in_range;
-    for(int i=0; i < ksY+1; i++)
-    {
-        not_all_in_range = (startX+col*4<0) | (startX+col*4+3>src_whole_cols-1)
-                           | (startY+i<0) | (startY+i>src_whole_rows-1);
-        if(not_all_in_range)
-        {
-            int selected_row;
-            int4 selected_col;
-            selected_row = ADDR_H(startY+i, 0, src_whole_rows);
-            selected_row = ADDR_B(startY+i, src_whole_rows, selected_row);
+// #else
+//     int not_all_in_range;
+//     for(int i=0; i < ksY+1; i++)
+//     {
+//         not_all_in_range = (startX+col*4<0) | (startX+col*4+3>src_whole_cols-1)
+//                            | (startY+i<0) | (startY+i>src_whole_rows-1);
+//         if(not_all_in_range)
+//         {
+//             int selected_row;
+//             int4 selected_col;
+//             selected_row = ADDR_H(startY+i, 0, src_whole_rows);
+//             selected_row = ADDR_B(startY+i, src_whole_rows, selected_row);
 
-            selected_col.x = ADDR_L(startX+col*4, 0, src_whole_cols);
-            selected_col.x = ADDR_R(startX+col*4, src_whole_cols, selected_col.x);
+//             selected_col.x = ADDR_L(startX+col*4, 0, src_whole_cols);
+//             selected_col.x = ADDR_R(startX+col*4, src_whole_cols, selected_col.x);
 
-            selected_col.y = ADDR_L(startX+col*4+1, 0, src_whole_cols);
-            selected_col.y = ADDR_R(startX+col*4+1, src_whole_cols, selected_col.y);
+//             selected_col.y = ADDR_L(startX+col*4+1, 0, src_whole_cols);
+//             selected_col.y = ADDR_R(startX+col*4+1, src_whole_cols, selected_col.y);
 
-            selected_col.z = ADDR_L(startX+col*4+2, 0, src_whole_cols);
-            selected_col.z = ADDR_R(startX+col*4+2, src_whole_cols, selected_col.z);
+//             selected_col.z = ADDR_L(startX+col*4+2, 0, src_whole_cols);
+//             selected_col.z = ADDR_R(startX+col*4+2, src_whole_cols, selected_col.z);
 
-            selected_col.w = ADDR_L(startX+col*4+3, 0, src_whole_cols);
-            selected_col.w = ADDR_R(startX+col*4+3, src_whole_cols, selected_col.w);
+//             selected_col.w = ADDR_L(startX+col*4+3, 0, src_whole_cols);
+//             selected_col.w = ADDR_R(startX+col*4+3, src_whole_cols, selected_col.w);
 
-            data[i].x = *(src + selected_row * src_step + selected_col.x);
-            data[i].y = *(src + selected_row * src_step + selected_col.y);
-            data[i].z = *(src + selected_row * src_step + selected_col.z);
-            data[i].w = *(src + selected_row * src_step + selected_col.w);
-        }
-        else
-        {
-            data[i] =  convert_uint4(vload4(col,(__global uchar*)(src+(startY+i)*src_step + startX)));
-        }
-    }
-#endif
+//             data[i].x = *(src + selected_row * src_step + selected_col.x);
+//             data[i].y = *(src + selected_row * src_step + selected_col.y);
+//             data[i].z = *(src + selected_row * src_step + selected_col.z);
+//             data[i].w = *(src + selected_row * src_step + selected_col.w);
+//         }
+//         else
+//         {
+//             data[i] =  convert_uint4(vload4(col,(__global uchar*)(src+(startY+i)*src_step + startX)));
+//         }
+//     }
+// #endif
     uint4 tmp_sum = 0;
     for(int i=1; i < ksY; i++)
     {

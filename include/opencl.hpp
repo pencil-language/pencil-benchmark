@@ -114,8 +114,8 @@ namespace carp {
                 size_t size() { return m_size; } // size                 
             }; // class preparator
             
-            cl_kernel cqKernel;
-            cl_command_queue cqCommandQueue;
+            boost::shared_ptr<_cl_kernel> cqKernel;
+            boost::shared_ptr<_cl_command_queue> cqCommandQueue;
             bool m_set;
 
             template <class MT0, class Pos>
@@ -125,27 +125,21 @@ namespace carp {
 
                 kernel::preparator<MT0> parameter(mt0);                
                 
-                utility::checkerror( clSetKernelArg(cqKernel, pos, parameter.size(), parameter.ptr() ), __FILE__, __LINE__, "(arg: " + carp::cast<std::string>(pos) + ") " );
+                utility::checkerror( clSetKernelArg( cqKernel.get(), pos, parameter.size(), parameter.ptr() ), __FILE__, __LINE__, "(arg from 0: " + carp::cast<std::string>(pos) + ") " );
                 pos++; // move the position of the parameter applied
                 return true;
             } // setparameter
                         
         public:
-            kernel() : cqKernel(NULL), cqCommandQueue(NULL), m_set(false) { };
+            kernel() : m_set(false) { };
 
             void
-            set( const cl_kernel & cqKernel, const cl_command_queue & cqCommandQueue ) {
+            set( boost::shared_ptr<_cl_kernel> cqKernel,
+                 boost::shared_ptr<_cl_command_queue> cqCommandQueue ) {
                 this->cqKernel = cqKernel;
                 this->cqCommandQueue = cqCommandQueue;
                 this->m_set = true;
-                                
             } // operator set
-
-            void release() {
-                assert(m_set);
-                if (cqKernel) clReleaseKernel(cqKernel);
-                cqKernel=NULL;                
-            } // release
 
             template <class ...MT>
             kernel & operator() ( MT ... mt ) {
@@ -162,14 +156,9 @@ namespace carp {
                 assert(cqKernel);
                 assert(cqCommandQueue);
                 std::vector<size_t> kernelsize = utility::roundup(groupsize, worksize);
-                PRINT("gs01");                
-                utility::checkerror(clEnqueueNDRangeKernel( cqCommandQueue, cqKernel, worksize.size(), NULL, kernelsize.data(), groupsize.data(), 0, NULL, NULL ), __FILE__, __LINE__ );
-                PRINT("gs02");
-                utility::checkerror(clFinish(cqCommandQueue), __FILE__, __LINE__ );
-                PRINT("gs03");
+                utility::checkerror(clEnqueueNDRangeKernel( cqCommandQueue.get(), cqKernel.get(), worksize.size(), NULL, kernelsize.data(), groupsize.data(), 0, NULL, NULL ), __FILE__, __LINE__ );
+                utility::checkerror(clFinish(cqCommandQueue.get()), __FILE__, __LINE__ );
             } // groupsize 
-            
-            
         }; // class kernel
 
         template <>
@@ -189,17 +178,16 @@ namespace carp {
         private:
             typedef std::map<std::string, opencl::kernel> kernels_t;            
             
-            cl_context cxGPUContext;        // OpenCL context
-            cl_command_queue cqCommandQueue;// OpenCL command queue
-            cl_platform_id cpPlatform;      // OpenCL platform
-            std::vector<cl_device_id> devices;            
+            boost::shared_ptr<_cl_context> cxGPUContext;         // OpenCL context
+            boost::shared_ptr<_cl_command_queue> cqCommandQueue; // OpenCL command queue
+            boost::shared_ptr<cl_platform_id> cpPlatform;       // OpenCL platform
+            std::vector<cl_device_id> devices;
             // cl_device_id cdDevice;          // OpenCL device
-            cl_program cpProgram;           // OpenCL program
+            boost::shared_ptr<_cl_program> cpProgram;           // OpenCL program
             kernels_t kernels; // OpenCL kernel            
             cl_uint num_platforms;          // The number of OpenCL platforms
             cl_uint num_devices;            // The number of OpenCL devices
 
-            bool automanage; // do we manage the context or do we borrow it from opencl
             device( const device & ){ } // device is not copyable
             
         public:
@@ -207,45 +195,35 @@ namespace carp {
             device() {
                 cl_int err; // for the error messages
 
-                utility::checkerror(clGetPlatformIDs(1, &cpPlatform, &num_platforms), __FILE__, __LINE__ );
+                cpPlatform.reset(new cl_platform_id);
+                utility::checkerror(clGetPlatformIDs( 1, cpPlatform.get(), &num_platforms ), __FILE__, __LINE__ );
                 assert(num_platforms==1);  // there is only one supported platform at the time
-
-                // getting the number of devices
-                utility::checkerror(clGetDeviceIDs(cpPlatform, CL_DEVICE_TYPE_GPU, 0, NULL, &num_devices), __FILE__, __LINE__ );
-                assert(num_devices>0);                
-                devices.resize(num_devices);
                 
-                utility::checkerror(clGetDeviceIDs(cpPlatform, CL_DEVICE_TYPE_GPU, devices.size(), devices.data(), NULL ), __FILE__, __LINE__ );
+                // getting the number of devices
+                utility::checkerror(clGetDeviceIDs( *cpPlatform, CL_DEVICE_TYPE_GPU, 0, NULL, &num_devices), __FILE__, __LINE__ );
+                assert(num_devices>0);
+
+                devices.resize(num_devices);                
+                utility::checkerror(clGetDeviceIDs( *cpPlatform, CL_DEVICE_TYPE_GPU, devices.size(), devices.data(), NULL ), __FILE__, __LINE__ );
                 if (num_devices>1)
                     PRINT("warning: more then one GPU device!");                
-               //                assert(num_devices==1);
+                //                assert(num_devices==1);
 
-                cxGPUContext = clCreateContext( NULL, devices.size(), devices.data(), NULL, NULL, &err );
-                utility::checkerror( err, __FILE__, __LINE__ );
                 
-                cqCommandQueue = clCreateCommandQueue( cxGPUContext, devices[0], /*CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE*/ 0,  &err ); // kernels are executed in order
+                cl_context tmp_cxGPUContext = clCreateContext( NULL, devices.size(), devices.data(), NULL, NULL, &err );
                 utility::checkerror( err, __FILE__, __LINE__ );
+                cxGPUContext.reset( tmp_cxGPUContext, clReleaseContext );
+
+                cl_command_queue tmp_cqCommandQueue;                
+                tmp_cqCommandQueue = clCreateCommandQueue( cxGPUContext.get(), devices[0], /*CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE*/ 0,  &err ); // kernels are executed in order
+                utility::checkerror( err, __FILE__, __LINE__ );
+                cqCommandQueue.reset( tmp_cqCommandQueue, clReleaseCommandQueue );                
                 
             } // device
 
-            device( cl_context & cxGPUContext, cl_command_queue & cqCommandQueue )
-                : cxGPUContext(cxGPUContext),
-                  cqCommandQueue(cqCommandQueue),
-                  automanage(true),
-                  cpPlatform(NULL),
-                  cpProgram(NULL),
-                  num_platforms(0),
-                  num_devices(0)
-                { }
-
-            device( cv::ocl::Context * context )                
-                : cxGPUContext( reinterpret_cast<cl_context>(context->oclContext()) ),
-                  cqCommandQueue( reinterpret_cast<cl_command_queue>(context->oclCommandQueue()) ),
-                  automanage(false),
-                  cpPlatform(NULL),
-                  cpProgram(NULL),
-                  num_platforms(0),
-                  num_devices(0)
+            device( cv::ocl::Context * context )
+                : cxGPUContext( reinterpret_cast<cl_context>(context->oclContext()), [](cl_context){ } ),
+                  cqCommandQueue( reinterpret_cast<cl_command_queue>(context->oclCommandQueue()), [](cl_command_queue) { }  )
                 {
                     if (!cxGPUContext)
                         throw std::runtime_error("Invalid GPU context!");
@@ -253,15 +231,16 @@ namespace carp {
                     if (!cqCommandQueue)
                         throw std::runtime_error("Invalid GPU queue!");
 
-                    utility::checkerror(clGetPlatformIDs(1, &cpPlatform, &num_platforms), __FILE__, __LINE__ );
+                    cpPlatform.reset(new cl_platform_id);
+                    utility::checkerror(clGetPlatformIDs(1, cpPlatform.get(), &num_platforms), __FILE__, __LINE__ );
                     assert(num_platforms==1);  // there is only one supported platform at the time
 
                     // getting the number of devices
-                    utility::checkerror(clGetDeviceIDs(cpPlatform, CL_DEVICE_TYPE_GPU, 0, NULL, &num_devices), __FILE__, __LINE__ );
+                    utility::checkerror(clGetDeviceIDs(*cpPlatform, CL_DEVICE_TYPE_GPU, 0, NULL, &num_devices), __FILE__, __LINE__ );
                     assert(num_devices>0);                
                     devices.resize(num_devices);
                 
-                    utility::checkerror(clGetDeviceIDs(cpPlatform, CL_DEVICE_TYPE_GPU, devices.size(), devices.data(), NULL ), __FILE__, __LINE__ );
+                    utility::checkerror(clGetDeviceIDs(*cpPlatform, CL_DEVICE_TYPE_GPU, devices.size(), devices.data(), NULL ), __FILE__, __LINE__ );
                     if (num_devices>1)
                         PRINT("warning: more then one GPU device!");                
                     //                assert(num_devices==1);
@@ -295,18 +274,20 @@ namespace carp {
                     c_strs.push_back(sources.back().c_str());
                     lengths.push_back(sources.back().size());                    
                 }
-                                
-                cpProgram = clCreateProgramWithSource( cxGPUContext, sources.size(), &(c_strs[0]), lengths.data(), &err );
-                utility::checkerror(err, __FILE__, __LINE__ );
 
+                cl_program tmp_cpProgram;
+                tmp_cpProgram = clCreateProgramWithSource( cxGPUContext.get(), sources.size(), &(c_strs[0]), lengths.data(), &err );
+                utility::checkerror(err, __FILE__, __LINE__ );
+                cpProgram.reset( tmp_cpProgram, clReleaseProgram );
+                                
                 // building the OpenCL source code
-                err = clBuildProgram( cpProgram, devices.size(), devices.data(), coptions, NULL, NULL );
+                err = clBuildProgram( cpProgram.get(), devices.size(), devices.data(), coptions, NULL, NULL );
                 if ( err!=CL_SUCCESS )
                 {
                     size_t len;
                     std::vector<char> buffer(1<<20);
 
-                    utility::checkerror( clGetProgramBuildInfo( cpProgram, devices[0], CL_PROGRAM_BUILD_LOG, buffer.size(), buffer.data(), &len ), __FILE__, __LINE__ );
+                    utility::checkerror( clGetProgramBuildInfo( cpProgram.get(), devices[0], CL_PROGRAM_BUILD_LOG, buffer.size(), buffer.data(), &len ), __FILE__, __LINE__ );
                     
                     std::cerr << buffer.data() << std::endl;
                     throw std::runtime_error("error: OpenCL: The compilation has failed.");                    
@@ -316,8 +297,11 @@ namespace carp {
                 for( const std::string & kernel_name : kernelnames )
                 {
                     cl_int err;
-                    kernels[kernel_name].set( clCreateKernel( cpProgram, kernel_name.c_str(), &err ), cqCommandQueue );
+                    cl_kernel tmp_kernel;
+                    tmp_kernel = clCreateKernel( cpProgram.get(), kernel_name.c_str(), &err );
                     utility::checkerror( err, __FILE__, __LINE__ );
+                    boost::shared_ptr<_cl_kernel> btmp_kernel( tmp_kernel, clReleaseKernel );
+                    kernels[kernel_name].set( btmp_kernel, cqCommandQueue );
                 }
 
                 return;
@@ -332,17 +316,20 @@ namespace carp {
                 const char * csource = reinterpret_cast<const char*>(source);
                 const char * coptions = NULL;
                 if (options!="") coptions = options.c_str();
-                
-                cpProgram = clCreateProgramWithSource( cxGPUContext, 1, &csource, &cl_code_len, &err );
+
+                cl_program tmp_cpProgram;
+                tmp_cpProgram = clCreateProgramWithSource( cxGPUContext.get(), 1, &csource, &cl_code_len, &err );
                 utility::checkerror(err, __FILE__, __LINE__ );
+                cpProgram.reset( tmp_cpProgram, clReleaseProgram );                
+
                 // building the OpenCL source code
-                err = clBuildProgram( cpProgram, devices.size(), devices.data(), coptions, NULL, NULL );
+                err = clBuildProgram( cpProgram.get(), devices.size(), devices.data(), coptions, NULL, NULL );
                 if ( err!=CL_SUCCESS )
                 {
                     size_t len;
                     std::vector<char> buffer(1<<20);
 
-                    utility::checkerror( clGetProgramBuildInfo( cpProgram, devices[0], CL_PROGRAM_BUILD_LOG, buffer.size(), buffer.data(), &len ), __FILE__, __LINE__ );
+                    utility::checkerror( clGetProgramBuildInfo( cpProgram.get(), devices[0], CL_PROGRAM_BUILD_LOG, buffer.size(), buffer.data(), &len ), __FILE__, __LINE__ );
                     
                     std::cerr << buffer.data() << std::endl;
                     throw std::runtime_error("error: OpenCL: The compilation has failed.");
@@ -352,26 +339,35 @@ namespace carp {
                 for( const std::string & kernel_name : kernelnames )
                 {
                     cl_int err;
-                    kernels[kernel_name].set( clCreateKernel( cpProgram, kernel_name.c_str(), &err ), cqCommandQueue );
+                    cl_kernel tmp_kernel;
+                    tmp_kernel = clCreateKernel( cpProgram.get(), kernel_name.c_str(), &err );
                     utility::checkerror( err, __FILE__, __LINE__ );
+                    boost::shared_ptr<_cl_kernel> btmp_kernel( tmp_kernel, clReleaseKernel );
+                    kernels[kernel_name].set( btmp_kernel, cqCommandQueue );
                 }
+
 
                 return;
             } // source_compile
 
             
-            kernel & operator [] ( const std::string & filename ) {
-                return kernels[filename];
+            kernel & operator [] ( const std::string & kernel_name ) {
+                return kernels[kernel_name];
             } // operator[]
 
             cl_context
             get_context() {
-                return cxGPUContext;
+                return cxGPUContext.get();
             }
 
             cl_command_queue
             get_queue() {
-                return cqCommandQueue;
+                return cqCommandQueue.get();
+            }
+            
+
+            void erase( const std::string & kernel_name ) {
+                kernels.erase(kernel_name);                
             }
             
             
