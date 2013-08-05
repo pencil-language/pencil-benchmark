@@ -116,7 +116,11 @@ namespace carp {
 
     public:
         cv::Mat cpuimg() {
-            return cv::imread(m_path.string());            
+            cv::Mat cpuimg = cv::imread(m_path.string());
+            cv::Mat img_resize;            
+            cv::resize(cpuimg, img_resize, cv::Size(1300,1400));
+            
+            return img_resize;
         }
 
         std::string path() const {
