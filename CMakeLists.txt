@@ -203,7 +203,7 @@ if (USE_TBB)
 	message(FATAL_ERROR "TBB usage is set but TBB not found")
     endif(NOT TBB_FOUND)
 
-    include_directories( TBB_INCLUDE_DIR )
+    include_directories( ${TBB_INCLUDE_DIR} )
     SET( LIBS ${LIBS} ${TBB_LIBRARIES} )
     # find_path(TBB_INCLUDE_PATH "tbb/tbb.h" PATHS "C:/TBB30/include" "/usr/include" )
 
@@ -292,6 +292,7 @@ set(BOOST_REQUIRED_COMPONENTS
         iostreams
 	thread
 	system
+	filesystem
 )
 set(BOOST_INCLUDE_CHECKS    
         boost/archive/xml_oarchive.hpp
@@ -306,6 +307,7 @@ if(BUILD_EXECUTABLES)
             program_options
             chrono
             system
+	    filesystem
     )
     set(BOOST_INCLUDE_CHECKS ${BOOST_INCLUDE_CHECKS}
             boost/program_options.hpp
