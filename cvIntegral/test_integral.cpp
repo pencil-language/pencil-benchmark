@@ -22,7 +22,7 @@ time_integral( carp::opencl::device & device, T0 & pool, int iteration )
     for ( int q=0; q<iteration; q++ ) {
         
         for ( auto & item : pool ) {
-            PRINT(item.path);
+            PRINT(item.path());
 
             long int elapsed_time_gpu = 0;
             long int elapsed_time_cpu = 0;
@@ -31,7 +31,7 @@ time_integral( carp::opencl::device & device, T0 & pool, int iteration )
             cv::Mat cpu_gray;
             cv::Mat check;    
 
-            cv::cvtColor( item.cpuimg, cpu_gray, CV_RGB2GRAY );
+            cv::cvtColor( item.cpuimg(), cpu_gray, CV_RGB2GRAY );
             if(cpu_gray.cols * cpu_gray.rows <= 2901 * 2901)
                 cv::resize(cpu_gray, cpu_gray, cv::Size(2901,2901));        
             auto cpu_start = std::chrono::high_resolution_clock::now();

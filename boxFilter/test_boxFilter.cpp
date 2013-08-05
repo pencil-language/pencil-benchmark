@@ -48,7 +48,7 @@ time_boxFilter( carp::opencl::device & device, T0 & pool )
         
     for ( auto & item : pool ) {
 
-        PRINT(item.path);
+        PRINT(item.path());
         for ( auto size : ksizes ) {
 
             PRINT(size);        
@@ -66,7 +66,7 @@ time_boxFilter( carp::opencl::device & device, T0 & pool )
                 cv::Size  ksize(size,size);
                 cv::Point anchor((size>>1),(size>>1));
         
-                cv::cvtColor( item.cpuimg, cpu_gray, CV_RGB2GRAY );
+                cv::cvtColor( item.cpuimg(), cpu_gray, CV_RGB2GRAY );
                 auto cpu_start = std::chrono::high_resolution_clock::now();
                 cv::boxFilter( cpu_gray, host_filtered, -1, ksize, anchor, true, border_type.second );
                 auto cpu_end = std::chrono::high_resolution_clock::now();
@@ -74,7 +74,7 @@ time_boxFilter( carp::opencl::device & device, T0 & pool )
 
                 cv::ocl::oclMat gpu_result;
                 cv::ocl::oclMat gpu_gray(cpu_gray);
-                gpu_result.create( item.cpuimg.rows, item.cpuimg.cols, CV_8U );
+                gpu_result.create( cpu_gray.rows, cpu_gray.cols, CV_8U );
                 float alpha = ksize.height * ksize.width;
                 size_t blockSizeX = 256, blockSizeY = 1;
                 size_t gSize = blockSizeX - (ksize.width - 1);

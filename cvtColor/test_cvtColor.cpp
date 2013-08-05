@@ -22,18 +22,19 @@ time_cvtColor( carp::opencl::device & device, T0 & pool, size_t iterations)
     for(int i = 0; i < iterations; ++i) {
         PRINT(i);        
         for ( auto & record : pool ) {
-            PRINT(record.path);            
+            PRINT(record.path());
+            cv::Mat cpuimg = record.cpuimg();                
             // CPU Bench
             {
                 auto start = std::chrono::high_resolution_clock::now();
-                cv::cvtColor( record.cpuimg, cpu_gray, CV_RGB2GRAY );
+                cv::cvtColor( cpuimg, cpu_gray, CV_RGB2GRAY );
                 auto end = std::chrono::high_resolution_clock::now();
                 elapsed_time_cpu += carp::microseconds(end - start);
             }
             // GPU Bench
             {
                 cv::ocl::oclMat gpu_gray;
-                cv::ocl::oclMat gpuimg(record.cpuimg);
+                cv::ocl::oclMat gpuimg(cpuimg);
                 gpu_gray.create( gpuimg.rows, gpuimg.cols, CV_8U );
                                 
                 // int code = CV_BGR2GRAY;                
@@ -50,7 +51,7 @@ time_cvtColor( carp::opencl::device & device, T0 & pool, size_t iterations)
                     reinterpret_cast<cl_mem>(gpuimg.data),
                     reinterpret_cast<cl_mem>(gpu_gray.data) 
                     )
-                    .groupsize( carp::make_vector<size_t>(16,16), carp::make_vector<size_t>(record.cpuimg.cols,record.cpuimg.rows) );               
+                    .groupsize( carp::make_vector<size_t>(16,16), carp::make_vector<size_t>(cpuimg.cols,cpuimg.rows) );               
                 auto end = std::chrono::high_resolution_clock::now();
                 elapsed_time_gpu += carp::microseconds(end - start);
                 check = gpu_gray;

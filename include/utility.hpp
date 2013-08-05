@@ -110,12 +110,21 @@ namespace carp {
     }; // struct Timing
 
 
-    struct record_t {
-        std::string path;        
-        cv::Mat cpuimg;
+    class record_t {
+    private:
+        boost::filesystem::path m_path;
 
-        record_t( const std::string & path, const cv::Mat & cpuimg )
-            : path(path), cpuimg(cpuimg) { }
+    public:
+        cv::Mat cpuimg() {
+            return cv::imread(m_path.string());            
+        }
+
+        std::string path() const {
+            return m_path.string();            
+        }        
+
+        record_t( const boost::filesystem::path & path )
+            : m_path(path)  { }
         
     }; // record_t
             
@@ -139,7 +148,7 @@ namespace carp {
                 std::string extension = iter->path().extension().string();
                 if ( (extension ==".jpg") or (extension==".jpeg") ) {
                     PRINT(iter->path().string());                    
-                    pool.push_back(record_t(iter->path().string(), cv::imread(iter->path().string())));
+                    pool.push_back(record_t(iter->path()));
                 }                
             }
         }
