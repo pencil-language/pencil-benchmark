@@ -111,9 +111,9 @@ time_integral( carp::opencl::device & device, T0 & pool, int iteration )
                 throw std::runtime_error("The GPU results are not equivalent with the CPU results.");                
             }
 
-            if (elapsed_time_gpu > 1) {                
-                sum_quotient += elapsed_time_cpu / elapsed_time_gpu;
-                nums++;                
+            if (elapsed_time_gpu > 1) {
+                sum_quotient += static_cast<double>(elapsed_time_cpu) / elapsed_time_gpu;
+                nums++;
             }
                         
             carp::Timing::print( "integral image", elapsed_time_cpu, elapsed_time_gpu );
@@ -141,7 +141,7 @@ int main(int argc, char* argv[])
     carp::Timing::printHeader();
     carp::opencl::device device(context);
     device.source_compile( imgproc_integral_sum_cl, imgproc_integral_sum_cl_len,
-                           carp::string_vector("integral_sum_cols_D4", "integral_sum_rows_D4", "integral_sum_cols_D5", "integral_sum_rows_D5", "integral_sum_cols_D6", "integral_sum_rows_D6" ),
+                           carp::string_vector("integral_sum_cols_D4", "integral_sum_rows_D4", "integral_sum_cols_D5", "integral_sum_rows_D5" ),
                            " -D DOUBLE_SUPPORT" );
     time_integral( device, pool, 10 );
     return EXIT_SUCCESS;    
