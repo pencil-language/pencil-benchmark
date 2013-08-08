@@ -8,6 +8,7 @@
 #include <string>
 #include <iomanip>
 #include <iostream>
+#include <boost/assign.hpp>
 #include <opencv2/opencv.hpp>
 #include <opencv2/ocl/ocl.hpp>
 #include <boost/filesystem.hpp>
@@ -118,7 +119,7 @@ namespace carp {
         cv::Mat cpuimg() {
             cv::Mat cpuimg = cv::imread(m_path.string());
             cv::Mat img_resize = cpuimg;
-            // cv::resize(cpuimg, img_resize, cv::Size(1300,1400));
+            // cv::resize(cpuimg, img_resize, cv::Size(300,400));
             
             return img_resize;
         }
@@ -171,7 +172,14 @@ namespace carp {
         return to;    
     } // gel_cast
      
-
+    static std::map<int, std::string> borders = boost::assign::map_list_of
+    ( cv::BORDER_CONSTANT, "BORDER_CONSTANT" )
+    ( cv::BORDER_REPLICATE, "BORDER_REPLICATE" )
+    ( cv::BORDER_REFLECT, "BORDER_REFLECT" )
+    ( cv::BORDER_WRAP, "BORDER_WRAP" )
+    ( cv::BORDER_REFLECT_101, "BORDER_REFLECT_101" )
+    ; // borders
+        
     
 } // namespace carp
 
