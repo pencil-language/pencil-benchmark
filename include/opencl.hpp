@@ -98,6 +98,33 @@ namespace carp {
         }; // class buffer 
 
         
+        class array {
+        protected:
+            boost::shared_ptr<_cl_mem> cl_ptr;
+            size_t m_size;
+            cl_context cqContext;
+            cl_command_queue cqCommandQueue;
+
+        public:
+
+            array ( const array & other )
+                : cl_ptr(other.cl_ptr), m_size(other.m_size), cqContext(other.cqContext), cqCommandQueue(other.cqCommandQueue)
+                { }; // copy constructor forbidden
+            
+            array()
+                : m_size(0), cqContext(NULL), cqCommandQueue(NULL)
+                { }
+                       
+            virtual cl_mem cl() { assert(cl_ptr); return cl_ptr.get(); }
+
+            virtual size_t size1() { assert(m_size>0); return m_size; }
+
+            virtual ~array() { }
+            
+            
+            
+        }; // class array
+
         
         class kernel {
         private:
@@ -161,6 +188,7 @@ namespace carp {
             } // groupsize 
         }; // class kernel
 
+        
         template <>
         class carp::opencl::kernel::preparator<opencl::buffer> {
         private:
@@ -173,7 +201,7 @@ namespace carp {
             size_t size() { return m_size; } // size                 
         }; // class preparator <opencl::buffer>
 
-        
+                
         class device {
         private:
             typedef std::map<std::string, opencl::kernel> kernels_t;            
@@ -373,89 +401,100 @@ namespace carp {
             
         }; // class device
 
-
+        
         template <class T0 = uint8_t >
-        class array {
+        class array_ : public array {
         private:
-            cl_mem cl_ptr;
-            size_t m_size;
-            cl_context cqContext;
-            cl_command_queue cqCommandQueue;
-            
-            array( const array<T0> & ) { } // copy constructor forbidden
+            array_( const array_<T0> & ) { } // copy constructor forbidden
             
         public:
             
-            array( const cl_context & cqContext,
-                   const cl_command_queue & cqCommandQueue,
-                   const size_t & size,
-                   cl_mem_flags flags = CL_MEM_READ_WRITE
-                ) : m_size(size), cqContext(cqContext), cqCommandQueue(cqCommandQueue) {
+            array_( const cl_context & cqContext,
+                    const cl_command_queue & cqCommandQueue,
+                    const size_t & size,
+                    cl_mem_flags flags = CL_MEM_READ_WRITE
+                ) {
+                this->m_size = size;                
+                this->cqContext = cqContext;
+                this->cqCommandQueue = cqCommandQueue;                
                 assert( (flags & CL_MEM_USE_HOST_PTR) == 0 );
-                cl_int err;                
-                cl_ptr = clCreateBuffer( cqContext, flags, m_size * sizeof(T0), NULL, &err );
-                utility::checkerror( err, __FILE__, __LINE__ );              
+                cl_int err;
+                cl_mem tmp;                
+                tmp = clCreateBuffer( cqContext, flags, m_size * sizeof(T0), NULL, &err );
+                utility::checkerror( err, __FILE__, __LINE__ );
+                cl_ptr.reset(tmp, clReleaseMemObject);
             } // array
 
-            array( const cl_context & cqContext,
-                   const cl_command_queue & cqCommandQueue,
-                   std::vector<T0> & input,
-                   cl_mem_flags flags = CL_MEM_READ_WRITE
-                ) : m_size(input.size()),
-                    cqContext(cqContext),
-                    cqCommandQueue(cqCommandQueue)
-                {
+            array_( const cl_context & cqContext,
+                    const cl_command_queue & cqCommandQueue,
+                    std::vector<T0> & input,
+                    cl_mem_flags flags = CL_MEM_READ_WRITE
+                ) {
+                    this->m_size = input.size();
+                    this->cqContext = cqContext;
+                    this->cqCommandQueue = cqCommandQueue;
+                    
                     cl_int err;
-                    cl_ptr = clCreateBuffer( cqContext, flags | CL_MEM_COPY_HOST_PTR, m_size * sizeof(T0), reinterpret_cast<void*>(input.data()), &err );
+                    cl_mem tmp;                    
+                    tmp = clCreateBuffer( cqContext, flags | CL_MEM_COPY_HOST_PTR, m_size * sizeof(T0), reinterpret_cast<void*>(input.data()), &err );
                     utility::checkerror( err, __FILE__, __LINE__ );
-                } // array
+                    cl_ptr.reset(tmp, clReleaseMemObject);
+                } // array_
 
-            array( opencl::device & device,
+            array_( opencl::device & device,
                    std::vector<T0> & input,
                    cl_mem_flags flags = CL_MEM_READ_WRITE
-                ) : m_size(input.size()),
-                    cqContext(device.get_context()),
-                    cqCommandQueue(device.get_queue())
-                {
+                ) {
+                    this->m_size = input.size();
+                    this->cqContext = device.get_context();
+                    this->cqCommandQueue = device.get_queue();
+                    
                     cl_int err;
-                    cl_ptr = clCreateBuffer( cqContext, flags | CL_MEM_COPY_HOST_PTR, m_size * sizeof(T0), reinterpret_cast<void*>(input.data()), &err );
-                    utility::checkerror( err, __FILE__, __LINE__ );                    
+                    cl_mem tmp;                    
+                    tmp = clCreateBuffer( cqContext, flags | CL_MEM_COPY_HOST_PTR, m_size * sizeof(T0), reinterpret_cast<void*>(input.data()), &err );
+                    utility::checkerror( err, __FILE__, __LINE__ );
+                    cl_ptr.reset(tmp, clReleaseMemObject);
                 }
                         
             template <class MT0>
-            array( opencl::device & device,
-                   size_t size,
-                   MT0 * ptr,
-                   cl_mem_flags flags = CL_MEM_READ_WRITE )
-                : m_size(size),
-                  cqContext(device.get_context()),
-                  cqCommandQueue(device.get_queue())
+            array_( opencl::device & device,
+                    size_t size,
+                    MT0 * ptr,
+                    cl_mem_flags flags = CL_MEM_READ_WRITE )
                 {
+                    this->m_size = size;
+                    this->cqContext = device.get_context();
+                    this->cqCommandQueue = device.get_queue();
+                
                     cl_int err;
-                    cl_ptr = clCreateBuffer( cqContext, flags | CL_MEM_COPY_HOST_PTR, size * sizeof(T0), reinterpret_cast<void*>(ptr), &err );
+                    cl_mem tmp;                    
+                    tmp = clCreateBuffer( cqContext, flags | CL_MEM_COPY_HOST_PTR, size * sizeof(T0), reinterpret_cast<void*>(ptr), &err );
                     utility::checkerror( err, __FILE__, __LINE__ );
+                    cl_ptr.reset(tmp, clReleaseMemObject);
                 }            
             
-            cl_mem cl() {
-                return cl_ptr;
-            } // cl
-                        
-            ~array() {
-                clReleaseMemObject(cl_ptr);
-            } // ~array
+            ~array_() { } // ~array_
 
+            cl_mem cl() {
+                return cl_ptr.get();
+            } // cl
+            
             size_t size() {
                 return m_size;
             } // size
+
+            size_t size1() {
+                return m_size * sizeof(T0);                
+            }
             
             std::vector<T0> get( ) {
                 std::vector<T0> result(m_size);                
-                utility::checkerror( clEnqueueReadBuffer( cqCommandQueue, cl_ptr, CL_TRUE, 0, sizeof(T0) * m_size, result.data(), 0, NULL, NULL), __FILE__, __LINE__ );
+                utility::checkerror( clEnqueueReadBuffer( cqCommandQueue, cl_ptr.get(), CL_TRUE, 0, sizeof(T0) * m_size, result.data(), 0, NULL, NULL), __FILE__, __LINE__ );
 
                 return result;                
             } // extract
             
-        }; // class array
+        }; // class array_
         
 
         template <class T0>
@@ -468,7 +507,7 @@ namespace carp {
             int m_cols;
             cl_context cqContext;
             cl_command_queue cqCommandQueue;
-            opencl::array<value_type> buf;
+            opencl::array_<value_type> buf;
 
             image( const image<T0> & ) { }
             
