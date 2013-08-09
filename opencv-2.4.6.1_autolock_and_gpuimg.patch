@@ -1,0 +1,372 @@
+diff -rupN opencv-2.4.6.1/modules/ocl/include/opencv2/ocl/ocl.hpp ../opencv-2.4.6.1/modules/ocl/include/opencv2/ocl/ocl.hpp
+--- opencv-2.4.6.1/modules/ocl/include/opencv2/ocl/ocl.hpp	2013-07-10 13:49:00.000000000 +0200
++++ ../opencv-2.4.6.1/modules/ocl/include/opencv2/ocl/ocl.hpp	2013-07-25 17:33:27.000000000 +0200
+@@ -46,12 +46,16 @@
+ 
+ #include <memory>
+ #include <vector>
++#include <boost/preprocessor.hpp>
+ 
+ #include "opencv2/core/core.hpp"
+ #include "opencv2/imgproc/imgproc.hpp"
+ #include "opencv2/objdetect/objdetect.hpp"
+ #include "opencv2/features2d/features2d.hpp"
+ 
++// #define PRINT(var)  std::cout << "debug: " << BOOST_PP_STRINGIZE(var) << " = " << var << std::endl
++#define PRINT(var)
++
+ namespace cv
+ {
+     namespace ocl
+@@ -116,7 +120,7 @@ namespace cv
+ 
+         //set device you want to use, optional function after getDevice be called
+         //the devnum is the index of the selected device in DeviceName vector of INfo
+-        CV_EXPORTS void setDevice(Info &oclinfo, int devnum = 0);
++        CV_EXPORTS void setDevice( Info &oclinfo, int devnum = 0, bool lock = true );
+ 
+         //The two functions below enable other opencl program to use ocl module's cl_context and cl_command_queue
+         //returns cl_context * 
+@@ -154,7 +158,7 @@ namespace cv
+             Info::Impl* impl;
+ 
+             static Context* getContext();
+-            static void setContext(Info &oclinfo);
++            static void setContext(Info &oclinfo, bool lock = true );
+ 
+             enum {CL_DOUBLE, CL_UNIFIED_MEM, CL_VER_1_2};
+             bool supportsFeature(int ftype);
+diff -rupN opencv-2.4.6.1/modules/ocl/src/initialization.cpp ../opencv-2.4.6.1/modules/ocl/src/initialization.cpp
+--- opencv-2.4.6.1/modules/ocl/src/initialization.cpp	2013-07-10 13:49:00.000000000 +0200
++++ ../opencv-2.4.6.1/modules/ocl/src/initialization.cpp	2013-07-25 11:53:39.000000000 +0200
+@@ -346,15 +346,15 @@ namespace cv
+             }
+             if(devcienums > 0)
+             {
+-                setDevice(oclinfo[0]);
++                setDevice(oclinfo[0], 0, false );
+             }
+             return devcienums;
+         }
+ 
+-        void setDevice(Info &oclinfo, int devnum)
++        void setDevice(Info &oclinfo, int devnum, bool lock )
+         {
+             oclinfo.impl->setDevice(0, 0, devnum);
+-            Context::setContext(oclinfo);
++            Context::setContext(oclinfo, lock );
+         }
+ 
+         void setDeviceEx(Info &oclinfo, void *ctx, void *q, int devnum)
+@@ -471,15 +471,26 @@ namespace cv
+             }
+             else if(kind == clMemcpyDeviceToHost)
+             {
++                PRINT(channels);
++                PRINT(height);
++                PRINT(width);
++                PRINT(spitch);                
+                 if(spitch == width || channels == 3 || height == 1)
+                 {
++                    PRINT("void openCLMemcpy2D -- clMemcpyDeviceToHost -- channels==3 -- BEGIN");
+                     openCLSafeCall(clEnqueueReadBuffer(clCxt->impl->clCmdQueue, (cl_mem)src, CL_TRUE,
+                                                        0, width * height, dst, 0, NULL, NULL));
++                    PRINT("void openCLMemcpy2D -- clMemcpyDeviceToHost -- channels==3 -- END");
+                 }
+                 else
+                 {
++                    PRINT("void openCLMemcpy2D -- clMemcpyDeviceToHost -- channels==1 -- BEGIN");
++                    PRINT(region);
++                    PRINT(spitch);
++                    PRINT(dpitch);                    
+                     openCLSafeCall(clEnqueueReadBufferRect(clCxt->impl->clCmdQueue, (cl_mem)src, CL_TRUE,
+                                                            buffer_origin, host_origin, region, spitch, 0, dpitch, 0, dst, 0, 0, 0));
++                    PRINT("void openCLMemcpy2D -- clMemcpyDeviceToHost -- channels==1 -- END");
+                 }
+             }
+         }
+@@ -975,24 +986,43 @@ namespace cv
+             return clCxt.get();
+         }
+ 
+-        void Context::setContext(Info &oclinfo)
++        void Context::setContext(Info &oclinfo, bool lock )
+         {
+-            AutoLock guard(cs);
+-            if(*((volatile int*)&val) != 1)
+-            {
+-                if( 0 == clCxt.get())
+-                    clCxt.reset(new Context);
+-
+-                clCxt.get()->impl = oclinfo.impl->copy();
+-
+-                *((volatile int*)&val) = 1;
+-            }
++            if (lock) {                
++                AutoLock guard(cs);
++                if(*((volatile int*)&val) != 1)
++                {
++                    if( 0 == clCxt.get())
++                        clCxt.reset(new Context);
++                    
++                    clCxt.get()->impl = oclinfo.impl->copy();
++                    
++                    *((volatile int*)&val) = 1;
++                }
++                else
++                {
++                    clCxt.get()->impl->release();
++                    clCxt.get()->impl = oclinfo.impl->copy();
++                }
++            } // lock
+             else
+             {
+-                clCxt.get()->impl->release();
+-                clCxt.get()->impl = oclinfo.impl->copy();
++                if(*((volatile int*)&val) != 1)
++                {
++                    if( 0 == clCxt.get())
++                        clCxt.reset(new Context);
++                    
++                    clCxt.get()->impl = oclinfo.impl->copy();
++                    
++                    *((volatile int*)&val) = 1;
++                }
++                else
++                {
++                    clCxt.get()->impl->release();
++                    clCxt.get()->impl = oclinfo.impl->copy();
++                }
+             }
+-        }
++        } // Context::setContext
+ 
+         Context::Context()
+         {
+diff -rupN opencv-2.4.6.1/modules/ocl/src/matrix_operations.cpp ../opencv-2.4.6.1/modules/ocl/src/matrix_operations.cpp
+--- opencv-2.4.6.1/modules/ocl/src/matrix_operations.cpp	2013-07-10 13:49:00.000000000 +0200
++++ ../opencv-2.4.6.1/modules/ocl/src/matrix_operations.cpp	2013-07-25 16:01:31.000000000 +0200
+@@ -79,10 +79,17 @@ namespace cv
+ // convert_C3C4
+ static void convert_C3C4(const cl_mem &src, oclMat &dst)
+ {
++    PRINT("static void convert_C3C4 -- BEGIN");    
+     int dstStep_in_pixel = dst.step1() / dst.oclchannels();
++    PRINT(dstStep_in_pixel);
++    PRINT(dst.step1());
++    PRINT(dst.oclchannels());    
+     int pixel_end = dst.wholecols * dst.wholerows - 1;
+     Context *clCxt = dst.clCxt;
+     string kernelName = "convertC3C4";
++    PRINT(kernelName);
++    PRINT(dst.wholecols);
++    PRINT(dst.wholerows);    
+     char compile_option[32];
+     switch(dst.depth())
+     {
+@@ -110,6 +117,7 @@ static void convert_C3C4(const cl_mem &s
+     default:
+         CV_Error(CV_StsUnsupportedFormat, "unknown depth");
+     }
++    PRINT(compile_option);    
+     vector< pair<size_t, const void *> > args;
+     args.push_back( make_pair( sizeof(cl_mem), (void *)&src));
+     args.push_back( make_pair( sizeof(cl_mem), (void *)&dst.data));
+@@ -121,14 +129,34 @@ static void convert_C3C4(const cl_mem &s
+     size_t globalThreads[3] = {((dst.wholecols * dst.wholerows + 3) / 4 + 255) / 256 * 256, 1, 1};
+     size_t localThreads[3] = {256, 1, 1};
+ 
++    PRINT(globalThreads[0]);
++    PRINT(globalThreads[1]);
++    PRINT(globalThreads[2]);
++
++    PRINT(localThreads[0]);
++    PRINT(localThreads[1]);
++    PRINT(localThreads[2]);
++    
+     openCLExecuteKernel(clCxt, &convertC3C4, kernelName, globalThreads, localThreads, args, -1, -1, compile_option);
++    PRINT("static void convert_C3C4 -- END");
+ }
+ ////////////////////////////////////////////////////////////////////////
+ // convert_C4C3
+ static void convert_C4C3(const oclMat &src, cl_mem &dst)
+ {
++    PRINT("static void convert_C4C3 -- BEGIN");    
++    PRINT(src.step1());
++    PRINT(src.oclchannels());
++    
+     int srcStep_in_pixel = src.step1() / src.oclchannels();
++    
++    
+     int pixel_end = src.wholecols * src.wholerows - 1;
++    PRINT(srcStep_in_pixel);
++    PRINT(pixel_end);
++    PRINT(src.wholecols);
++    PRINT(src.wholerows);
++    
+     Context *clCxt = src.clCxt;
+     string kernelName = "convertC4C3";
+     char compile_option[32];
+@@ -171,14 +199,20 @@ static void convert_C4C3(const oclMat &s
+     size_t localThreads[3] = {256, 1, 1};
+ 
+     openCLExecuteKernel(clCxt, &convertC3C4, kernelName, globalThreads, localThreads, args, -1, -1, compile_option);
++    PRINT("static void convert_C4C3 -- END");
+ }
+ 
+ void cv::ocl::oclMat::upload(const Mat &m)
+ {
++    PRINT("void cv::ocl::oclMat::upload -- BEGIN");    
+     CV_DbgAssert(!m.empty());
+     Size wholeSize;
+     Point ofs;
+     m.locateROI(wholeSize, ofs);
++    PRINT(wholeSize.width);
++    PRINT(wholeSize.height);
++    PRINT(ofs.x);
++    PRINT(ofs.y);
+     //   int type = m.type();
+     //   if(m.oclchannels() == 3)
+     //{
+@@ -188,6 +222,12 @@ void cv::ocl::oclMat::upload(const Mat &
+ 
+     if(m.channels() == 3)
+     {
++        PRINT(wholeSize.width);
++        PRINT(step);
++        PRINT(wholeSize.width * 3 * m.elemSize1());
++        PRINT(m.elemSize1());
++        PRINT(m.elemSize());
++        PRINT(m.step);        
+         int pitch = wholeSize.width * 3 * m.elemSize1();
+         int tail_padding = m.elemSize1() * 3072;
+         int err;
+@@ -219,13 +259,14 @@ void cv::ocl::oclMat::upload(const Mat &
+     }
+     else
+     {
+-        openCLMemcpy2D(clCxt, data, step, m.datastart, m.step, wholeSize.width * elemSize(), wholeSize.height, clMemcpyHostToDevice);
++        openCLMemcpy2D(clCxt, data, step, m.datastart, m.step, wholeSize.width * elemSize(), wholeSize.height, clMemcpyHostToDevice, 1);
+     }
+ 
+     rows = m.rows;
+     cols = m.cols;
+     offset = ofs.y * step + ofs.x * elemSize();
+     //download_channels = m.channels();
++    PRINT("void cv::ocl::oclMat::upload -- END");
+ }
+ 
+ cv::ocl::oclMat::operator cv::_InputArray()
+@@ -258,6 +299,7 @@ cv::ocl::oclMat& cv::ocl::getOclMatRef(O
+ 
+ void cv::ocl::oclMat::download(cv::Mat &m) const
+ {
++    PRINT("void cv::ocl::oclMat::download -- BEGIN");    
+     CV_DbgAssert(!this->empty());
+     //   int t = type();
+     //   if(download_channels == 3)
+@@ -299,12 +341,22 @@ void cv::ocl::oclMat::download(cv::Mat &
+     }
+     else
+     {
+-        openCLMemcpy2D(clCxt, m.data, m.step, data, step, wholecols * elemSize(), wholerows, clMemcpyDeviceToHost);
++        PRINT("void cv::ocl::oclMat::download -- channels==1 -- BEGIN");
++        PRINT(m.rows);
++        PRINT(m.cols);
++        PRINT(m.step);
++        PRINT(elemSize());
++        PRINT(wholerows);
++        PRINT(step);
++        
++        openCLMemcpy2D(clCxt, m.data, m.step, data, step, wholecols * elemSize(), wholerows, clMemcpyDeviceToHost, 1);
++        PRINT("void cv::ocl::oclMat::download -- channels==1 -- END");
+     }
+     Size wholesize;
+     Point ofs;
+     locateROI(wholesize, ofs);
+     m.adjustROI(-ofs.y, ofs.y + rows - wholerows, -ofs.x, ofs.x + cols - wholecols);
++    PRINT("void cv::ocl::oclMat::download -- END");
+ }
+ 
+ /////////////////////common//////////////////////////////////////
+diff -rupN opencv-2.4.6.1/modules/ocl/src/opencl/convertC3C4.cl ../opencv-2.4.6.1/modules/ocl/src/opencl/convertC3C4.cl
+--- opencv-2.4.6.1/modules/ocl/src/opencl/convertC3C4.cl	2013-07-10 13:49:00.000000000 +0200
++++ ../opencv-2.4.6.1/modules/ocl/src/opencl/convertC3C4.cl	2013-07-25 17:31:04.000000000 +0200
+@@ -1,3 +1,4 @@
++// -*- c++ -*-
+ //                           License Agreement
+ //                For Open Source Computer Vision Library
+ //
+@@ -37,18 +38,18 @@
+ #pragma OPENCL EXTENSION cl_khr_fp64:enable
+ #endif
+ __kernel void convertC3C4(__global const GENTYPE4 * restrict src, __global GENTYPE4 *dst, int cols, int rows,
+-                    int dstStep_in_piexl,int pixel_end)
++                    int dstStep_in_pixel,int pixel_end)
+ {
+     int id = get_global_id(0);
+     //int pixel_end = mul24(cols -1 , rows -1);
+-    int3 pixelid = (int3)(mul24(id,3),mad24(id,3,1),mad24(id,3,2));
++    int3 pixelid = (int3)(id*3, id*3+1, id*3+2);
++                         // 3*id ; 3*id + 1; 3*id + 2
+     pixelid = clamp(pixelid,0,pixel_end);
+     GENTYPE4 pixel0, pixel1, pixel2, outpix0,outpix1,outpix2,outpix3;
+     pixel0 = src[pixelid.x];
+     pixel1 = src[pixelid.y];
+     pixel2 = src[pixelid.z];
+ 
+-
+     outpix0 = (GENTYPE4)(pixel0.x,pixel0.y,pixel0.z,0);
+     outpix1 = (GENTYPE4)(pixel0.w,pixel1.x,pixel1.y,0);
+     outpix2 = (GENTYPE4)(pixel1.z,pixel1.w,pixel2.x,0);
+@@ -66,7 +67,7 @@ __kernel void convertC3C4(__global const
+     //outpix1 = select(outpix1, outpix0, (uchar4)(outy.y>=rows));
+     //outx = select(outx,(int4)outx.x,outy>=rows);
+     //outy = select(outy,(int4)outy.x,outy>=rows);
+-    int4 addr = mad24(outy,(int4)dstStep_in_piexl,outx);
++    int4 addr = outy * (int4)dstStep_in_pixel + outx;
+     if(outx.w<cols && outy.w<rows)
+     {
+         dst[addr.x] = outpix0;
+@@ -104,7 +105,7 @@ __kernel void convertC4C3(__global const
+     int4 y4 = select((int4)y,(int4)(y+1),x4>=(int4)cols);
+     y4=clamp(y4,(int4)0,(int4)(rows-1));
+     x4 = select(x4,x4-(int4)cols,x4>=(int4)cols);
+-    int4 addr = mad24(y4,(int4)srcStep_in_pixel,x4);
++    int4 addr = y4 * (int4)srcStep_in_pixel + x4;
+     GENTYPE4 pixel0,pixel1,pixel2,pixel3, outpixel1, outpixel2;
+     pixel0 = src[addr.x];
+     pixel1 = src[addr.y];
+@@ -120,7 +121,7 @@ __kernel void convertC4C3(__global const
+     outpixel2.y = pixel3.x;
+     outpixel2.z = pixel3.y;
+     outpixel2.w = pixel3.z;
+-    int4 outaddr = mul24(id>>2 , 3);
++    int4 outaddr = (id>>2) * 3;
+     outaddr.y++;
+     outaddr.z+=2;
+     if(outaddr.z <= pixel_end)
+diff -rupN opencv-2.4.6.1/modules/ocl/src/opencl/filtering_boxFilter.cl ../opencv-2.4.6.1/modules/ocl/src/opencl/filtering_boxFilter.cl
+--- opencv-2.4.6.1/modules/ocl/src/opencl/filtering_boxFilter.cl	2013-07-10 13:49:00.000000000 +0200
++++ ../opencv-2.4.6.1/modules/ocl/src/opencl/filtering_boxFilter.cl	2013-07-30 14:38:22.000000000 +0200
+@@ -1,3 +1,4 @@
++// -*- c++ -*-
+ /*M///////////////////////////////////////////////////////////////////////////////////////
+ //
+ //  IMPORTANT: READ BEFORE DOWNLOADING, COPYING, INSTALLING OR USING.
+diff -rupN opencv-2.4.6.1/modules/ocl/src/opencl/imgproc_integral.cl ../opencv-2.4.6.1/modules/ocl/src/opencl/imgproc_integral.cl
+--- opencv-2.4.6.1/modules/ocl/src/opencl/imgproc_integral.cl	2013-07-10 13:49:00.000000000 +0200
++++ ../opencv-2.4.6.1/modules/ocl/src/opencl/imgproc_integral.cl	2013-08-02 13:03:21.000000000 +0200
+@@ -1,3 +1,4 @@
++// -*- c++ -*-
+ /*M///////////////////////////////////////////////////////////////////////////////////////
+ //
+ //  IMPORTANT: READ BEFORE DOWNLOADING, COPYING, INSTALLING OR USING.
+diff -rupN opencv-2.4.6.1/modules/ocl/src/opencl/imgproc_integral_sum.cl ../opencv-2.4.6.1/modules/ocl/src/opencl/imgproc_integral_sum.cl
+--- opencv-2.4.6.1/modules/ocl/src/opencl/imgproc_integral_sum.cl	2013-07-10 13:49:00.000000000 +0200
++++ ../opencv-2.4.6.1/modules/ocl/src/opencl/imgproc_integral_sum.cl	2013-08-02 13:03:42.000000000 +0200
+@@ -1,3 +1,4 @@
++// -*- c++ -*-
+ /*M///////////////////////////////////////////////////////////////////////////////////////
+ //
+ //  IMPORTANT: READ BEFORE DOWNLOADING, COPYING, INSTALLING OR USING.
