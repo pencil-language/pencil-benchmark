@@ -88,9 +88,9 @@ int main()
                 }
                 
                 // preparing the opencl data
-                carp::opencl::array<uint8_t> clSelf( device, groupsize * local_memsize, self );
-                carp::opencl::array<int> clSegments( device, segments );
-                carp::opencl::array<calcpackage> clCalcpackages( device, calcpackages );
+                carp::opencl::array_<uint8_t> clSelf( device, groupsize * local_memsize, self );
+                carp::opencl::array_<int> clSegments( device, segments );
+                carp::opencl::array_<calcpackage> clCalcpackages( device, calcpackages );
                 
                 auto start = std::chrono::high_resolution_clock::now();
                 device["calculateMaps"](
