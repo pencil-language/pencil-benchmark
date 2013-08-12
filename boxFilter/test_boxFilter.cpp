@@ -126,7 +126,7 @@ time_boxFilter( carp::opencl::device & device, T0 & pool )
 
             } // for border_type
 
-            carp::Timing::print( "cvtColor", elapsed_time_cpu, elapsed_time_gpu );
+            carp::Timing::print( "boxFilter", elapsed_time_cpu, elapsed_time_gpu );
             
             if (elapsed_time_gpu > 1)
                 sum_quotient += static_cast<double>(elapsed_time_cpu) / elapsed_time_gpu;
