@@ -284,7 +284,7 @@ void calculateRespondMaps(
 
 // This loop is parallel, ppcg can find parallelism without the need for
 // the independent directive.
-#pragma indepdent  
+#pragma pencil indepdent  
     for (int i = 0; i < m_visibleLandmarks_size; i++) {
 
     // This array is interesting as it gives the coordinates of the different
