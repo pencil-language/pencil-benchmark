@@ -7,6 +7,7 @@
 #include "opencl.hpp"
 #include "utility.hpp"
 #include "cvt_color.clh"
+#include "cvt_color.pencil.h"
 
 template<class T0>
 void
@@ -14,7 +15,8 @@ time_cvtColor( carp::opencl::device & device, T0 & pool, size_t iterations)
 {
     cv::Mat host_gray;
     cv::Mat cpu_gray;
-    cv::Mat check;    
+    cv::Mat check;
+    cv::Mat pencil_gray;
     
     long int elapsed_time_gpu = 0;
     long int elapsed_time_cpu = 0;
@@ -58,7 +60,27 @@ time_cvtColor( carp::opencl::device & device, T0 & pool, size_t iterations)
                 //check = gpuimg;
                 
             }
+
+            // pencil verification
+            {
+                int bidx = 2;
+                pencil_gray.create( cpu_gray.rows, cpu_gray.cols, CV_8U );                
+                
+                pencil_RGB2Gray(
+                    cpuimg.cols,
+                    cpuimg.rows,
+                    cpuimg.step,
+                    pencil_gray.step,
+                    cpuimg.channels(),
+                    bidx,
+                    cpuimg.data,
+                    pencil_gray.data
+                    );
+                
+            }
+            
             // Verifying the results
+            PRINT(cv::norm(pencil_gray - cpu_gray));
             if ( cv::norm(check - cpu_gray) > 0.01 ) {
                 cv::imwrite( "gpu_img.png", check );
                 cv::imwrite( "cpu_img.png", cpu_gray );
@@ -83,7 +105,7 @@ int main(int argc, char* argv[])
     cv::ocl::Context * context = cv::ocl::Context::getContext();
     carp::opencl::device device(context);
     device.source_compile( cvt_color_cl, cvt_color_cl_len, carp::string_vector("RGB2Gray") );
-    size_t num_iterations = 10;
+    size_t num_iterations = 1;
     carp::Timing::printHeader();
     time_cvtColor( device, pool, num_iterations );
 
