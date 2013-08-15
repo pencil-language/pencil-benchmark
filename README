@@ -1,12 +1,66 @@
- For compiling and running the test You are going to need OpenCV
-(tested with 2.4.2) and boost.
+## OpenCV ##
 
-The input data for mlp testing is stored in file
-'response_dumps.xml.7z'. You have to decompress it before the benchmark. 
+The benchmark has been tested with opencv 2.4.6.1. There is a bug in opencv-2.4.6.1 which results in a deadlock when initializing the OpenCL context. There is a patch in the repository called 
 
-There are makefile parameters which can be set in order to compile the
-benchmark. Look into the makefile. 
+opencv-2.4.6.1_autolock_and_gpuimg.patch
 
-The most interesting files in the mlp benchmark are 
-mlp_impl.c
-mlp_impl.cl
+this patch needs to be applied before building OpenCV. 
+
+## CMake ##
+
+The benchmark has to be built with CMake. During the configuration each 
+
+test_*.cpp 
+
+will be converted into a target executable. 
+
+*.cl 
+
+files will be precompiled into .clh string headers.
+
+By convention all PENCIL source files should be called 
+
+*.pencil.c
+
+OpenCL operators are preprocessed with 
+
+xxd
+
+This executable has to be accessible to make during the compilation. 
+
+## Repository Structure ##
+
+The repository has a modular structure where each test is called 
+
+test_"operator name"
+
+Each executable tests a single operator, but can test all the implementations of it. 
+
+## Development ##
+
+The git repository should be kept in a feature-branch format, where each new operator from now gets a new branch named after the operator. Once the operator is working the feature branch should be merged back in master and deleted. Examples
+
+git clone ... 
+git checkout featurename
+git commit 
+git push origin featurename
+git commit
+git push origin featurename
+...
+git commit
+git push origin featurename
+
+git checkout master
+git merge featurename
+# testing everything works
+# hey laszlo a new feature has been included, you can delete the obsolete branch
+
+## Pool ##
+
+The input dataset for the tests is stored in directory 
+
+pool
+
+the content of pool should be extracted into directory
+
+build_dir/pool
