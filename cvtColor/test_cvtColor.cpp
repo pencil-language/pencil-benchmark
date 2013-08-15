@@ -80,8 +80,10 @@ time_cvtColor( carp::opencl::device & device, T0 & pool, size_t iterations)
             }
             
             // Verifying the results
-            PRINT(cv::norm(pencil_gray - cpu_gray));
-            if ( cv::norm(check - cpu_gray) > 0.01 ) {
+            float pencil_err = cv::norm(pencil_gray - cpu_gray);
+            if ( (cv::norm(check - cpu_gray) > 0.01) || (pencil_err>0.01) ) {
+                PRINT(cv::norm(check - cpu_gray));
+                PRINT(cv::norm(pencil_gray - cpu_gray));
                 cv::imwrite( "gpu_img.png", check );
                 cv::imwrite( "cpu_img.png", cpu_gray );
                 throw std::runtime_error("The GPU results are not equivalent with the CPU results.");                
@@ -105,7 +107,7 @@ int main(int argc, char* argv[])
     cv::ocl::Context * context = cv::ocl::Context::getContext();
     carp::opencl::device device(context);
     device.source_compile( cvt_color_cl, cvt_color_cl_len, carp::string_vector("RGB2Gray") );
-    size_t num_iterations = 1;
+    size_t num_iterations = 10;
     carp::Timing::printHeader();
     time_cvtColor( device, pool, num_iterations );
 
