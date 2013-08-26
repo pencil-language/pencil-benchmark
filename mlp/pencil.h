@@ -6,6 +6,6 @@
 #define DEF()
 #define USE()
 
-#define __pencil_assert(X) assert(X)
+#define __pencil_assert(X)
 
 #endif
