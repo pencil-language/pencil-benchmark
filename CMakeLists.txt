@@ -26,6 +26,12 @@ endif ()
 
 set( POTENTIAL_LIBDIRS /usr/lib /usr/local/lib /opt/local/lib /usr/lib64 /usr/local/lib64 /opt/local/lib64 /Library )
 
+# You can use something similar to the following to set include and library
+# directories manually
+#set( OpenCV_DIR "/home/b/src-not-saved/opencv-2.4.5-build/lib/")
+#set ( LIBS ${LIBS} /opt/AMDAPP/lib/x86_64/libOpenCL.so.1)
+#include_directories(/usr/local/cuda/include/)
+
 ################## PROCESSOR ####################
 if(${CMAKE_SYSTEM_PROCESSOR} MATCHES amd64*)
    set(X86_64 1)
@@ -470,7 +476,9 @@ endif(INTEL_COMPILER)
 ################## OpenCL ######################
 
 find_library( LIBOPENCL libOpenCL.${LIBEXT} PATHS ${POTENTIAL_LIBDIRS} )
-set( LIBS ${LIBS} ${LIBOPENCL} )
+if(IS_DIRECTORY ${LIBOPENCL})
+	set( LIBS ${LIBS} ${LIBOPENCL} )
+endif(IS_DIRECTORY ${LIBOPENCL})
 
 ################## Gathering Files ######################
 
