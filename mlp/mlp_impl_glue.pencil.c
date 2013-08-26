@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include "pencil.h"
 
-#include "mlp_impl.h"
+#include "mlp_impl_pencil.h"
 
 static void copyMatFloatToArray(MatFloat In, int n, int m, float Out[][m]) {
   assert(In.rows == n);
@@ -220,8 +220,8 @@ void calculateRespondMaps(
     int m_visibleLandmarks_size, int MapSize, int ImageRows, int ImageCols,
     uint8_t Image[static const restrict ImageRows][ImageCols], int shape_rows,
     int shape_cols, float shape_data[static const restrict shape_rows][shape_cols],
-    int shape_start, mlp m_classifiers[const restrict],
-    float ResponseMaps[const restrict][MapSize + MapSize + 1][MapSize + MapSize + 1]);
+    int shape_start, mlp m_classifiers[static const restrict m_visibleLandmarks_size],
+    float ResponseMaps[static const restrict m_visibleLandmarks_size][MapSize + MapSize + 1][MapSize + MapSize + 1]);
 
 /// @brief Calculate a set of response maps.
 ///
