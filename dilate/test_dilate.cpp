@@ -8,6 +8,7 @@
 #include "opencl.hpp"
 #include "utility.hpp"
 #include "filtering_morph.clh"
+#include "dilate.pencil.h"
 
 namespace {
     inline void normalizeAnchor(int & anchor, int ksize)
@@ -183,6 +184,8 @@ time_dilate( carp::opencl::device & device, T0 & pool )
         long int elapsed_time_cpu = 0;
         
         for ( auto & item : pool ) {
+            PRINT(item.path());
+            
             // acquiring the image for the test
             cv::Mat cpu_gray;
             cv::cvtColor( item.cpuimg(), cpu_gray, CV_RGB2GRAY );
@@ -203,11 +206,32 @@ time_dilate( carp::opencl::device & device, T0 & pool )
             auto gpu_end = std::chrono::high_resolution_clock::now();
             elapsed_time_gpu += carp::microseconds(gpu_end - gpu_start);
 
+            // pencil code result checking
+            cv::Mat pdilate(cpu_gray.size(), CV_8U);
+            
+            pencil_dilate( cpu_gray.ptr(),
+                           cpu_gray.rows,
+                           cpu_gray.cols,
+                           cpu_gray.step1(),
+                           pdilate.ptr(),
+                           pdilate.step1(),
+                           structuring_element.ptr(),
+                           structuring_element.rows,
+                           structuring_element.cols,
+                           structuring_element.step1(),
+                           anchor.x,
+                           anchor.y,
+                           cv::BORDER_CONSTANT,
+                           ksize.width,
+                           ksize.height );
+            
             // Verifying the results
-            if ( cv::norm(host_dilate - check) > 0.01 ) {
+            if ( (cv::norm(host_dilate - check) > 0.01) || (cv::norm(host_dilate - pdilate) > 0.01) ) {
                 PRINT(cv::norm(check - host_dilate));
+                PRINT(cv::norm(host_dilate - pdilate));                
                 cv::imwrite("cpu_dilate.png", host_dilate);
-                cv::imwrite("gpu_dilate.png", check );                
+                cv::imwrite("gpu_dilate.png", check );
+                cv::imwrite("pencil_dilate.png", pdilate );                
                 throw std::runtime_error("The GPU results are not equivalent with the CPU results.");                
             }
             
@@ -217,7 +241,7 @@ time_dilate( carp::opencl::device & device, T0 & pool )
             } // elapsed_time_gpu
 
         } // for pool
-            
+        
         carp::Timing::print( "dilate image", elapsed_time_cpu, elapsed_time_gpu );
             
     } // for elemsizes
