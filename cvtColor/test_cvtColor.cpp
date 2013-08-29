@@ -67,10 +67,10 @@ time_cvtColor( carp::opencl::device & device, T0 & pool, size_t iterations)
                 pencil_gray.create( cpu_gray.rows, cpu_gray.cols, CV_8U );                
                 
                 pencil_RGB2Gray(
-                    cpuimg.cols,
                     cpuimg.rows,
-                    cpuimg.step,
-                    pencil_gray.step,
+                    cpuimg.cols,
+                    cpuimg.step1()/cpuimg.channels(),
+                    pencil_gray.step1(),
                     cpuimg.channels(),
                     bidx,
                     cpuimg.data,

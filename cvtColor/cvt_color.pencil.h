@@ -49,8 +49,8 @@ extern "C" {
     
     void 
     pencil_RGB2Gray( 
-        int cols, 
         int rows, 
+        int cols, 
         int src_step,
         int dst_step, 
         int channels,
