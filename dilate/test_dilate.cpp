@@ -209,21 +209,20 @@ time_dilate( carp::opencl::device & device, T0 & pool )
             // pencil code result checking
             cv::Mat pdilate(cpu_gray.size(), CV_8U);
             
-            pencil_dilate( cpu_gray.ptr(),
-                           cpu_gray.rows,
-                           cpu_gray.cols,
-                           cpu_gray.step1(),
-                           pdilate.ptr(),
-                           pdilate.step1(),
-                           structuring_element.ptr(),
-                           structuring_element.rows,
-                           structuring_element.cols,
-                           structuring_element.step1(),
-                           anchor.x,
-                           anchor.y,
-                           cv::BORDER_CONSTANT,
-                           ksize.width,
-                           ksize.height );
+            pencil_dilate(
+                cpu_gray.rows,
+                cpu_gray.cols,
+                cpu_gray.step1(),
+                cpu_gray.ptr(),
+                pdilate.step1(),
+                pdilate.ptr(),
+                structuring_element.rows,
+                structuring_element.cols,
+                structuring_element.step1(),
+                structuring_element.ptr(),
+                anchor.x,
+                anchor.y,
+                cv::BORDER_CONSTANT );
             
             // Verifying the results
             if ( (cv::norm(host_dilate - check) > 0.01) || (cv::norm(host_dilate - pdilate) > 0.01) ) {

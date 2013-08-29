@@ -8,25 +8,21 @@
 
 #include "dilate.pencil.h"
 
-void
-pencil_dilate (
-    uint8_t cpu_gray[],
+static void
+dilate (
     int rows,
     int cols,
     int cpu_step,
-    uint8_t dilate[],
+    const uint8_t cpu_gray[static const restrict rows][cpu_step],
     int dilate_step,
-    uint8_t se[],
+    uint8_t dilate[static const restrict rows][dilate_step],
     int se_rows,
     int se_cols,
     int se_step,
+    const uint8_t se[static const restrict se_rows][se_step],
     int anchor_row,
     int anchor_col,
-    int border_type,
-    int size_w,
-    int size_h ) {
-
-    assert(border_type==0);
+    int border_type ) {
 
 #   pragma independent
     for ( int q = 0; q < rows; q++ ) {
@@ -43,15 +39,38 @@ pencil_dilate (
 		    int high_row = (candidate_row < rows);
 		    int high_col = (candidate_col < cols);
 		    if ( (low_row) && (low_col) && (high_row) && (high_col) ) {
-			uint8_t val = cpu_gray[candidate_row * cpu_step + candidate_col];
-			if (se[ e*se_step + r]!=0)
+			uint8_t val = cpu_gray[candidate_row][candidate_col];
+			if (se[e][r]!=0)
 			    sup = (sup > val) ? sup : val;
 		    } // if
 		} // r
 	    } // e
-	    dilate[ q * dilate_step + w ] = sup;
+	    dilate[q][w] = sup;
 	} // w
     } // q 
+    
+}
+
+void
+pencil_dilate (
+    int rows,
+    int cols,
+    int cpu_step,
+    uint8_t cpu_gray[],
+    int dilate_step,
+    uint8_t pdilate[],
+    int se_rows,
+    int se_cols,
+    int se_step,
+    uint8_t se[],
+    int anchor_row,
+    int anchor_col,
+    int border_type ) {
+
+    assert(border_type==0);
+
+    dilate( rows, cols, cpu_step, cpu_gray, dilate_step, pdilate, se_rows, se_cols, se_step, se, anchor_row, anchor_col, border_type );
+
     return;
 } // pencil_dilate
 
