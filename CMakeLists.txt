@@ -470,7 +470,9 @@ endif(INTEL_COMPILER)
 ################## OpenCL ######################
 
 find_library( LIBOPENCL libOpenCL.${LIBEXT} PATHS ${POTENTIAL_LIBDIRS} )
-set( LIBS ${LIBS} ${LIBOPENCL} )
+if(IS_DIRECTORY ${LIBOPENCL})
+	set( LIBS ${LIBS} ${LIBOPENCL} )
+endif(IS_DIRECTORY ${LIBOPENCL})
 
 ################## Gathering Files ######################
 
