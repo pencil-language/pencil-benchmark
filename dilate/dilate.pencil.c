@@ -28,30 +28,8 @@ pencil_dilate (
 
     assert(border_type==0);
 
-    /* for ( int row = 0; row < rows; row++ ) */
-    /* 	for ( int col = 0; col< cols; col++ ) { */
-    /* 	    uint8_t sup = -1; */
-    
-    /* 	} */
-
-/*     printf( "rows = %d\n", rows ); */
-/*     printf( "cols = %d\n", cols ); */
-/*     printf( "cpu_step = %d\n", cpu_step ); */
-/* //    printf( " = %d\n", ); */
-/*     printf( "dilate_step = %d\n", dilate_step ); */
-/*     printf( "se_rows = %d\n", se_rows ); */
-/*     printf( "se_cols = %d\n", se_cols ); */
-/*     printf( "se_step = %d\n", se_step ); */
-/*     printf( "anchor_row = %d\n", anchor_row ); */
-/*     printf( "anchor_col = %d\n", anchor_col ); */
-/*     printf( "border_type = %d\n", border_type ); */
-/*     printf( "size_w = %d\n", size_w ); */
-/*     printf( "size_h = %d\n", size_h ); */
-/*     printf( "------------------------------\n" ); */
-
 #   pragma independent
     for ( int q = 0; q < rows; q++ ) {
-//	printf("current row = %d/%d\n", q, rows);
 #       pragma independent
 	for ( int w = 0; w < cols; w++ ) {
 	    uint8_t sup = 0;
@@ -66,7 +44,8 @@ pencil_dilate (
 		    int high_col = (candidate_col < cols);
 		    if ( (low_row) && (low_col) && (high_row) && (high_col) ) {
 			uint8_t val = cpu_gray[candidate_row * cpu_step + candidate_col];
-			sup = (sup > val) ? sup : val;
+			if (se[ e*se_step + r]!=0)
+			    sup = (sup > val) ? sup : val;
 		    } // if
 		} // r
 	    } // e
