@@ -9,6 +9,7 @@
 #include "opencl.hpp"
 #include "utility.hpp"
 #include "imgproc_convolve.clh"
+#include "filter2D.pencil.h"
 
 namespace {
     inline int divUp(int total, int grain)
@@ -113,11 +114,36 @@ time_filter2D( carp::opencl::device & device, T0 & pool, int iteration )
             const auto gpu_end = std::chrono::high_resolution_clock::now();
             elapsed_time_gpu += carp::microseconds(gpu_end - gpu_start);
             check = gpu_convolve;            
+
+            // pencil test:
+            cv::Mat pencil_conv(cpu_gray.size(), CV_32F);
+            pencil_filter2D( cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<float>(),
+                             kernel_cpu.rows, kernel_cpu.cols, kernel_cpu.step1(), kernel_cpu.ptr<float>(),
+                             pencil_conv.step1(), pencil_conv.ptr<float>() );
+            
             
             // Verifying the results
-            if ( cv::norm(host_convolve - check) > 0.01 ) {
+            if ( (cv::norm(host_convolve - check) > 0.01) ||
+                 (cv::norm(pencil_conv - host_convolve) > 0.01) ) {
                 PRINT(cv::norm(check - host_convolve));
-                // no use to write out the results, as they are in float
+                PRINT(cv::norm(pencil_conv - host_convolve));
+
+                cv::Mat cpu;
+                cv::Mat pencil;
+                cv::Mat gpu;
+                host_convolve.convertTo( cpu, CV_8U, 255. );
+                check.convertTo( gpu, CV_8U, 255. );
+                pencil_conv.convertTo( pencil, CV_8U, 255. );
+
+                PRINT(cv::norm(gpu-cpu));
+                PRINT(cv::norm(gpu-pencil));
+                PRINT(cv::norm(cpu-pencil));
+                
+                cv::imwrite( "host_convolve.png", cpu );
+                cv::imwrite( "gpu_convolve.png", gpu );
+                cv::imwrite( "pencil_convolve.png", pencil );
+                cv::imwrite( "diff.png", cv::abs(gpu-pencil) );
+                
                 throw std::runtime_error("The GPU results are not equivalent with the CPU results.");                
             }
 
