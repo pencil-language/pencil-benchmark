@@ -10,6 +10,7 @@
 #include "utility.hpp"
 #include "filter_sep_col.clh"
 #include "filter_sep_row.clh"
+#include "gaussian.pencil.h"
 
 namespace
 {
@@ -200,20 +201,55 @@ time_gaussian( carp::opencl::device & device, T0 & pool )
             const auto gpu_start = std::chrono::high_resolution_clock::now();
             carp::gaussian(device, src, dst, ksize, gaussX, gaussY, bordertype );            
             const auto gpu_end = std::chrono::high_resolution_clock::now();
-            elapsed_time_gpu += carp::microseconds(gpu_end - gpu_start);
-                            
+            elapsed_time_gpu += carp::microseconds(gpu_end - gpu_start);                            
             check = dst;                
 
+            cv::Mat kernel = cv::getGaussianKernel(ksize.width, gaussX, CV_32F).t();
+            cv::Mat t_kernel = cv::getGaussianKernel(ksize.height, gaussY, CV_32F);
+            
+            cv::Mat pencil;            
+            {
+                cv::Mat intermediate;
+                intermediate.create( cpu_gray.size(), CV_32F );
+
+                pencil.create( cpu_gray.size(), CV_32F );
+
+                pencil_gaussian(
+                    cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<float>(),
+                    kernel.rows, kernel.cols, kernel.step1(), kernel.ptr<float>(),
+                    intermediate.step1(), intermediate.ptr<float>()
+                    );
+
+                pencil_gaussian(
+                    intermediate.rows, intermediate.cols, intermediate.step1(), intermediate.ptr<float>(),
+                    t_kernel.rows, t_kernel.cols, t_kernel.step1(), t_kernel.ptr<float>(),
+                    pencil.step1(), pencil.ptr<float>()
+                    );
+            }
+            
+            
             // Verifying the results
-            if ( cv::norm( host_blur - check ) > 0.01 ) {
+            if ( (cv::norm( host_blur - check ) > 0.01) ||
+                 (cv::norm( host_blur - pencil) > 0.01) ) {
                 PRINT(cv::norm(check - host_blur ));
+                PRINT(cv::norm(pencil - host_blur));
+                
                 cv::Mat check8;
                 cv::Mat host_blur8;
-                
+                cv::Mat pencil8;
+                cv::Mat diff8;
+                                
                 check.convertTo( check8, CV_8UC1, 255. );
                 host_blur.convertTo( host_blur8, CV_8UC1, 255. );
+                pencil.convertTo( pencil8, CV_8UC1, 255. );
+                cv::Mat absdiff = cv::abs(pencil - host_blur);
+                absdiff.convertTo( diff8, CV_8UC1, 255. );                
+                
                 cv::imwrite( "gpu_gaussian.png", check8 );
                 cv::imwrite( "cpu_gaussian.png", host_blur8 );
+                cv::imwrite( "pencil_gaussian.png", pencil8 );
+                cv::imwrite( "diff_gaussian.png", diff8 );
+                
                 throw std::runtime_error("The GPU results are not equivalent with the CPU results.");
             }
 
