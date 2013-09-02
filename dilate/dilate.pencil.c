@@ -49,7 +49,7 @@ dilate (
 	} // w
     } // q 
     
-}
+} // dilate
 
 void
 pencil_dilate (
