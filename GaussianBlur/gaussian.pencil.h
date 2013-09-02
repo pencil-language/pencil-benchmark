@@ -10,17 +10,23 @@ extern "C" {
 
     void 
     pencil_gaussian( 
-        int rows,
-        int cols,
-        int src_step,
-        float src[],
-        int kernel_rows,
-        int kernel_cols,
-        int kernel_step,
-        float kernel[],
-        int conv_step, 
-        float conv[] );
-
+	int rows,
+	int cols,
+	int src_step,
+	float src[],
+	int kernelX_rows,
+	int kernelX_cols,
+	int kernelX_step,
+	float kernelX[],
+	int kernelY_rows,
+	int kernelY_cols,
+	int kernelY_step,
+	float kernelY[],
+	int temp_step,
+	float temp[],
+	int conv_step, 
+	float conv[] );
+    
 
 #ifdef __cplusplus
 } // extern "C"

@@ -217,12 +217,8 @@ time_gaussian( carp::opencl::device & device, T0 & pool )
                 pencil_gaussian(
                     cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<float>(),
                     kernel.rows, kernel.cols, kernel.step1(), kernel.ptr<float>(),
-                    intermediate.step1(), intermediate.ptr<float>()
-                    );
-
-                pencil_gaussian(
-                    intermediate.rows, intermediate.cols, intermediate.step1(), intermediate.ptr<float>(),
                     t_kernel.rows, t_kernel.cols, t_kernel.step1(), t_kernel.ptr<float>(),
+                    intermediate.step1(), intermediate.ptr<float>(),
                     pencil.step1(), pencil.ptr<float>()
                     );
             }
