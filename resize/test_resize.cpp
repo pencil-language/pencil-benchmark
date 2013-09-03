@@ -9,11 +9,16 @@
 #include "opencl.hpp"
 #include "utility.hpp"
 #include "imgproc_resize.clh"
-
+#include "resize.pencil.h"
 
 namespace carp {
     
-    void resize( carp::opencl::device & device, const cv::ocl::oclMat & src, cv::ocl::oclMat & dst, cv::Size dsize, int interpolation = cv::INTER_LINEAR )
+    void
+    resize( carp::opencl::device & device,
+            const cv::ocl::oclMat & src,
+            cv::ocl::oclMat & dst,
+            cv::Size dsize,
+            int interpolation = cv::INTER_LINEAR )
     {
         double fx=0.;
         double fy=0.;        
@@ -106,7 +111,8 @@ time_resize( carp::opencl::device & device, T0 & pool )
 
     double sum_quotient = 0;
     int64_t nums = 0;
-    std::vector<cv::Size> sizes = { {10,10}, {503, 786}, {1230, 2341}, {4243, 2324}  };
+    // std::vector<cv::Size> sizes = { {10,10}, {503, 786}, {1230, 2341}, {4243, 2324}  };
+    std::vector<cv::Size> sizes = { {640, 480 } };
     std::vector<int> methods = { cv::INTER_LINEAR /*, cv::INTER_NEAREST*/ };
 
     for ( auto & size : sizes )
@@ -138,14 +144,26 @@ time_resize( carp::opencl::device & device, T0 & pool )
                     elapsed_time_gpu += carp::microseconds(gpu_end - gpu_start);
                     check = gpu_resize;
                 }
-        
+
+                // pencil verification
+                cv::Mat pencil_resize;
+                pencil_resize.create(size, CV_8UC1);
+                
+                pencil_resize_LN(
+                    cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr(),
+                    pencil_resize.rows, pencil_resize.cols, pencil_resize.step1(), pencil_resize.ptr() );
+                                
+
                 // Verifying the results
-                if ( cv::norm(cpu_resize - check, cv::NORM_INF) > 1 ) {
+                if (( cv::norm(cpu_resize - check, cv::NORM_INF) > 1 ) ||
+                    ( cv::norm(cpu_resize - pencil_resize, cv::NORM_INF) > 1 )) {
                     PRINT(cv::norm(check - cpu_resize, cv::NORM_INF));
-            
+                    PRINT(cv::norm(cpu_resize - pencil_resize, cv::NORM_INF));
+                    
                     cv::imwrite( "gpu_resize.png", check );
                     cv::imwrite( "cpu_resize.png", cpu_resize );
-
+                    cv::imwrite( "pencil_resize.png", pencil_resize );
+                    
                     throw std::runtime_error("The GPU results are not equivalent with the CPU results.");                
                 }
 
