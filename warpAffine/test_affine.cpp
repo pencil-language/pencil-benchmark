@@ -9,24 +9,27 @@
 #include "opencl.hpp"
 #include "utility.hpp"
 #include "imgproc_warpAffine.clh"
+#include "affine.pencil.h"
 
 namespace
 {
 
-    void convert_coeffs(double *M)
+    template <class T0>
+    void convert_coeffs(T0 * M)
     {
-        double D = M[0] * M[4] - M[1] * M[3];
+        T0 D = M[0] * M[4] - M[1] * M[3];
         D = D != 0 ? 1. / D : 0;
-        double A11 = M[4] * D, A22 = M[0] * D;
+        T0 A11 = M[4] * D, A22 = M[0] * D;
         M[0] = A11;
         M[1] *= -D;
         M[3] *= -D;
         M[4] = A22;
-        double b1 = -M[0] * M[2] - M[1] * M[5];
-        double b2 = -M[3] * M[2] - M[4] * M[5];
+        T0 b1 = -M[0] * M[2] - M[1] * M[5];
+        T0 b2 = -M[3] * M[2] - M[4] * M[5];
         M[2] = b1;
         M[5] = b2;
-    }
+    } // convert_coeffs
+    
 } // unnamed namespace
 
 
@@ -119,10 +122,12 @@ time_affine( carp::opencl::device & device, T0 & pool )
         cv::cvtColor( item.cpuimg(), cpu_gray, CV_RGB2GRAY );
         cpu_gray.convertTo( cpu_gray, CV_32F, 1.0/255. );
         cv::Mat host_affine;
-            
+        
         std::vector<float> transform_data = { 2.0f, 0.5f, -500.0f,
                                               0.333f, 3.0f, -500.0f };
-            
+        // std::vector<float> transform_data = { 1.0f, 0.5f, 10.0f,
+        //                                       0.0f, 1.0f, -3.0f };
+        
         cv::Mat transform( 2, 3, CV_32F, transform_data.data() );
             
         const auto cpu_start = std::chrono::high_resolution_clock::now();
@@ -140,17 +145,33 @@ time_affine( carp::opencl::device & device, T0 & pool )
             elapsed_time_gpu += carp::microseconds(gpu_end - gpu_start);
             check = gpu_affine;
         }
+
+        // verifying the pencil code
+        cv::Mat pencil_affine( cpu_gray.size(), CV_32F );
+        convert_coeffs(reinterpret_cast<float*>(transform.data));        
+        pencil_affine_linear(
+            cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<float>(),
+            pencil_affine.rows, pencil_affine.cols, pencil_affine.step1(), pencil_affine.ptr<float>(),
+            transform.at<float>(0,0), transform.at<float>(0,1), transform.at<float>(1,0), transform.at<float>(1,1),
+            transform.at<float>(1,2), transform.at<float>(0,2) );
         
         // Verifying the results
-        if ( cv::norm(host_affine - check) > 0.01 ) {
-            PRINT(cv::norm(check - host_affine));
+        if ( (cv::norm(cv::abs(host_affine - check)) > 0.01) ||
+             (cv::norm(cv::abs(pencil_affine - host_affine)) > 0.01) ) {
+            PRINT(cv::norm(cv::abs(host_affine - check)));
+            PRINT(cv::norm(cv::abs(pencil_affine - host_affine)));
+        
             cv::Mat check8;
             cv::Mat host_affine8;
+            cv::Mat pencil_affine8;            
             
             check.convertTo( check8, CV_8UC1, 255. );
             host_affine.convertTo( host_affine8, CV_8UC1, 255. );
+            pencil_affine.convertTo( pencil_affine8, CV_8UC1, 255. );
+            
             cv::imwrite( "gpu_affine.png", check8 );
             cv::imwrite( "cpu_affine.png", host_affine8 );
+            cv::imwrite( "pencil_affine.png", pencil_affine8 );
 
             throw std::runtime_error("The GPU results are not equivalent with the CPU results.");                
         }
