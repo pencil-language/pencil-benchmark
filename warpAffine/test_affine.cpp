@@ -154,12 +154,12 @@ time_affine( carp::opencl::device & device, T0 & pool )
             pencil_affine.rows, pencil_affine.cols, pencil_affine.step1(), pencil_affine.ptr<float>(),
             transform.at<float>(0,0), transform.at<float>(0,1), transform.at<float>(1,0), transform.at<float>(1,1),
             transform.at<float>(1,2), transform.at<float>(0,2) );
-        
+
         // Verifying the results
-        if ( (cv::norm(cv::abs(host_affine - check)) > 0.01) ||
-             (cv::norm(cv::abs(pencil_affine - host_affine)) > 0.01) ) {
-            PRINT(cv::norm(cv::abs(host_affine - check)));
-            PRINT(cv::norm(cv::abs(pencil_affine - host_affine)));
+        if ( (cv::norm(cv::abs(host_affine - check), cv::NORM_INF ) > 1) ||
+             (cv::norm(cv::abs(pencil_affine - host_affine), cv::NORM_INF ) > 1) ) {
+            PRINT(cv::norm(cv::abs(host_affine - check), cv::NORM_INF ));
+            PRINT(cv::norm(cv::abs(pencil_affine - host_affine), cv::NORM_INF ));
         
             cv::Mat check8;
             cv::Mat host_affine8;
@@ -173,7 +173,7 @@ time_affine( carp::opencl::device & device, T0 & pool )
             cv::imwrite( "cpu_affine.png", host_affine8 );
             cv::imwrite( "pencil_affine.png", pencil_affine8 );
 
-            throw std::runtime_error("The GPU results are not equivalent with the CPU results.");                
+            throw std::runtime_error("The GPU results are not equivalent with the CPU results.");
         }
 
         if (elapsed_time_gpu > 1) {
