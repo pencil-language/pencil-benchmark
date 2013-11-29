@@ -19,17 +19,20 @@ RGB2Gray(
     const DATA_TYPE src[static const restrict rows][src_step][channels],
     DATA_TYPE dst[static const restrict rows][dst_step] )
 {
+#pragma scop
 #   pragma independent
     for ( int q = 0; q < rows; q++ )
 #       pragma independent
 	for( int w = 0; w < cols; w++ )
 	    dst[q][w] = CV_DESCALE( (src[q][w][bidx] * B2Y + src[q][w][1] * G2Y + src[q][w][(bidx^2)] * R2Y ), yuv_shift );
+#pragma endscop
     return;
+
 } // pencil_RGB2Gray_caller
 
 
 void 
-pencil_RGB2Gray( 
+pencil_RGB2Gray ( 
     int rows, 
     int cols, 
     int src_step,
@@ -39,8 +42,9 @@ pencil_RGB2Gray(
     const DATA_TYPE src[], 
     DATA_TYPE dst[] )
 {
+#pragma scop
     RGB2Gray( rows, cols, src_step, dst_step, channels, bidx, src, dst );
-
+#pragma endscop
     return;
 } // pencil_RGB2Gray
 

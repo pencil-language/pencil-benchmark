@@ -24,18 +24,22 @@ bilinear interpolation of the value of P.
 
 static inline float 
 bilinear( float A00, float A01, float A11, float A10, float r, float c ) {
-    assert(c>=0);
-    assert(c<=1);
-    assert(r>=0);
-    assert(r<=1);
-
-    return (1-c) * ( (1-r) * A00 + r * A10 ) + c * ( (1-r) * A01 + r * A11 );
+    // assert(c>=0);
+    // assert(c<=1);
+    // assert(r>=0);
+    // assert(r<=1);
+#pragma scop
+    float result = (1-c) * ( (1-r) * A00 + r * A10 ) + c * ( (1-r) * A01 + r * A11 );
+#pragma endscop
+    return result; 
 } // bilinear
 
 static inline int
 sat( int val, int lo, int hi ) {
+#pragma scop
     val = (val >= lo) ? val : lo;
     val = (val <= hi) ? val : hi;
+#pragma endscop
     return val;
 }
 
@@ -61,7 +65,7 @@ affine (
     int src_rows, int src_cols, int src_step, float src[static const restrict src_step][src_cols],
     int dst_rows, int dst_cols, int dst_step, float dst[static const restrict dst_step][dst_cols],
     float a00, float a01, float a10, float a11, float b00, float b10 ) {
-
+#pragma scop
 #   pragma pencil independent
     for ( int n_r=0; n_r<dst_rows; n_r++ )
 #       pragma pencil independent
@@ -92,8 +96,10 @@ affine (
 	    
 	    dst[n_r][n_c] = bilinear( A00, A01, A11, A10, r, c );
 	}
+#pragma endscop
 
     return;
+
 } // pencil_resize_LN
 
 
@@ -102,8 +108,10 @@ pencil_affine_linear (
     int src_rows, int src_cols, int src_step, float src[],
     int dst_rows, int dst_cols, int dst_step, float dst[],
     float a00, float a01, float a10, float a11, float b00, float b10 ) {
-    
+
+#pragma scop
     affine( src_rows, src_cols, src_step, src, dst_rows, dst_cols, dst_step, dst, a00, a01, a10, a11, b00, b10 );
+#pragma endscop
 
     return;
 }

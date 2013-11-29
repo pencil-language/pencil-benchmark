@@ -24,18 +24,22 @@ bilinear interpolation of the value of P.
 
 static inline float 
 bilinear( float A00, float A01, float A11, float A10, float r, float c ) {
-    assert(c>=0);
-    assert(c<=1);
-    assert(r>=0);
-    assert(r<=1);
-
-    return (1-c) * ( (1-r) * A00 + r * A10 ) + c * ( (1-r) * A01 + r * A11 );
+    // assert(c>=0);
+    // assert(c<=1);
+    // assert(r>=0);
+    // assert(r<=1);
+#pragma scop
+    float result = (1-c) * ( (1-r) * A00 + r * A10 ) + c * ( (1-r) * A01 + r * A11 );
+#pragma endscop
+    return result;
 } // bilinear
 
 static inline int
 sat( int val, int lo, int hi ) {
+#pragma scop
     val = (val >= lo) ? val : lo;
     val = (val <= hi) ? val : hi;
+#pragma endscop
     return val;
 }
 
@@ -50,8 +54,9 @@ resize (
     int resampled_step,
     uint8_t resampled[static const restrict resampled_step][resampled_cols] ) {
 
-    assert(resampled_rows>1);
-    assert(resampled_cols>1);
+#pragma scop
+    // assert(resampled_rows>1);
+    // assert(resampled_cols>1);
 
     float o_h = original_rows;
     float o_w = original_cols;
@@ -87,6 +92,7 @@ resize (
 	    resampled[n_r][n_c] = bilinear( A00, A01, A11, A10, r, c );
      	} // for n_c, n_r
 
+#pragma endscop
     return;
 } // pencil_resize_LN
 
@@ -95,8 +101,11 @@ pencil_resize_LN (
     int original_rows,  int original_cols,  int original_step,  uint8_t original[],
     int resampled_rows, int resampled_cols, int resampled_step, uint8_t resampled[] ) {
 
+#   pragma scop
     resize( original_rows, original_cols, original_step, original, 
 	    resampled_rows, resampled_cols, resampled_step, resampled );
+#   pragma endscop
+    return;
 } // pencil_resize_LN
 
 

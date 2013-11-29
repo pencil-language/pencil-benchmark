@@ -11,20 +11,24 @@ static void transposeFloat(int InRows, int InCols,
                            float In[static const restrict InRows][InCols],
 			   int OutRows, int OutCols,
 			   float Out[static const restrict OutRows][OutCols]) {
-  __pencil_assert(InRows == OutCols);
-  __pencil_assert(OutCols == InRows);
+  // __pencil_assert(InRows == OutCols);
+  // __pencil_assert(OutCols == InRows);
 
+#pragma scop
   for (int i = 0; i < InRows; i++)
     for (int j = 0; j < InCols; j++)
 	Out[j][i] = In[i][j];
 
-  return;
+#pragma endscop
+  return;  
+
 }
 
 static float meanChar(int subImageRows, int subImageCols, int imageRows,
 		      int imageCols,
 		      unsigned char image[static const restrict imageRows][imageCols],
 		      int imageOffsetRow, int imageOffsetCol)  {
+#pragma scop
   float sum = 0;
 
   for (int i = 0; i < subImageRows; i++)
@@ -32,37 +36,58 @@ static float meanChar(int subImageRows, int subImageCols, int imageRows,
       sum += image[i + imageOffsetRow][j + imageOffsetCol];
     }
 
-  return sum / (subImageRows * subImageCols);
+  float result = sum / (subImageRows * subImageCols);
+#pragma endscop
+  return result;
+  
+
 }
 
-static unsigned char min(unsigned char a, unsigned char b) { return a < b ? a : b; }
+static unsigned char min(unsigned char a, unsigned char b) {
+#pragma scop
+    unsigned char result = a < b ? a : b;
+#pragma endscop
+    
+    return result;
+    
+}
 
 static unsigned char minChar(int subImageRows, int subImageCols, int imageRows,
 		       int imageCols,
 		       unsigned char image[static const restrict imageRows][imageCols],
-		       int imageOffsetRow, int imageOffsetCol)  {
+                             int imageOffsetRow, int imageOffsetCol)  {
+#pragma scop
   unsigned char minvalue = 255;
 
   for (int i = 0; i < subImageRows; i++)
     for (int j = 0; j < subImageCols; j++)
       minvalue = min(minvalue, image[i + imageOffsetRow][j+imageOffsetCol]);
-
+#pragma endscop
   return minvalue;
+
 }
 
-static unsigned char max(unsigned char a, unsigned char b) { return a > b ? a : b; }
+static unsigned char max(unsigned char a, unsigned char b) {
+#pragma scop
+    unsigned char result = a > b ? a : b;
+#pragma endscop
+    return result;    
+}
 
 static unsigned char maxChar(int subImageRows, int subImageCols, int imageRows,
 		       int imageCols,
 		       unsigned char image[static const restrict imageRows][imageCols],
-		       int imageOffsetRow, int imageOffsetCol)  {
+                             int imageOffsetRow, int imageOffsetCol)  {
+#pragma scop
   unsigned char maxvalue = 0;
 
   for (int i = 0; i < subImageRows; i++)
     for (int j = 0; j < subImageCols; j++)
       maxvalue = max(maxvalue, image[i + imageOffsetRow][j+imageOffsetCol]);
-
+#pragma endscop
+  
   return maxvalue;
+
 }
 
 // returns alpha*A*B + beta * C
@@ -74,10 +99,10 @@ static void gemmFloatArray_subArray(int ARows, int ACols,
                            float C[static const restrict CRows][CCols],
 			   float beta, int ResRows, int ResCols,
 			   float Res[static const restrict ResRows][ResCols])  {
-  __pencil_assert(BCols == CCols);
-  __pencil_assert(CRows == ResRows);
-  __pencil_assert(CCols == ResCols);
-
+  // __pencil_assert(BCols == CCols);
+  // __pencil_assert(CRows == ResRows);
+  // __pencil_assert(CCols == ResCols);
+#pragma scop
   for (int i = 0; i < CRows; i++)
     for (int j = 0; j < CCols; j++) {
       Res[i][j] = beta * C[i][j];
@@ -86,6 +111,7 @@ static void gemmFloatArray_subArray(int ARows, int ACols,
       }
     }
 
+#pragma endscop
   return;
 }
 
@@ -93,10 +119,13 @@ static void copySubArrayFloat(int arrayRows, int arrayCols,
                               float Array[static const restrict arrayRows][arrayCols],
                               int subArrayRows, int subArrayCols,
                               float subArray[static const restrict subArrayRows][subArrayCols],
-                              int offsetRow, int offsetCol)  {
+        int offsetRow, int offsetCol)  {
+#pragma scop
   for (int i = 0; i < subArrayRows; i++)
     for (int j = 0; j < subArrayCols; j++)
       subArray[i][j] = Array[i + offsetRow][j + offsetCol];
+#pragma endscop
+  return;
 }
 
 static float generateResponseMapPatchNoMemory(
@@ -107,7 +136,8 @@ static float generateResponseMapPatchNoMemory(
     Point2i center, int wInRows, int wInCols,
     float wInArray[static const restrict wInRows][wInCols], int wOutRows,
     int wOutCols, float wOutArray[static const restrict wOutRows][wOutCols],
-    float bOut)  {
+        float bOut)  {
+#pragma scop
   int cy = ncy + center.y - mapSize;
   int cx = ncx + center.x - mapSize;
 
@@ -163,7 +193,9 @@ static float generateResponseMapPatchNoMemory(
   result -= bOut;
   result = 1.0f / (1.0f + expf(result));
 
+#pragma endscop
   return result;
+
 }
 
 /// @brief Calculate a single response map for an image.
@@ -182,7 +214,7 @@ static void generateResponseMap(
     float m_wOutArray[static const restrict m_wOutRows][m_wOutCols] 
     )
      {
-
+#pragma scop
   // This is a temporary array.
   //
   // Also, I wonder if this computation can not be precalculated? Or that
@@ -257,17 +289,24 @@ static void generateResponseMap(
           wOutRows, wOutCols, wOutArray, bOut);
     }
   }
-
+#pragma endscop
+  
   return;
 }
 
 static int cvRound(float value) {
-  return (int)(value + (value >= 0 ? 0.5 : -0.5));
+#pragma scop
+  int result = (int)(value + (value >= 0 ? 0.5 : -0.5));
+#pragma endscop
+  return result;  
 }
 
 float GetValueFloat(int N, int M, float A[static const restrict N][M],
 		    int row, int col, int offset)  {
-  return A[row][col + offset];
+#pragma scop
+         float result = A[row][col + offset];
+#pragma endscop
+         return result;         
 }
 
 // Calculate a set of respone maps for a given image.
@@ -281,6 +320,8 @@ void calculateRespondMaps(
     int shape_cols, float shape_data[static const restrict shape_rows][shape_cols],
     int shape_start, mlp m_classifiers[static const restrict m_visibleLandmarks_size],
     float ResponseMaps[static const restrict m_visibleLandmarks_size][MapSize + MapSize + 1][MapSize + MapSize + 1])  {
+
+#pragma scop
 
 // This loop is parallel, ppcg can find parallelism without the need for
 // the independent directive.
@@ -317,5 +358,6 @@ void calculateRespondMaps(
 			m_classifiers[i].m_wOut.cols, m_classifiers[i].m_wOut.data);
   }
 
-  return;
+#pragma endscop
+    return;
 }

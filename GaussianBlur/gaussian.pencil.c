@@ -20,7 +20,8 @@ filter2D(
     const float kernel[static const restrict kernel_step][kernel_cols],
     int conv_step, 
     float conv[static const restrict conv_step][cols] ) {
-    
+
+#pragma scop    
     int center_row = kernel_rows / 2;
     int center_col = kernel_cols / 2;
    
@@ -44,8 +45,9 @@ filter2D(
      	    	}
 	    conv[q][w] = prod;
      	}
-    
+#pragma endscop    
     return;
+
 } // filter2D
 
 static void
@@ -66,11 +68,12 @@ gaussian (
     float temp[static const restrict temp_step][cols],
     int conv_step, 
     float conv[static const restrict conv_step][cols] ) {
-
+#pragma scop
     filter2D( rows, cols, src_step,  src,  kernelX_rows, kernelX_cols, kernelX_step, kernelX, temp_step, temp );    
     filter2D( rows, cols, temp_step, temp, kernelY_rows, kernelY_cols, kernelY_step, kernelY, conv_step, conv );
-
+#pragma endscop
     return;
+
 } // gaussian
 
 void 
@@ -91,9 +94,11 @@ pencil_gaussian(
     float temp[],
     int conv_step, 
     float conv[] ) {
-    
+#pragma scop    
     gaussian ( rows, cols, src_step, src, kernelX_rows, kernelX_cols, kernelX_step, kernelX, kernelY_rows, kernelY_cols, kernelY_step, kernelY, temp_step, temp, conv_step, conv );
+#pragma endscop
     return;
+
 } // gaussian
 
 

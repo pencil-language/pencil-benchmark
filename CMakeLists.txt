@@ -90,6 +90,11 @@ if (NOT XXD_COMPILER)
     message( FATAL_ERROR "The xxd compiler not found. Please install the compiler before building.")
 endif(NOT XXD_COMPILER)
 
+################## PPCG Compiler ####################
+find_program( PPCG_COMPILER "ppcg" )
+if (NOT PPCG_COMPILER)
+    message( FATAL_ERROR "The ppcg compiler not found. Please install the compiler before building.")
+endif(NOT PPCG_COMPILER)
 
 
 ######################### Includes ##########################
@@ -157,19 +162,19 @@ if (WITH_MKL)
 	set( LIBS ${LIBS} ${LIB_PTHREAD} )
     endif(NOT CMAKE_HOST_WIN32)
 
-    if(X86_64)
-        find_library( LIB_MKL_INTEL_LP64 ${LIBPREFIX}mkl_intel_lp64${MKL_LIB_POSTFIX} PATHS ${POTENTIAL_LIBDIRS} ${MKL_LIB_PATH} )
-        set( LIBS ${LIBS} ${LIB_MKL_INTEL_LP64} )
-    elseif(X86)
-        find_library( LIB_MKL_INTEL_C ${LIBPREFIX}mkl_intel_c${MKL_LIB_POSTFIX} PATHS ${POTENTIAL_LIBDIRS} ${MKL_LIB_PATH} )
-        set( LIBS ${LIBS} ${LIB_MKL_INTEL_C} )
-    endif()
+#    if(X86_64)
+#        find_library( LIB_MKL_INTEL_LP64 ${LIBPREFIX}mkl_intel_lp64${MKL_LIB_POSTFIX} PATHS ${POTENTIAL_LIBDIRS} ${MKL_LIB_PATH} )
+#        set( LIBS ${LIBS} ${LIB_MKL_INTEL_LP64} )
+#    elseif(X86)
+#        find_library( LIB_MKL_INTEL_C ${LIBPREFIX}mkl_intel_c${MKL_LIB_POSTFIX} PATHS ${POTENTIAL_LIBDIRS} ${MKL_LIB_PATH} )
+#        set( LIBS ${LIBS} ${LIB_MKL_INTEL_C} )
+#    endif()
 
-    find_library( LIB_SEQUENTIAL ${LIBPREFIX}mkl_sequential${MKL_LIB_POSTFIX} PATHS ${POTENTIAL_LIBDIRS} ${MKL_LIB_PATH} )
-    set( LIBS ${LIBS} ${LIB_SEQUENTIAL} ) 
+#    find_library( LIB_SEQUENTIAL ${LIBPREFIX}mkl_sequential${MKL_LIB_POSTFIX} PATHS ${POTENTIAL_LIBDIRS} ${MKL_LIB_PATH} )
+#    set( LIBS ${LIBS} ${LIB_SEQUENTIAL} ) 
 
-    find_library( LIB_MKL_CORE ${LIBPREFIX}mkl_core${MKL_LIB_POSTFIX} PATHS ${POTENTIAL_LIBDIRS} ${MKL_LIB_PATH} )
-    set( LIBS ${LIBS} ${LIB_MKL_CORE} ) 
+#    find_library( LIB_MKL_CORE ${LIBPREFIX}mkl_core${MKL_LIB_POSTFIX} PATHS ${POTENTIAL_LIBDIRS} ${MKL_LIB_PATH} )
+#    set( LIBS ${LIBS} ${LIB_MKL_CORE} ) 
 
     link_directories( ${MKL_LIB_PATH} )    
     include_directories( ${MKL_INCLUDE_PATH} )
@@ -479,6 +484,7 @@ INCLUDE(CheckTypeSize)
 FILE( GLOB_RECURSE lib_src_c *.c )
 FILE( GLOB_RECURSE lib_src_cpp *.cpp )
 FILE( GLOB_RECURSE lib_src_cl *.cl )
+FILE( GLOB_RECURSE lib_src_pencil *.pencil.c )
 
 ## Collecting the Sources from the Directory
 SET( SOURCES ${lib_src_c} ${lib_src_cpp} )
@@ -494,6 +500,7 @@ foreach( q ${SOURCES} )
     endif ( q MATCHES "test_.*" )
 endforeach( q ${SOURCES} )
 
+# compiling the OpenCL source code
 foreach( q ${lib_src_cl} )
     string( REGEX MATCH [^/]*.c[^.]*$ filename ${q} )
     string( LENGTH ${q} full_len )
@@ -509,6 +516,23 @@ foreach( q ${lib_src_cl} )
                         WORKING_DIRECTORY ${path} )
     SET( CLS ${CLS} ${filename}.clh )
 endforeach( q ${SOURCES} )
+
+# compiling the PENCIL source code
+foreach( q ${lib_src_pencil} )
+    string( REGEX MATCH [^/]*.c[^.]*$ filename ${q} )
+    string( LENGTH ${q} full_len )
+    string( LENGTH ${filename} file_len )
+    math( EXPR path_len  ${full_len}-${file_len} )
+    string( SUBSTRING ${q} 0 ${path_len} path )
+    string( REGEX REPLACE .c[^.]*$ "" executable ${filename} )
+
+    message( STATUS "path = " ${path} )
+
+    add_custom_command( OUTPUT ${filename}.clh
+                        COMMAND ${PPCG_COMPILER} "--target=opencl" "-o" ${CMAKE_BINARY_DIR}/${executable} ${filename} 
+                        WORKING_DIRECTORY ${path} )
+    SET( CLS ${CLS} ${filename}.clh )
+endforeach( q ${lib_src_pencil} )
 
 message( STATUS "TESTS = " ${TESTS} )
 message( STATUS "LIBSOURCES = " ${LIBSOURCES} )
