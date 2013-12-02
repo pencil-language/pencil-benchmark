@@ -6,3 +6,4 @@ response_dumps.xml
 test_mlp
 *.orig
 *.jpg
+build/*
