@@ -174,7 +174,10 @@ void
 time_dilate( carp::opencl::device & device, T0 & pool )
 {
 
-    double sum_quotient = 0;
+    double cpu_gpu_quotient=0;
+    double pencil_gpu_quotient=0;
+    double pencil_cpu_quotient=0;
+
     int64_t nums = 0;
     std::vector<int> elemsizes = { 5, 7, 9 /*, 11, 15, 17*/ };
     
@@ -182,6 +185,7 @@ time_dilate( carp::opencl::device & device, T0 & pool )
         PRINT(elemsize);        
         long int elapsed_time_gpu = 0;
         long int elapsed_time_cpu = 0;
+        long int elapsed_time_pencil = 0;
         
         for ( auto & item : pool ) {
             PRINT(item.path());
@@ -208,7 +212,8 @@ time_dilate( carp::opencl::device & device, T0 & pool )
 
             // pencil code result checking
             cv::Mat pdilate(cpu_gray.size(), CV_8U);
-            
+
+            const auto pencil_start = std::chrono::high_resolution_clock::now();
             pencil_dilate(
                 cpu_gray.rows,
                 cpu_gray.cols,
@@ -223,30 +228,33 @@ time_dilate( carp::opencl::device & device, T0 & pool )
                 anchor.x,
                 anchor.y,
                 cv::BORDER_CONSTANT );
+            const auto pencil_end = std::chrono::high_resolution_clock::now();
+            elapsed_time_pencil += carp::microseconds(pencil_end - pencil_start);
             
             // Verifying the results
             if ( (cv::norm(host_dilate - check) > 0.01) || (cv::norm(host_dilate - pdilate) > 0.01) ) {
                 PRINT(cv::norm(check - host_dilate));
-                PRINT(cv::norm(host_dilate - pdilate));                
+                PRINT(cv::norm(host_dilate - pdilate));
                 cv::imwrite("cpu_dilate.png", host_dilate);
                 cv::imwrite("gpu_dilate.png", check );
-                cv::imwrite("pencil_dilate.png", pdilate );                
+                cv::imwrite("pencil_dilate.png", pdilate );
                 throw std::runtime_error("The GPU results are not equivalent with the CPU results.");                
             }
             
             if (elapsed_time_gpu > 1) {
-                sum_quotient += static_cast<double>(elapsed_time_cpu) / elapsed_time_gpu;
+                cpu_gpu_quotient += static_cast<double>(elapsed_time_cpu) / elapsed_time_gpu;
+                pencil_gpu_quotient += static_cast<double>(elapsed_time_pencil) / elapsed_time_gpu;
+                pencil_cpu_quotient += static_cast<double>(elapsed_time_pencil) / elapsed_time_cpu;
                 nums++;
             } // elapsed_time_gpu
 
         } // for pool
         
-        carp::Timing::print( "dilate image", elapsed_time_cpu, elapsed_time_gpu );
+        carp::Timing::print( "dilate image", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
             
     } // for elemsizes
 
-    std::cout << "Cumulated Speed Improvement: " << (sum_quotient/nums) << "x" << std::endl;    
-
+    carp::Timing::CSI( cpu_gpu_quotient, pencil_gpu_quotient, pencil_cpu_quotient, nums );    
 
     return;
 } // text_boxFilter

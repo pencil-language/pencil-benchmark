@@ -164,7 +164,10 @@ void
 time_gaussian( carp::opencl::device & device, T0 & pool )
 {
 
-    double sum_quotient = 0;
+    double cpu_gpu_quotient=0;
+    double pencil_gpu_quotient=0;
+    double pencil_cpu_quotient=0;
+
     int64_t nums = 0;
     std::vector<int> sizes = {5, 9, 11, 25, 41};
 
@@ -183,7 +186,8 @@ time_gaussian( carp::opencl::device & device, T0 & pool )
 
             long int elapsed_time_gpu = 0;
             long int elapsed_time_cpu = 0;
-        
+            long int elapsed_time_pencil = 0;
+            
             cv::Mat cpu_gray;
             cv::Mat check;    
 
@@ -213,7 +217,8 @@ time_gaussian( carp::opencl::device & device, T0 & pool )
                 intermediate.create( cpu_gray.size(), CV_32F );
 
                 pencil.create( cpu_gray.size(), CV_32F );
-
+                
+                const auto pencil_start = std::chrono::high_resolution_clock::now();
                 pencil_gaussian(
                     cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<float>(),
                     kernel.rows, kernel.cols, kernel.step1(), kernel.ptr<float>(),
@@ -221,6 +226,9 @@ time_gaussian( carp::opencl::device & device, T0 & pool )
                     intermediate.step1(), intermediate.ptr<float>(),
                     pencil.step1(), pencil.ptr<float>()
                     );
+                const auto pencil_end = std::chrono::high_resolution_clock::now();
+                elapsed_time_pencil += carp::microseconds(pencil_end - pencil_start);
+
             }
             
             
@@ -250,16 +258,19 @@ time_gaussian( carp::opencl::device & device, T0 & pool )
             }
 
             if (elapsed_time_gpu > 1) {
-                sum_quotient += static_cast<double>(elapsed_time_cpu) / elapsed_time_gpu;
+                cpu_gpu_quotient += static_cast<double>(elapsed_time_cpu) / elapsed_time_gpu;
+                pencil_gpu_quotient += static_cast<double>(elapsed_time_pencil) / elapsed_time_gpu;
+                pencil_cpu_quotient += static_cast<double>(elapsed_time_pencil) / elapsed_time_cpu;
                 nums++;
             }
                         
-            carp::Timing::print( "blur image", elapsed_time_cpu, elapsed_time_gpu );
+            carp::Timing::print( "blur image", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
 
         } // for pool
     } // sizes
     
-    std::cout << "Cumulated Speed Improvement: " << (sum_quotient/nums) << "x" << std::endl;    
+    carp::Timing::CSI( cpu_gpu_quotient, pencil_gpu_quotient, pencil_cpu_quotient, nums );    
+
 
 
     return;

@@ -107,7 +107,10 @@ void
 time_affine( carp::opencl::device & device, T0 & pool )
 {
 
-    double sum_quotient = 0;
+    double cpu_gpu_quotient=0;
+    double pencil_gpu_quotient=0;
+    double pencil_cpu_quotient=0;
+
     int64_t nums = 0;
         
     for ( auto & item : pool ) {
@@ -115,6 +118,7 @@ time_affine( carp::opencl::device & device, T0 & pool )
 
         long int elapsed_time_gpu = 0;
         long int elapsed_time_cpu = 0;
+        long int elapsed_time_pencil = 0;
         
         cv::Mat cpu_gray;
         cv::Mat check;    
@@ -135,26 +139,29 @@ time_affine( carp::opencl::device & device, T0 & pool )
         const auto cpu_end = std::chrono::high_resolution_clock::now();
         elapsed_time_cpu += carp::microseconds(cpu_end - cpu_start);
 
-        {
+        {            
+            const auto gpu_start = std::chrono::high_resolution_clock::now();
             cv::ocl::oclMat gpu_gray(cpu_gray);
             cv::ocl::oclMat gpu_affine;
-            
-            const auto gpu_start = std::chrono::high_resolution_clock::now();
             carp::warpAffine( device, gpu_gray, gpu_affine, transform, gpu_gray.size() );
+            check = gpu_affine;
             const auto gpu_end = std::chrono::high_resolution_clock::now();
             elapsed_time_gpu += carp::microseconds(gpu_end - gpu_start);
-            check = gpu_affine;
         }
 
         // verifying the pencil code
         cv::Mat pencil_affine( cpu_gray.size(), CV_32F );
-        convert_coeffs(reinterpret_cast<float*>(transform.data));        
+        convert_coeffs(reinterpret_cast<float*>(transform.data));
+
+        const auto pencil_start = std::chrono::high_resolution_clock::now();
         pencil_affine_linear(
             cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<float>(),
             pencil_affine.rows, pencil_affine.cols, pencil_affine.step1(), pencil_affine.ptr<float>(),
             transform.at<float>(0,0), transform.at<float>(0,1), transform.at<float>(1,0), transform.at<float>(1,1),
             transform.at<float>(1,2), transform.at<float>(0,2) );
-
+        const auto pencil_end = std::chrono::high_resolution_clock::now();
+        elapsed_time_pencil += carp::microseconds(pencil_end - pencil_start);
+        
         // Verifying the results
         if ( (cv::norm(cv::abs(host_affine - check), cv::NORM_INF ) > 1) ||
              (cv::norm(cv::abs(pencil_affine - host_affine), cv::NORM_INF ) > 1) ) {
@@ -177,14 +184,17 @@ time_affine( carp::opencl::device & device, T0 & pool )
         }
 
         if (elapsed_time_gpu > 1) {
-            sum_quotient += static_cast<double>(elapsed_time_cpu) / elapsed_time_gpu;
+            cpu_gpu_quotient += static_cast<double>(elapsed_time_cpu) / elapsed_time_gpu;
+            pencil_gpu_quotient += static_cast<double>(elapsed_time_pencil) / elapsed_time_gpu;
+            pencil_cpu_quotient += static_cast<double>(elapsed_time_pencil) / elapsed_time_cpu;
             nums++;
         }
                         
-        carp::Timing::print( "convolve image", elapsed_time_cpu, elapsed_time_gpu );
+        carp::Timing::print( "convolve image", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
     } // for pool
 
-    std::cout << "Cumulated Speed Improvement: " << (sum_quotient/nums) << "x" << std::endl;    
+    carp::Timing::CSI( cpu_gpu_quotient, pencil_gpu_quotient, pencil_cpu_quotient, nums );    
+    // std::cout << "Cumulated Speed Improvement: " << (sum_quotient/nums) << "x" << std::endl;    
 
     return;
 } // text_boxFilter

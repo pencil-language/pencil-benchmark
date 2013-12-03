@@ -20,7 +20,8 @@ time_cvtColor( carp::opencl::device & device, T0 & pool, size_t iterations)
     
     long int elapsed_time_gpu = 0;
     long int elapsed_time_cpu = 0;
-
+    long int elapsed_time_pencil = 0;
+    
     for(int i = 0; i < iterations; ++i) {
         PRINT(i);        
         for ( auto & record : pool ) {
@@ -35,14 +36,15 @@ time_cvtColor( carp::opencl::device & device, T0 & pool, size_t iterations)
             }
             // GPU Bench
             {
-                cv::ocl::oclMat gpu_gray;
-                cv::ocl::oclMat gpuimg(cpuimg);
-                gpu_gray.create( gpuimg.rows, gpuimg.cols, CV_8U );
                                 
                 // int code = CV_BGR2GRAY;                
                 // int bidx = (code == CV_BGR2GRAY || code == CV_BGRA2GRAY) ? 0 : 2;
                 int bidx = 2;
                 auto start = std::chrono::high_resolution_clock::now();
+                cv::ocl::oclMat gpu_gray;
+                cv::ocl::oclMat gpuimg(cpuimg);
+                gpu_gray.create( gpuimg.rows, gpuimg.cols, CV_8U );
+
                 device["RGB2Gray"] (
                     gpuimg.cols,
                     gpuimg.rows ,
@@ -54,9 +56,9 @@ time_cvtColor( carp::opencl::device & device, T0 & pool, size_t iterations)
                     reinterpret_cast<cl_mem>(gpu_gray.data) 
                     )
                     .groupsize( carp::make_vector<size_t>(16,16), carp::make_vector<size_t>(cpuimg.cols,cpuimg.rows) );               
+                check = gpu_gray;
                 auto end = std::chrono::high_resolution_clock::now();
                 elapsed_time_gpu += carp::microseconds(end - start);
-                check = gpu_gray;
                 //check = gpuimg;
                 
             }
@@ -64,8 +66,9 @@ time_cvtColor( carp::opencl::device & device, T0 & pool, size_t iterations)
             // pencil verification
             {
                 int bidx = 2;
-                pencil_gray.create( cpu_gray.rows, cpu_gray.cols, CV_8U );                
+                pencil_gray.create( cpu_gray.rows, cpu_gray.cols, CV_8U );
                 
+                const auto pencil_start = std::chrono::high_resolution_clock::now();
                 pencil_RGB2Gray(
                     cpuimg.rows,
                     cpuimg.cols,
@@ -76,7 +79,8 @@ time_cvtColor( carp::opencl::device & device, T0 & pool, size_t iterations)
                     cpuimg.data,
                     pencil_gray.data
                     );
-                
+                const auto pencil_end = std::chrono::high_resolution_clock::now();
+                elapsed_time_pencil += carp::microseconds(pencil_end - pencil_start);
             }
             
             // Verifying the results
@@ -91,7 +95,7 @@ time_cvtColor( carp::opencl::device & device, T0 & pool, size_t iterations)
         }
     }
     
-    carp::Timing::print( "cvtColor", elapsed_time_cpu, elapsed_time_gpu );
+    carp::Timing::print( "cvtColor", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
     return;
 }
 

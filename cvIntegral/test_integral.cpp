@@ -15,10 +15,12 @@ void
 time_integral( carp::opencl::device & device, T0 & pool, int iteration )
 {
 
-    double sum_quotient = 0;
+    double cpu_gpu_quotient=0;
+    double pencil_gpu_quotient=0;
+    double pencil_cpu_quotient=0;
+
     int64_t nums = 0;
-    
-    
+      
     for ( int q=0; q<iteration; q++ ) {
         
         for ( auto & item : pool ) {
@@ -112,18 +114,19 @@ time_integral( carp::opencl::device & device, T0 & pool, int iteration )
             }
 
             if (elapsed_time_gpu > 1) {
-                sum_quotient += static_cast<double>(elapsed_time_cpu) / elapsed_time_gpu;
+                cpu_gpu_quotient += static_cast<double>(elapsed_time_cpu) / elapsed_time_gpu;
+                pencil_gpu_quotient += static_cast<double>(elapsed_time_pencil) / elapsed_time_gpu;
+                pencil_cpu_quotient += static_cast<double>(elapsed_time_pencil) / elapsed_time_cpu;
                 nums++;
             }
                         
             carp::Timing::print( "integral image", elapsed_time_cpu, elapsed_time_gpu );
 
         } // for pool
-            
+        
     } // for q 
-
-    std::cout << "Cumulated Speed Improvement: " << (sum_quotient/nums) << "x" << std::endl;    
-
+    
+    carp::Timing::CSI( cpu_gpu_quotient, nums );    
 
     return;
 } // text_boxFilter
@@ -138,7 +141,7 @@ int main(int argc, char* argv[])
 
     // Initializing OpenCL
     cv::ocl::Context * context = cv::ocl::Context::getContext();
-    carp::Timing::printHeader();
+    carp::Timing::printShortHeader();
     carp::opencl::device device(context);
     device.source_compile( imgproc_integral_sum_cl, imgproc_integral_sum_cl_len,
                            carp::string_vector("integral_sum_cols_D4", "integral_sum_rows_D4", "integral_sum_cols_D5", "integral_sum_rows_D5" ),

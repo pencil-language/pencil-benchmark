@@ -72,6 +72,7 @@ time_boxFilter( carp::opencl::device & device, T0 & pool )
                 auto cpu_end = std::chrono::high_resolution_clock::now();
                 elapsed_time_cpu += carp::microseconds(cpu_end - cpu_start);
 
+                auto gpu_start = std::chrono::high_resolution_clock::now();
                 cv::ocl::oclMat gpu_result;
                 cv::ocl::oclMat gpu_gray(cpu_gray);
                 gpu_result.create( cpu_gray.rows, cpu_gray.cols, CV_8U );
@@ -86,7 +87,7 @@ time_boxFilter( carp::opencl::device & device, T0 & pool )
                 size_t localThreads[3]  = { blockSizeX, blockSizeY, 1 };
                 normalizeAnchor(anchor, ksize);
 
-                auto gpu_start = std::chrono::high_resolution_clock::now();
+
                 device.source_compile(
                     filtering_boxFilter_cl,
                     filtering_boxFilter_cl_len,
@@ -111,10 +112,10 @@ time_boxFilter( carp::opencl::device & device, T0 & pool )
                     static_cast<int>(gpu_result.step)
                     ).groupsize( { blockSizeX, blockSizeY, 1 }, { globalSizeX, globalSizeY, 1 } );
                 // //.groupsize( localThreads, globalThreads );
+                check = gpu_result;
                 auto gpu_end = std::chrono::high_resolution_clock::now();
                 elapsed_time_gpu += carp::microseconds(gpu_end - gpu_start);
                 device.erase("boxFilter_C1_D0");
-                check = gpu_result;
 
                 // Verifying the results
                 if ( cv::norm(check - host_filtered) > 0.01 ) {
@@ -150,7 +151,7 @@ int main(int argc, char* argv[])
 
     // Initializing OpenCL
     cv::ocl::Context * context = cv::ocl::Context::getContext();
-    carp::Timing::printHeader();
+    carp::Timing::printShortHeader();
     carp::opencl::device device(context);
     time_boxFilter( device, pool );
 

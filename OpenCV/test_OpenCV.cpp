@@ -234,7 +234,7 @@ time_warpAffine(const cv::Mat& host_img, size_t iterations)
     cv::Mat difference = host_warp - gpu_warp;
     if( cv::norm(difference, cv::NORM_INF) > 1 ) throw std::logic_error("warpAffine: CPU and GPU result differs too much");
 
-    carp::Timing::print("warpAffine", cpu_time, gpu_time);
+    carp::Timing::print("warpAffine", cpu_time, gpu_time );
     return;
 }
 
@@ -255,7 +255,7 @@ int main(int argc, char* argv[])
     if (argc > 1)
         num_iterations = std::stoi(argv[1]);
 
-    carp::Timing::printHeader();
+    carp::Timing::printShortHeader();
 
     try{
         time_boxFilter (img, num_iterations);
