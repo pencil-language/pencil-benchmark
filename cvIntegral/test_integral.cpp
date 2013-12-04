@@ -115,8 +115,6 @@ time_integral( carp::opencl::device & device, T0 & pool, int iteration )
 
             if (elapsed_time_gpu > 1) {
                 cpu_gpu_quotient += static_cast<double>(elapsed_time_cpu) / elapsed_time_gpu;
-                pencil_gpu_quotient += static_cast<double>(elapsed_time_pencil) / elapsed_time_gpu;
-                pencil_cpu_quotient += static_cast<double>(elapsed_time_pencil) / elapsed_time_cpu;
                 nums++;
             }
                         

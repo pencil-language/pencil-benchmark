@@ -370,9 +370,9 @@ void calculateRespondMaps(
       }
     }
 
-  printf("ERROR: Correct me!!\n");
-  assert(1!=1);
-  exit(1);  
+//  printf("ERROR: Correct me!!\n");
+//  assert(1!=1);
+//  exit(1);  
 
   int wOut_tmpCols = 0;
   int wOut_tmpRows = 0;

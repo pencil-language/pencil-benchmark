@@ -139,7 +139,7 @@ namespace carp {
         static void CSI( double cpu_gpu_quotient, int64_t nums )
             {
                 std::cout << "Cumulated Speed Improvement: " << std::endl 
-                          << "    cpu time    / gpu time: " << (cpu_gpu_quotient / nums) << "x" << std::endl 
+                          << "    cpu time    / gpu time: " << (cpu_gpu_quotient / nums) << "x" << std::endl;                
             }
 
         
