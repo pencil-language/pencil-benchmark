@@ -2,30 +2,33 @@
 # Experimental code for the CARP project
 
 BUILD_DIR=build
-Boost_DIR=/usr/include 
-OpenCV_DIR=/home/ujoimro/Inst/opencv/build/opencv-2.4.6.1/install/share/OpenCV 
-OpenCV_INCLUDE=/home/ujoimro/Inst/opencv/build/opencv-2.4.6.1/install/include
-OpenCV_LIBS=/home/ujoimro/Inst/opencv/build/opencv-2.4.6.1/lib/cv2.so /home/ujoimro/Inst/opencv/build/opencv-2.4.6.1/lib/libopencv_ml.so /home/ujoimro/Inst/opencv/build/opencv-2.4.6.1/lib/libopencv_calib3d.so /home/ujoimro/Inst/opencv/build/opencv-2.4.6.1/lib/libopencv_nonfree.so /home/ujoimro/Inst/opencv/build/opencv-2.4.6.1/lib/libopencv_contrib.so /home/ujoimro/Inst/opencv/build/opencv-2.4.6.1/lib/libopencv_objdetect.so /home/ujoimro/Inst/opencv/build/opencv-2.4.6.1/lib/libopencv_core.so /home/ujoimro/Inst/opencv/build/opencv-2.4.6.1/lib/libopencv_ocl.so /home/ujoimro/Inst/opencv/build/opencv-2.4.6.1/lib/libopencv_features2d.so /home/ujoimro/Inst/opencv/build/opencv-2.4.6.1/lib/libopencv_photo.so /home/ujoimro/Inst/opencv/build/opencv-2.4.6.1/lib/libopencv_flann.so /home/ujoimro/Inst/opencv/build/opencv-2.4.6.1/lib/libopencv_stitching.so /home/ujoimro/Inst/opencv/build/opencv-2.4.6.1/lib/libopencv_gpu.so /home/ujoimro/Inst/opencv/build/opencv-2.4.6.1/lib/libopencv_superres.so /home/ujoimro/Inst/opencv/build/opencv-2.4.6.1/lib/libopencv_highgui.so /home/ujoimro/Inst/opencv/build/opencv-2.4.6.1/lib/libopencv_ts.so /home/ujoimro/Inst/opencv/build/opencv-2.4.6.1/lib/libopencv_imgproc.so /home/ujoimro/Inst/opencv/build/opencv-2.4.6.1/lib/libopencv_video.so /home/ujoimro/Inst/opencv/build/opencv-2.4.6.1/lib/libopencv_legacy.so /home/ujoimro/Inst/opencv/build/opencv-2.4.6.1/lib/libopencv_videostab.so
+Boost_DIR=/usr/include
+Lib_Boost_DIR=/usr/lib64/
+OPENCV_DIR=/home/ujoimro/Inst/opencv/build/opencv-2.4.6.1/
+OpenCV_DIR=$(OPENCV_DIR)/install/share/OpenCV 
+OpenCV_INCLUDE=$(OPENCV_DIR)/install/include
+OpenCV_LIBS=$(OPENCV_DIR)/lib/cv2.so $(OPENCV_DIR)/lib/libopencv_ml.so $(OPENCV_DIR)/lib/libopencv_calib3d.so $(OPENCV_DIR)/lib/libopencv_nonfree.so $(OPENCV_DIR)/lib/libopencv_contrib.so $(OPENCV_DIR)/lib/libopencv_objdetect.so $(OPENCV_DIR)/lib/libopencv_core.so $(OPENCV_DIR)/lib/libopencv_ocl.so $(OPENCV_DIR)/lib/libopencv_features2d.so $(OPENCV_DIR)/lib/libopencv_photo.so $(OPENCV_DIR)/lib/libopencv_flann.so $(OPENCV_DIR)/lib/libopencv_stitching.so $(OPENCV_DIR)/lib/libopencv_gpu.so $(OPENCV_DIR)/lib/libopencv_superres.so $(OPENCV_DIR)/lib/libopencv_highgui.so $(OPENCV_DIR)/lib/libopencv_ts.so $(OPENCV_DIR)/lib/libopencv_imgproc.so $(OPENCV_DIR)/lib/libopencv_video.so $(OPENCV_DIR)/lib/libopencv_legacy.so $(OPENCV_DIR)/lib/libopencv_videostab.so
 TBB_INCLUDE_DIR=/home/ujoimro/Inst/intel/tbb42_20131003oss/include 
 TBB_DIR=/home/ujoimro/Inst/intel/tbb42_20131003oss/build/linux_intel64_gcc_cc4.7_libc2.17_kernel3.7.10_release
 PPCG_COMPILER=/home/ujoimro/doc/projects/realeyes/CARP/ppcg/ppcg 
-Boost_DATE_TIME_LIBRARY=/usr/lib64/libboost_date_time.so 
-Boost_FILESYSTEM_LIBRARY=/usr/lib64/libboost_filesystem.so 
-Boost_IOSTREAMS_LIBRARY=/usr/lib64/libboost_iostreams.so 
-Boost_PROGRAM_OPTIONS_LIBRARY=/usr/lib64/libboost_program_options.so 
-Boost_SERIALIZATION_LIBRARY=/usr/lib64/libboost_serialization.so 
-Boost_SYSTEM_LIBRARY=/usr/lib64/libboost_system.so 
-Boost_CHRONO_LIBRARY=/usr/lib64/libboost_chrono.so 
+Boost_DATE_TIME_LIBRARY=$(Lib_Boost_DIR)/libboost_date_time.so 
+Boost_FILESYSTEM_LIBRARY=$(Lib_Boost_DIR)/libboost_filesystem.so 
+Boost_IOSTREAMS_LIBRARY=$(Lib_Boost_DIR)/libboost_iostreams.so 
+Boost_PROGRAM_OPTIONS_LIBRARY=$(Lib_Boost_DIR)/libboost_program_options.so 
+Boost_SERIALIZATION_LIBRARY=$(Lib_Boost_DIR)/libboost_serialization.so 
+Boost_SYSTEM_LIBRARY=$(Lib_Boost_DIR)/libboost_system.so 
+Boost_CHRONO_LIBRARY=$(Lib_Boost_DIR)/libboost_chrono.so 
 XXD_COMPILER=xxd
 OPENCL_LIB=-lOpenCL
 BOOST_LIBS=$(Boost_DATE_TIME_LIBRARY) $(Boost_FILESYSTEM_LIBRARY) $(Boost_IOSTREAMS_LIBRARY) $(Boost_PROGRAM_OPTIONS_LIBRARY) $(Boost_SERIALIZATION_LIBRARY) $(Boost_SYSTEM_LIBRARY) $(Boost_CHRONO_LIBRARY)
-
+OPENCL_INCLUDE=-I/opt/AMDAPP/include/
+OPENCL_LIB_DIR=-L/opt/AMDAPP/lib/x86_64/
 # Optimization Flags
 
 EXTRA_FLAGS=-mfpmath=sse -msse2
-CFLAGS=-O3 -DNDEBUG -fomit-frame-pointer -ffast-math -std=c99 -fPIC -I$(BUILD_DIR)
-CXXFLAGS=-std=c++0x -Wall -Wstrict-aliasing=2 $(EXTRA_FLAGS) -I$(OpenCV_INCLUDE) -Iinclude -I$(TBB_INCLUDE_DIR) -I$(BUILD_DIR)
-LDFLAGS=$(OpenCV_LIBS) $(OPENCL_LIB) $(BOOST_LIBS) $(TBB_LIBRARY) -lstdc++ -L$(BUILD_DIR) -L$(TBB_DIR) -ltbb -ltbbmalloc
+CFLAGS=-O3 -DNDEBUG -fomit-frame-pointer -ffast-math -std=c99 -fPIC -I$(BUILD_DIR) $(OPENCL_INCLUDE)
+CXXFLAGS=-std=c++0x -Wall -Wstrict-aliasing=2 $(EXTRA_FLAGS) -I$(OpenCV_INCLUDE) -Iinclude -I$(TBB_INCLUDE_DIR) -I$(BUILD_DIR) $(OPENCL_INCLUDE)
+LDFLAGS=$(OpenCV_LIBS) $(OPENCL_LIB) $(BOOST_LIBS) $(TBB_LIBRARY) -lstdc++ -L$(BUILD_DIR) -L$(TBB_DIR) -ltbb -ltbbmalloc $(OPENCL_LIB_DIR)
 
 all: all_test all_ppcg_test
 
