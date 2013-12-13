@@ -58,7 +58,7 @@ o_c -- old col
 */
 static inline void
 affine (
-    int src_rows, int src_cols, int src_step, float src[static const restrict src_step][src_cols],
+    int src_col, int src_rows, int src_cols, int src_step, float src[static const restrict src_step][src_cols],
     int dst_rows, int dst_cols, int dst_step, float dst[static const restrict dst_step][dst_cols],
     float a00, float a01, float a10, float a11, float b00, float b10 ) {
 #pragma scop
@@ -74,16 +74,16 @@ affine (
 	    float c = o_c - floor(o_c); 
 	    
 	    int coord_00_r = sat( floor(o_r), 0, src_rows - 1 );
- 	    int coord_00_c = sat( floor(o_c), 0, src_cols - 1 );
+ 	    int coord_00_c = sat( floor(o_c), 0, src_col - 1 );
 
  	    int coord_01_r = coord_00_r;
-     	    int coord_01_c = sat( coord_00_c + 1, 0, src_cols - 1 );
+     	    int coord_01_c = sat( coord_00_c + 1, 0, src_col - 1 );
 
  	    int coord_10_r = sat( coord_00_r + 1, 0, src_rows - 1 );
      	    int coord_10_c = coord_00_c;
 
  	    int coord_11_r = sat( coord_00_r + 1, 0, src_rows - 1 );
-     	    int coord_11_c = sat( coord_00_c + 1, 0, src_cols - 1 );
+     	    int coord_11_c = sat( coord_00_c + 1, 0, src_col - 1 );
 	    
 	    float A00 = src[coord_00_r][coord_00_c];
 	    float A10 = src[coord_10_r][coord_10_c];
@@ -105,7 +105,7 @@ pencil_affine_linear (
     int dst_rows, int dst_cols, int dst_step, float dst[],
     float a00, float a01, float a10, float a11, float b00, float b10 ) {
 
-    affine( src_rows, src_cols, src_step, src, dst_rows, dst_cols, dst_step, dst, a00, a01, a10, a11, b00, b10 );
+    affine( src_cols, src_rows, src_cols, src_step, src, dst_rows, dst_cols, dst_step, dst, a00, a01, a10, a11, b00, b10 );
 
     return;
 }
