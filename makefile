@@ -4,13 +4,16 @@
 BUILD_DIR=build
 Boost_DIR=/usr/include
 Lib_Boost_DIR=/usr/lib64/
+#Lib_Boost_DIR=/usr/lib/
 OPENCV_DIR=/home/ujoimro/Inst/opencv/build/opencv-2.4.6.1/
+#OPENCV_DIR=/home/b/src-not-saved/opencv-2.4.5-build/
 OpenCV_DIR=$(OPENCV_DIR)/install/share/OpenCV 
 OpenCV_INCLUDE=$(OPENCV_DIR)/install/include
 OpenCV_LIBS=$(OPENCV_DIR)/lib/cv2.so $(OPENCV_DIR)/lib/libopencv_ml.so $(OPENCV_DIR)/lib/libopencv_calib3d.so $(OPENCV_DIR)/lib/libopencv_nonfree.so $(OPENCV_DIR)/lib/libopencv_contrib.so $(OPENCV_DIR)/lib/libopencv_objdetect.so $(OPENCV_DIR)/lib/libopencv_core.so $(OPENCV_DIR)/lib/libopencv_ocl.so $(OPENCV_DIR)/lib/libopencv_features2d.so $(OPENCV_DIR)/lib/libopencv_photo.so $(OPENCV_DIR)/lib/libopencv_flann.so $(OPENCV_DIR)/lib/libopencv_stitching.so $(OPENCV_DIR)/lib/libopencv_gpu.so $(OPENCV_DIR)/lib/libopencv_superres.so $(OPENCV_DIR)/lib/libopencv_highgui.so $(OPENCV_DIR)/lib/libopencv_ts.so $(OPENCV_DIR)/lib/libopencv_imgproc.so $(OPENCV_DIR)/lib/libopencv_video.so $(OPENCV_DIR)/lib/libopencv_legacy.so $(OPENCV_DIR)/lib/libopencv_videostab.so
 TBB_INCLUDE_DIR=/home/ujoimro/Inst/intel/tbb42_20131003oss/include 
 TBB_DIR=/home/ujoimro/Inst/intel/tbb42_20131003oss/build/linux_intel64_gcc_cc4.7_libc2.17_kernel3.7.10_release
 PPCG_COMPILER=/home/ujoimro/doc/projects/realeyes/CARP/ppcg/ppcg 
+#PPCG_COMPILER=/home/b/src/ppcg-gforge-next/
 Boost_DATE_TIME_LIBRARY=$(Lib_Boost_DIR)/libboost_date_time.so 
 Boost_FILESYSTEM_LIBRARY=$(Lib_Boost_DIR)/libboost_filesystem.so 
 Boost_IOSTREAMS_LIBRARY=$(Lib_Boost_DIR)/libboost_iostreams.so 
