@@ -137,7 +137,7 @@ $(BUILD_DIR)/ocl_utilities.o: ./base/ocl_utilities.c
 all_test: $(BUILD_DIR)/test_gaussian $(BUILD_DIR)/test_cvtColor $(BUILD_DIR)/test_filter2D $(BUILD_DIR)/test_dilate $(BUILD_DIR)/test_integral $(BUILD_DIR)/test_mlp $(BUILD_DIR)/test_opencl_mlp $(BUILD_DIR)/test_gel_mlp $(BUILD_DIR)/test_OpenCV $(BUILD_DIR)/test_boxFilter $(BUILD_DIR)/test_affine $(BUILD_DIR)/test_resize $(BUILD_DIR)/test_allocation $(BUILD_DIR)/test_local $(BUILD_DIR)/test_nesting $(BUILD_DIR)/test_color
 
 $(BUILD_DIR)/test_gaussian: all_opencl ./GaussianBlur/test_gaussian.cpp $(BUILD_DIR)/libcarp_pencil.so
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -lcarp_pencil ./GaussianBlur/test_gaussian.cpp -o $(BUILD_DIR)/test_gaussian
+	$(CXX) $(CXXFLAGS) -lcarp_pencil ./GaussianBlur/test_gaussian.cpp -o $(BUILD_DIR)/test_gaussian $(LDFLAGS)
 
 $(BUILD_DIR)/test_cvtColor: all_opencl $(BUILD_DIR)/libcarp_pencil.so ./cvtColor/test_cvtColor.cpp
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -lcarp_pencil ./cvtColor/test_cvtColor.cpp -o $(BUILD_DIR)/test_cvtColor
