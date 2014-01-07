@@ -34,8 +34,8 @@ bilinear( float A00, float A01, float A11, float A10, float r, float c ) {
 
 static inline int
 sat( int val, int lo, int hi ) {
-    val = (val >= lo) ? val : lo;
-    val = (val <= hi) ? val : hi;
+    if (val < lo) val = lo;
+    if (val > hi) val = hi;
     return val;
 }
 
@@ -73,17 +73,31 @@ affine (
 	    float r = o_r - floor(o_r); 
 	    float c = o_c - floor(o_c); 
 	    
-	    int coord_00_r = sat( floor(o_r), 0, src_rows - 1 );
- 	    int coord_00_c = sat( floor(o_c), 0, src_col - 1 );
+	    int coord_00_r = floor(o_r);
+	    if ( floor(o_r) < 0 ) coord_00_r = 0; 
+	    if ( coord_00_r > src_rows - 1 ) coord_00_r = src_rows - 1;
+
+ 	    int coord_00_c = floor(o_c);
+	    if ( floor(o_c) < 0 ) coord_00_c = 0;
+	    if ( coord_00_c > src_col - 1 ) coord_00_c = src_col - 1;
 
  	    int coord_01_r = coord_00_r;
-     	    int coord_01_c = sat( coord_00_c + 1, 0, src_col - 1 );
+     	    int coord_01_c = coord_00_c + 1;
+	    if ( coord_00_c + 1 < 0 ) coord_01_c = 0;
+	    if ( coord_01_c > src_col - 1 ) coord_01_c = src_col - 1;
 
- 	    int coord_10_r = sat( coord_00_r + 1, 0, src_rows - 1 );
+ 	    int coord_10_r = coord_00_r + 1;
+	    if ( coord_00_r + 1 < 0 ) coord_10_r = 0;
+	    if ( coord_10_r > src_rows - 1) coord_10_r = src_rows - 1;
      	    int coord_10_c = coord_00_c;
 
- 	    int coord_11_r = sat( coord_00_r + 1, 0, src_rows - 1 );
-     	    int coord_11_c = sat( coord_00_c + 1, 0, src_col - 1 );
+ 	    int coord_11_r = coord_00_r + 1; 
+	    if ( coord_00_r + 1 < 0 ) coord_11_r = 0;
+	    if ( coord_11_r > src_rows - 1 ) coord_11_r = src_rows - 1;
+	    
+     	    int coord_11_c = coord_00_c + 1; 
+	    if ( coord_00_c + 1 > 0) coord_11_c = 0;
+	    if ( coord_11_c < src_col - 1 ) coord_11_c = src_col - 1;
 	    
 	    float A00 = src[coord_00_r][coord_00_c];
 	    float A10 = src[coord_10_r][coord_10_c];
