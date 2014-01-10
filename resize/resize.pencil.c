@@ -28,18 +28,14 @@ bilinear( float A00, float A01, float A11, float A10, float r, float c ) {
     // assert(c<=1);
     // assert(r>=0);
     // assert(r<=1);
-#pragma scop
     float result = (1-c) * ( (1-r) * A00 + r * A10 ) + c * ( (1-r) * A01 + r * A11 );
-#pragma endscop
     return result;
 } // bilinear
 
 static inline int
 sat( int val, int lo, int hi ) {
-#pragma scop
     val = (val >= lo) ? val : lo;
     val = (val <= hi) ? val : hi;
-#pragma endscop
     return val;
 }
 
@@ -101,10 +97,8 @@ pencil_resize_LN (
     int original_rows,  int original_cols,  int original_step,  uint8_t original[],
     int resampled_rows, int resampled_cols, int resampled_step, uint8_t resampled[] ) {
 
-#   pragma scop
     resize( original_rows, original_cols, original_step, original, 
 	    resampled_rows, resampled_cols, resampled_step, resampled );
-#   pragma endscop
     return;
 } // pencil_resize_LN
 
