@@ -41,6 +41,7 @@ sat( int val, int lo, int hi ) {
 
 static void
 resize (
+    int original_col,
     int original_rows,
     int original_cols,
     int original_step,
@@ -55,7 +56,7 @@ resize (
     // assert(resampled_cols>1);
 
     float o_h = original_rows;
-    float o_w = original_cols;
+    float o_w = original_col;
     float n_h = resampled_rows;
     float n_w = resampled_cols;
 #   pragma independent
@@ -97,7 +98,7 @@ pencil_resize_LN (
     int original_rows,  int original_cols,  int original_step,  uint8_t original[],
     int resampled_rows, int resampled_cols, int resampled_step, uint8_t resampled[] ) {
 
-    resize( original_rows, original_cols, original_step, original, 
+    resize(original_cols, original_rows, original_cols, original_step, original, 
 	    resampled_rows, resampled_cols, resampled_step, resampled );
     return;
 } // pencil_resize_LN
