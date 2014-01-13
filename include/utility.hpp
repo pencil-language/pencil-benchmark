@@ -19,7 +19,8 @@ const int KiB=1024;
 const int MiB=1024*KiB;
 const int GiB=1024*KiB;
 
-#define PRINT(var)  std::cout << "debug: " << BOOST_PP_STRINGIZE(var) << " = " << var << std::endl
+//#define PRINT(var)  std::cout << "debug: " << BOOST_PP_STRINGIZE(var) << " = " << var << std::endl
+#define PRINT(var)
 
 namespace carp {    
 
@@ -111,20 +112,22 @@ namespace carp {
         static void print( const std::string & name, const long int & cpu, const long int & gpu, const long int & pencil )
             {
                 auto speedup = static_cast<double>(pencil)/static_cast<double>(gpu);
+		std::cout << std::fixed << std::setprecision(3);
                 std::cout << std::setw(12) << name << " - "
                           << std::setw(6) << (cpu/1000000.) << "s - "
                           << std::setw(6) << (gpu/1000000.) << "s - "
                           << std::setw(6) << (pencil/1000000.) << "s - "
-                          << std::setw(7) << std::fixed << std::setprecision(3) << speedup << 'x' << std::endl;
+                          << std::setw(7) << speedup << 'x' << std::endl;
             } // print
 
         static void print( const std::string & name, const long int & cpu, const long int & gpu )
             {
                 auto speedup = static_cast<double>(cpu)/static_cast<double>(gpu);
+		std::cout << std::fixed << std::setprecision(3);
                 std::cout << std::setw(12) << name << " - "
                           << std::setw(6) << (cpu/1000000.) << "s - "
                           << std::setw(6) << (gpu/1000000.) << "s - "
-                          << std::setw(7) << std::fixed << std::setprecision(3) << speedup << 'x' << std::endl;
+                          << std::setw(7) << speedup << 'x' << std::endl;
             } // print
 
         
