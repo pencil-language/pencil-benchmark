@@ -2,36 +2,32 @@
 # Experimental code for the CARP project
 
 BUILD_DIR=build
-Boost_DIR=/usr/include
-Lib_Boost_DIR=/usr/lib64/
-#Lib_Boost_DIR=/usr/lib/
-OPENCV_DIR=/home/ujoimro/Inst/opencv/build/opencv-2.4.6.1/
-#OPENCV_DIR=/home/b/src-not-saved/opencv-2.4.5-build/
-OpenCV_DIR=$(OPENCV_DIR)/install/share/OpenCV 
-OpenCV_INCLUDE=$(OPENCV_DIR)/install/include
-OpenCV_LIBS=$(OPENCV_DIR)/lib/cv2.so $(OPENCV_DIR)/lib/libopencv_ml.so $(OPENCV_DIR)/lib/libopencv_calib3d.so $(OPENCV_DIR)/lib/libopencv_nonfree.so $(OPENCV_DIR)/lib/libopencv_contrib.so $(OPENCV_DIR)/lib/libopencv_objdetect.so $(OPENCV_DIR)/lib/libopencv_core.so $(OPENCV_DIR)/lib/libopencv_ocl.so $(OPENCV_DIR)/lib/libopencv_features2d.so $(OPENCV_DIR)/lib/libopencv_photo.so $(OPENCV_DIR)/lib/libopencv_flann.so $(OPENCV_DIR)/lib/libopencv_stitching.so $(OPENCV_DIR)/lib/libopencv_gpu.so $(OPENCV_DIR)/lib/libopencv_superres.so $(OPENCV_DIR)/lib/libopencv_highgui.so $(OPENCV_DIR)/lib/libopencv_ts.so $(OPENCV_DIR)/lib/libopencv_imgproc.so $(OPENCV_DIR)/lib/libopencv_video.so $(OPENCV_DIR)/lib/libopencv_legacy.so $(OPENCV_DIR)/lib/libopencv_videostab.so
-TBB_INCLUDE_DIR=/home/ujoimro/Inst/intel/tbb42_20131003oss/include 
-TBB_DIR=/home/ujoimro/Inst/intel/tbb42_20131003oss/build/linux_intel64_gcc_cc4.7_libc2.17_kernel3.7.10_release
-PPCG_COMPILER=/home/ujoimro/doc/projects/realeyes/CARP/ppcg/ppcg 
-#PPCG_COMPILER=/home/b/src/ppcg-gforge-next/ppcg
-Boost_DATE_TIME_LIBRARY=$(Lib_Boost_DIR)/libboost_date_time.so 
-Boost_FILESYSTEM_LIBRARY=$(Lib_Boost_DIR)/libboost_filesystem.so 
-Boost_IOSTREAMS_LIBRARY=$(Lib_Boost_DIR)/libboost_iostreams.so 
-Boost_PROGRAM_OPTIONS_LIBRARY=$(Lib_Boost_DIR)/libboost_program_options.so 
-Boost_SERIALIZATION_LIBRARY=$(Lib_Boost_DIR)/libboost_serialization.so 
-Boost_SYSTEM_LIBRARY=$(Lib_Boost_DIR)/libboost_system.so 
-Boost_CHRONO_LIBRARY=$(Lib_Boost_DIR)/libboost_chrono.so 
+PPCG_COMPILER=/home/davidrobi/ppcg/ppcg
 XXD_COMPILER=xxd
+
+BOOST_INCLUDE_DIR=/usr/include/
+BOOST_LIB_DIR=/usr/lib/x86_64-linux-gnu/
+BOOST_LIBS=-lboost_date_time -lboost_filesystem -lboost_iostreams -lboost_program_options -lboost_serialization -lboost_system -lboost_chrono
+
+OPENCV_INCLUDE_DIR=/usr/local/include/
+OPENCV_LIB_DIR=/usr/local/lib/
+OPENCV_LIBS=-lopencv_calib3d -lopencv_flann -lopencv_legacy -lopencv_ocl -lopencv_ts -lopencv_contrib -lopencv_gpu -lopencv_ml -lopencv_photo -lopencv_video -lopencv_core -lopencv_highgui -lopencv_nonfree -lopencv_stitching -lopencv_videostab -lopencv_features2d -lopencv_imgproc -lopencv_objdetect -lopencv_superres
+
+TBB_INCLUDE_DIR=/usr/include/
+TBB_LIB_DIR=/usr/lib/
+TBB_LIBS=-ltbb -ltbbmalloc
+
+OPENCL_INCLUDE=/usr/include/
+OPENCL_LIB_DIR=/usr/lib/
 OPENCL_LIB=-lOpenCL
-BOOST_LIBS=$(Boost_DATE_TIME_LIBRARY) $(Boost_FILESYSTEM_LIBRARY) $(Boost_IOSTREAMS_LIBRARY) $(Boost_PROGRAM_OPTIONS_LIBRARY) $(Boost_SERIALIZATION_LIBRARY) $(Boost_SYSTEM_LIBRARY) $(Boost_CHRONO_LIBRARY)
-OPENCL_INCLUDE=-I/opt/AMDAPP/include/
-OPENCL_LIB_DIR=-L/opt/AMDAPP/lib/x86_64/
+
 # Optimization Flags
 
-EXTRA_FLAGS=-mfpmath=sse -msse2
-CFLAGS=-O3 -DNDEBUG -fomit-frame-pointer -ffast-math -std=c99 -fPIC -I$(BUILD_DIR) $(OPENCL_INCLUDE)
-CXXFLAGS=-std=c++0x -Wall -Wstrict-aliasing=2 $(EXTRA_FLAGS) -I$(OpenCV_INCLUDE) -Iinclude -I$(TBB_INCLUDE_DIR) -I$(BUILD_DIR) $(OPENCL_INCLUDE)
-LDFLAGS=$(OpenCV_LIBS) $(OPENCL_LIB) $(BOOST_LIBS) $(TBB_LIBRARY) -lstdc++ -L$(BUILD_DIR) -L$(TBB_DIR) -ltbb -ltbbmalloc $(OPENCL_LIB_DIR)
+EXTRA_FLAGS=-O3 -DNDEBUG -fomit-frame-pointer -fPIC -ffast-math -Wall -Wstrict-aliasing=2
+CFLAGS=$(EXTRA_FLAGS) -std=c99 -Iinclude -I$(BUILD_DIR) -I$(OPENCL_INCLUDE)
+CXXFLAGS=$(EXTRA_FLAGS) -std=c++0x -Iinclude -I$(BUILD_DIR) -I$(OPENCL_INCLUDE) -I$(OPENCV_INCLUDE_DIR) -I$(TBB_INCLUDE_DIR)
+LDFLAGS=-L$(OPENCL_LIB_DIR) $(OPENCL_LIB) -L$(OPENCV_LIB_DIR) $(OPENCV_LIBS) -L$(TBB_LIB_DIR) $(TBB_LIBS) -L$(BUILD_DIR) $(BOOST_LIBS)
+# LDFLAGS=-L$(OPENCL_LIB_DIR) $(OPENCL_LIB) -L$(OPENCV_LIB_DIR) $(OPENCV_LIBS) -L$(TBB_LIB_DIR) $(TBB_LIBS) -L$(BUILD_DIR) $(BOOST_LIBS) -lstdc++
 
 all: all_test all_ppcg_test
 
@@ -105,7 +101,7 @@ $(BUILD_DIR)/color.clh: ./base/color.cl
 
 ## PENCIL GCC LIBRARY
 $(BUILD_DIR)/libcarp_pencil.so: all_gcc_pencil_o
-	$(CXX) -shared -o $(BUILD_DIR)/libcarp_pencil.so $(BUILD_DIR)/ocl_utilities.o  $(BUILD_DIR)/gaussian.pencil.o $(BUILD_DIR)/cvt_color.pencil.o $(BUILD_DIR)/filter2D.pencil.o $(BUILD_DIR)/dilate.pencil.o $(BUILD_DIR)/affine.pencil.o $(BUILD_DIR)/resize.pencil.o $(BUILD_DIR)/mlp_impl.pencil.o
+	$(CXX) -shared -o $(BUILD_DIR)/libcarp_pencil.so $(BUILD_DIR)/ocl_utilities.o  $(BUILD_DIR)/gaussian.pencil.o $(BUILD_DIR)/cvt_color.pencil.o $(BUILD_DIR)/filter2D.pencil.o $(BUILD_DIR)/dilate.pencil.o $(BUILD_DIR)/affine.pencil.o $(BUILD_DIR)/resize.pencil.o $(BUILD_DIR)/mlp_impl.pencil.o $(LDFLAGS)
 
 all_gcc_pencil_o: $(BUILD_DIR)/ocl_utilities.o $(BUILD_DIR)/gaussian.pencil.o $(BUILD_DIR)/cvt_color.pencil.o $(BUILD_DIR)/filter2D.pencil.o $(BUILD_DIR)/dilate.pencil.o $(BUILD_DIR)/affine.pencil.o $(BUILD_DIR)/resize.pencil.o $(BUILD_DIR)/mlp_impl.pencil.o
 
@@ -234,58 +230,58 @@ $(BUILD_DIR)/mlp_impl.pencil_host.o: all_pencil_source
 all_pencil_o: $(BUILD_DIR)/ocl_utilities.o $(BUILD_DIR)/affine.pencil_host.o $(BUILD_DIR)/cvt_color.pencil_host.o $(BUILD_DIR)/dilate.pencil_host.o $(BUILD_DIR)/filter2D.pencil_host.o $(BUILD_DIR)/gaussian.pencil_host.o $(BUILD_DIR)/resize.pencil_host.o $(BUILD_DIR)/mlp_impl.pencil_host.o
 
 $(BUILD_DIR)/libcarp_ppcg.so: all_pencil_o
-	$(CXX) -shared -o  $(BUILD_DIR)/libcarp_ppcg.so $(BUILD_DIR)/ocl_utilities.o $(BUILD_DIR)/affine.pencil_host.o $(BUILD_DIR)/cvt_color.pencil_host.o $(BUILD_DIR)/dilate.pencil_host.o $(BUILD_DIR)/filter2D.pencil_host.o $(BUILD_DIR)/gaussian.pencil_host.o $(BUILD_DIR)/resize.pencil_host.o $(BUILD_DIR)/mlp_impl.pencil_host.o
+	$(CXX) -shared -o  $(BUILD_DIR)/libcarp_ppcg.so $(BUILD_DIR)/ocl_utilities.o $(BUILD_DIR)/affine.pencil_host.o $(BUILD_DIR)/cvt_color.pencil_host.o $(BUILD_DIR)/dilate.pencil_host.o $(BUILD_DIR)/filter2D.pencil_host.o $(BUILD_DIR)/gaussian.pencil_host.o $(BUILD_DIR)/resize.pencil_host.o $(BUILD_DIR)/mlp_impl.pencil_host.o $(LDFLAGS)
 
 ## PPCG Tests
 all_ppcg_test: $(BUILD_DIR)/ppcg_test_gaussian $(BUILD_DIR)/ppcg_test_cvtColor $(BUILD_DIR)/ppcg_test_filter2D $(BUILD_DIR)/ppcg_test_dilate $(BUILD_DIR)/ppcg_test_integral $(BUILD_DIR)/ppcg_test_mlp $(BUILD_DIR)/ppcg_test_opencl_mlp $(BUILD_DIR)/ppcg_test_gel_mlp $(BUILD_DIR)/ppcg_test_OpenCV $(BUILD_DIR)/ppcg_test_boxFilter $(BUILD_DIR)/ppcg_test_affine $(BUILD_DIR)/ppcg_test_resize $(BUILD_DIR)/ppcg_test_allocation $(BUILD_DIR)/ppcg_test_local $(BUILD_DIR)/ppcg_test_nesting $(BUILD_DIR)/ppcg_test_color
 
 $(BUILD_DIR)/ppcg_test_gaussian: all_opencl $(BUILD_DIR)/libcarp_ppcg.so ./GaussianBlur/test_gaussian.cpp
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -lcarp_ppcg -lOpenCL ./GaussianBlur/test_gaussian.cpp -o $(BUILD_DIR)/ppcg_test_gaussian
+	$(CXX) $(CXXFLAGS) ./GaussianBlur/test_gaussian.cpp -o $(BUILD_DIR)/ppcg_test_gaussian $(LDFLAGS) -lcarp_ppcg
 
 $(BUILD_DIR)/ppcg_test_cvtColor: all_opencl $(BUILD_DIR)/libcarp_ppcg.so ./cvtColor/test_cvtColor.cpp
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -lcarp_ppcg -lOpenCL ./cvtColor/test_cvtColor.cpp -o $(BUILD_DIR)/ppcg_test_cvtColor
+	$(CXX) $(CXXFLAGS) ./cvtColor/test_cvtColor.cpp -o $(BUILD_DIR)/ppcg_test_cvtColor $(LDFLAGS) -lcarp_ppcg
 
 $(BUILD_DIR)/ppcg_test_filter2D: all_opencl $(BUILD_DIR)/libcarp_ppcg.so ./filter2D/test_filter2D.cpp
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -lcarp_ppcg -lOpenCL ./filter2D/test_filter2D.cpp -o $(BUILD_DIR)/ppcg_test_filter2D
+	$(CXX) $(CXXFLAGS) ./filter2D/test_filter2D.cpp -o $(BUILD_DIR)/ppcg_test_filter2D $(LDFLAGS) -lcarp_ppcg
 
 $(BUILD_DIR)/ppcg_test_dilate: all_opencl $(BUILD_DIR)/libcarp_ppcg.so ./dilate/test_dilate.cpp
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -lcarp_ppcg -lOpenCL ./dilate/test_dilate.cpp -o $(BUILD_DIR)/ppcg_test_dilate
+	$(CXX) $(CXXFLAGS) ./dilate/test_dilate.cpp -o $(BUILD_DIR)/ppcg_test_dilate $(LDFLAGS) -lcarp_ppcg
 
 $(BUILD_DIR)/ppcg_test_integral: all_opencl $(BUILD_DIR)/libcarp_ppcg.so ./cvIntegral/test_integral.cpp 
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -lcarp_ppcg -lOpenCL ./cvIntegral/test_integral.cpp -o $(BUILD_DIR)/ppcg_test_integral
+	$(CXX) $(CXXFLAGS) ./cvIntegral/test_integral.cpp -o $(BUILD_DIR)/ppcg_test_integral $(LDFLAGS) -lcarp_ppcg
 
 $(BUILD_DIR)/ppcg_test_mlp: all_opencl $(BUILD_DIR)/libcarp_ppcg.so ./mlp/test_mlp.cpp $(MLP_SOURCES)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -lcarp_ppcg -lOpenCL ./mlp/test_mlp.cpp $(MLP_SOURCES) -o $(BUILD_DIR)/ppcg_test_mlp
+	$(CXX) $(CXXFLAGS) ./mlp/test_mlp.cpp $(MLP_SOURCES) -o $(BUILD_DIR)/ppcg_test_mlp $(LDFLAGS) -lcarp_ppcg
 
 $(BUILD_DIR)/ppcg_test_opencl_mlp: all_opencl $(BUILD_DIR)/libcarp_ppcg.so ./mlp/test_opencl_mlp.cpp $(MLP_SOURCES)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -lcarp_ppcg -lOpenCL ./mlp/test_opencl_mlp.cpp $(MLP_SOURCES) -o $(BUILD_DIR)/ppcg_test_opencl_mlp
+	$(CXX) $(CXXFLAGS) ./mlp/test_opencl_mlp.cpp $(MLP_SOURCES) -o $(BUILD_DIR)/ppcg_test_opencl_mlp $(LDFLAGS) -lcarp_ppcg
 
 $(BUILD_DIR)/ppcg_test_gel_mlp: all_opencl $(BUILD_DIR)/libcarp_ppcg.so ./mlp/test_gel_mlp.cpp $(MLP_SOURCES)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -lcarp_ppcg -lOpenCL ./mlp/test_gel_mlp.cpp $(MLP_SOURCES) -o $(BUILD_DIR)/ppcg_test_gel_mlp
+	$(CXX) $(CXXFLAGS) ./mlp/test_gel_mlp.cpp $(MLP_SOURCES) -o $(BUILD_DIR)/ppcg_test_gel_mlp $(LDFLAGS) -lcarp_ppcg
 
 $(BUILD_DIR)/ppcg_test_OpenCV: all_opencl $(BUILD_DIR)/libcarp_ppcg.so ./OpenCV/test_OpenCV.cpp 
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -lcarp_ppcg -lOpenCL ./OpenCV/test_OpenCV.cpp -o $(BUILD_DIR)/ppcg_test_OpenCV
+	$(CXX) $(CXXFLAGS) ./OpenCV/test_OpenCV.cpp -o $(BUILD_DIR)/ppcg_test_OpenCV $(LDFLAGS) -lcarp_ppcg
 
 $(BUILD_DIR)/ppcg_test_boxFilter: all_opencl $(BUILD_DIR)/libcarp_ppcg.so ./boxFilter/test_boxFilter.cpp 
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -lcarp_ppcg -lOpenCL ./boxFilter/test_boxFilter.cpp -o $(BUILD_DIR)/ppcg_test_boxFilter
+	$(CXX) $(CXXFLAGS) ./boxFilter/test_boxFilter.cpp -o $(BUILD_DIR)/ppcg_test_boxFilter $(LDFLAGS) -lcarp_ppcg
 
 $(BUILD_DIR)/ppcg_test_affine: all_opencl $(BUILD_DIR)/libcarp_ppcg.so ./warpAffine/test_affine.cpp 
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -lcarp_ppcg -lOpenCL ./warpAffine/test_affine.cpp -o $(BUILD_DIR)/ppcg_test_affine
+	$(CXX) $(CXXFLAGS) ./warpAffine/test_affine.cpp -o $(BUILD_DIR)/ppcg_test_affine $(LDFLAGS) -lcarp_ppcg
 
 $(BUILD_DIR)/ppcg_test_resize: all_opencl $(BUILD_DIR)/libcarp_ppcg.so ./resize/test_resize.cpp 
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -lcarp_ppcg -lOpenCL ./resize/test_resize.cpp -o $(BUILD_DIR)/ppcg_test_resize
+	$(CXX) $(CXXFLAGS) ./resize/test_resize.cpp -o $(BUILD_DIR)/ppcg_test_resize $(LDFLAGS) -lcarp_ppcg
 
 $(BUILD_DIR)/ppcg_test_allocation: all_opencl $(BUILD_DIR)/libcarp_ppcg.so ./base/test_allocation.cpp 
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -lcarp_ppcg -lOpenCL ./base/test_allocation.cpp -o $(BUILD_DIR)/ppcg_test_allocation
+	$(CXX) $(CXXFLAGS) ./base/test_allocation.cpp -o $(BUILD_DIR)/ppcg_test_allocation $(LDFLAGS) -lcarp_ppcg
 
 $(BUILD_DIR)/ppcg_test_local: all_opencl $(BUILD_DIR)/libcarp_ppcg.so ./base/test_local.cpp 
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -lcarp_ppcg -lOpenCL ./base/test_local.cpp -o $(BUILD_DIR)/ppcg_test_local
+	$(CXX) $(CXXFLAGS) ./base/test_local.cpp -o $(BUILD_DIR)/ppcg_test_local $(LDFLAGS) -lcarp_ppcg
 
 $(BUILD_DIR)/ppcg_test_nesting: all_opencl $(BUILD_DIR)/libcarp_ppcg.so ./base/test_nesting.cpp 
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -lcarp_ppcg -lOpenCL ./base/test_nesting.cpp -o $(BUILD_DIR)/ppcg_test_nesting
+	$(CXX) $(CXXFLAGS) ./base/test_nesting.cpp -o $(BUILD_DIR)/ppcg_test_nesting $(LDFLAGS) -lcarp_ppcg
 
 $(BUILD_DIR)/ppcg_test_color: all_opencl $(BUILD_DIR)/libcarp_ppcg.so ./base/test_color.cpp 
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -lcarp_ppcg -lOpenCL ./base/test_color.cpp -o $(BUILD_DIR)/ppcg_test_color
+	$(CXX) $(CXXFLAGS) ./base/test_color.cpp -o $(BUILD_DIR)/ppcg_test_color $(LDFLAGS) -lcarp_ppcg
 
 
 # LuM end of file
