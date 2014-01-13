@@ -100,24 +100,28 @@ namespace carp {
 
         static void printHeader()
             {
-                std::cout << "    Operator - CPU Time - GPU Time - Pencil Time - Pencil/GPU speedup" << std::endl;
+                std::cout << "    Operator - CPU Time - GPU Time - Pencil Time - CPU/GPU - CPU/Pencil - GPU/Pencil" << std::endl;
             }
 
         static void printShortHeader()
             {
-                std::cout << "    Operator - CPU Time - GPU Time - CPU/GPU speedup" << std::endl;
+                std::cout << "    Operator - CPU Time - GPU Time - CPU/GPU" << std::endl;
             }
 
         
         static void print( const std::string & name, const long int & cpu, const long int & gpu, const long int & pencil )
             {
-                auto speedup = static_cast<double>(pencil)/static_cast<double>(gpu);
+                auto cpu_gpu = static_cast<double>(cpu)/static_cast<double>(gpu);
+                auto cpu_pen = static_cast<double>(cpu)/static_cast<double>(pencil);
+                auto gpu_pen = static_cast<double>(gpu)/static_cast<double>(pencil);
 		std::cout << std::fixed << std::setprecision(3);
                 std::cout << std::setw(12) << name << " - "
-                          << std::setw(6) << (cpu/1000000.) << "s - "
-                          << std::setw(6) << (gpu/1000000.) << "s - "
-                          << std::setw(6) << (pencil/1000000.) << "s - "
-                          << std::setw(7) << speedup << 'x' << std::endl;
+                          << std::setw(7) << (cpu/1000000.) << "s - "
+                          << std::setw(7) << (gpu/1000000.) << "s - "
+                          << std::setw(7) << (pencil/1000000.) << "s - "
+                          << std::setw(7) << cpu_gpu << 'x' << " - "
+                          << std::setw(7) << cpu_pen << 'x' << " - "
+                          << std::setw(7) << gpu_pen << 'x' << std::endl;
             } // print
 
         static void print( const std::string & name, const long int & cpu, const long int & gpu )
@@ -125,8 +129,8 @@ namespace carp {
                 auto speedup = static_cast<double>(cpu)/static_cast<double>(gpu);
 		std::cout << std::fixed << std::setprecision(3);
                 std::cout << std::setw(12) << name << " - "
-                          << std::setw(6) << (cpu/1000000.) << "s - "
-                          << std::setw(6) << (gpu/1000000.) << "s - "
+                          << std::setw(7) << (cpu/1000000.) << "s - "
+                          << std::setw(7) << (gpu/1000000.) << "s - "
                           << std::setw(7) << speedup << 'x' << std::endl;
             } // print
 
@@ -134,15 +138,15 @@ namespace carp {
         static void CSI( double cpu_gpu_quotient, double pencil_gpu_quotient, double pencil_cpu_quotient, int64_t nums )
             {
                 std::cout << "Cumulated Speed Improvement: " << std::endl 
-                          << "    cpu time    / gpu time: " << (cpu_gpu_quotient / nums) << "x" << std::endl 
-                          << "    pencil time / cpu time: " << (pencil_cpu_quotient / nums) << "x" << std::endl
-                          << "    pencil time / gpu time: " << (pencil_gpu_quotient / nums) << "x" << std::endl;
+                          << "    CPU time / GPU time: " << (cpu_gpu_quotient / nums) << "x" << std::endl 
+                          << "    CPU time / Pencil time: " << (nums / pencil_cpu_quotient) << "x" << std::endl
+                          << "    GPU time / Pencil time: " << (nums / pencil_gpu_quotient) << "x" << std::endl;
             }
 
         static void CSI( double cpu_gpu_quotient, int64_t nums )
             {
                 std::cout << "Cumulated Speed Improvement: " << std::endl 
-                          << "    cpu time    / gpu time: " << (cpu_gpu_quotient / nums) << "x" << std::endl;                
+                          << "    CPU time / GPU time: " << (cpu_gpu_quotient / nums) << "x" << std::endl;                
             }
 
         
