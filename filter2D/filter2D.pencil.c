@@ -17,7 +17,7 @@ filter2D(
     int kernel_rows,
     int kernel_cols,
     int kernel_step,
-    const float kernel[static const restrict kernel_step][kernel_cols],
+    const float kernel_[static const restrict kernel_step][kernel_cols],
     int conv_step, 
     float conv[static const restrict conv_step][cols] ) {
 #pragma scop    
@@ -40,7 +40,7 @@ filter2D(
 		    col = col < 0 ? 0 : col;
 		    col = col < cols ? col : cols - 1;
 	    	    // if ( (row>=0) && (row<rows) && (col>=0) && (col<cols) )
-		    prod += src[row][col] * kernel[e][r];
+		    prod += src[row][col] * kernel_[e][r];
      	    	}
 	    conv[q][w] = prod;
      	}
@@ -57,11 +57,11 @@ pencil_filter2D(
     int kernel_rows,
     int kernel_cols,
     int kernel_step,
-    float kernel[],
+    float kernel_[],
     int conv_step, 
     float conv[] ) {
 #pragma scop
-    filter2D( rows, cols, src_step, src, kernel_rows, kernel_cols, kernel_step, kernel, conv_step, conv );
+    filter2D( rows, cols, src_step, src, kernel_rows, kernel_cols, kernel_step, kernel_, conv_step, conv );
 #pragma endscop
 
     return;

@@ -17,7 +17,7 @@ filter2D(
     int kernel_rows,
     int kernel_cols,
     int kernel_step,
-    const float kernel[static const restrict kernel_step][kernel_cols],
+    const float kernel_[static const restrict kernel_step][kernel_cols],
     int conv_step, 
     float conv[static const restrict conv_step][cols] ) {
 
@@ -41,7 +41,7 @@ filter2D(
 		    col = col < 0 ? 0 : col;
 		    col = col < cols ? col : cols - 1;
 	    	    // if ( (row>=0) && (row<rows) && (col>=0) && (col<cols) )
-		    prod += src[row][col] * kernel[e][r];
+		    prod += src[row][col] * kernel_[e][r];
      	    	}
 	    conv[q][w] = prod;
      	}
