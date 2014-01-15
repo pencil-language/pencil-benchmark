@@ -82,11 +82,9 @@ void printMatFloat(MatFloat mat, char *name) {
 }
 
 void freeMLP(mlp *classifier) {
-#pragma scop
     freeMatFloat(&classifier->m_wIn);
     freeMatFloat(&classifier->m_wOut);
     freeMatFloat(&classifier->m_U);
-#pragma endscop
     return;
 }
 
@@ -197,7 +195,6 @@ static void convertFromCharToFloatArray(int imageRows, int imageCols,
 }
 
 void freeMatFloat(MatFloat *mat) {
-#pragma scop
     // assert(mat->data);
     // assert(mat->start == 0);
     free(mat->data);
@@ -206,12 +203,10 @@ void freeMatFloat(MatFloat *mat) {
     mat->cols = 0;
     mat->step = 0;
     mat->start = 0;
-#pragma endscop
     return;
 }
 
 void freeMatChar(MatChar *mat) {
-#pragma scop
     // assert(mat->data);
     // assert(mat->start == 0);
     free(mat->data);
@@ -220,7 +215,6 @@ void freeMatChar(MatChar *mat) {
     mat->cols = 0;
     mat->step = 0;
     mat->start = 0;
-#pragma endscop
     return;
 }
 
@@ -283,8 +277,6 @@ static void divideFloat(float Val, int rows, int cols, float Mat[rows][cols]) {
 }
 
 float GetValueFloat(MatFloat self, int row, int col) {
-#pragma scop
-#pragma endscop
     return self.data[row * self.step + col + self.start];
 }
 
@@ -315,7 +307,6 @@ static void normalizeSample(int subImageRows, int subImageCols, int imageRows,
 			    int imageOffsetRow, int imageOffsetCol,
                             int resultRows, int resultCols,
                             float resultArray[resultRows][resultCols]) {
-#pragma scop
 
     float sampleMean = meanChar(subImageRows, subImageCols, imageRows,
                                 imageCols, imageArray, imageOffsetRow,
@@ -339,7 +330,6 @@ static void normalizeSample(int subImageRows, int subImageCols, int imageRows,
                                 imageOffsetCol, 1.0 / sampleMax,
                                 -(1.0 / sampleMax) * sampleMean, resultRows,
                                 resultCols, resultArray);
-#pragma endscop
     return;
 }
 
@@ -389,7 +379,6 @@ static float generateResponseMapPatch(
     float (*patchArray)[patchCols] =
         malloc(sizeof(float) * patchRows * patchCols);
     
-#pragma scop
     normalizeSample(imagePatchRows, imagePatchCols, ImageRows, ImageCols, Image,
                     cy - classifier.m_patchSize, cx - classifier.m_patchSize,
                     patchRows, patchCols, patchArray);
@@ -421,7 +410,6 @@ static float generateResponseMapPatch(
 
     free(patchArray);
     free(xOutArray);
-#pragma endscop
     return result;
 }
 
@@ -623,8 +611,6 @@ static void generateResponseMap(
 }
 
 static int cvRound(float value) {
-#pragma scop
-#pragma endscop
     return (int)(value + (value >= 0 ? 0.5 : -0.5));
 }
 
