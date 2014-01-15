@@ -68,10 +68,8 @@ gaussian (
     float temp[static const restrict temp_step][cols],
     int conv_step, 
     float conv[static const restrict conv_step][cols] ) {
-#pragma scop
     filter2D( rows, cols, src_step,  src,  kernelX_rows, kernelX_cols, kernelX_step, kernelX, temp_step, temp );    
     filter2D( rows, cols, temp_step, temp, kernelY_rows, kernelY_cols, kernelY_step, kernelY, conv_step, conv );
-#pragma endscop
     return;
 
 } // gaussian
@@ -94,9 +92,7 @@ pencil_gaussian(
     float temp[],
     int conv_step, 
     float conv[] ) {
-#pragma scop    
     gaussian ( rows, cols, src_step, src, kernelX_rows, kernelX_cols, kernelX_step, kernelX, kernelY_rows, kernelY_cols, kernelY_step, kernelY, temp_step, temp, conv_step, conv );
-#pragma endscop
     return;
 
 } // gaussian
