@@ -60,9 +60,8 @@ pencil_filter2D(
     float kernel_[],
     int conv_step, 
     float conv[] ) {
-#pragma scop
+
     filter2D( rows, cols, src_step, src, kernel_rows, kernel_cols, kernel_step, kernel_, conv_step, conv );
-#pragma endscop
 
     return;
 } // filter2D
