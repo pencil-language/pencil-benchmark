@@ -74,11 +74,9 @@ pencil_dilate (
     int anchor_col,
     int border_type ) {
 
-#pragma scop
     // assert(border_type==0);
 
     dilate( rows, cols, cpu_step, cpu_gray, dilate_step, pdilate, se_rows, se_cols, se_step, se, anchor_row, anchor_col, border_type );
-#pragma endscop
 
     return;
 } // pencil_dilate
