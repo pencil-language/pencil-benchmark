@@ -32,12 +32,7 @@ bilinear( float A00, float A01, float A11, float A10, float r, float c ) {
     return result;
 } // bilinear
 
-static inline int
-sat( int val, int lo, int hi ) {
-    val = (val >= lo) ? val : lo;
-    val = (val <= hi) ? val : hi;
-    return val;
-}
+#define sat( val, lo, hi ) ((val >= lo) ? ((val <= hi) ? val : hi) : lo);
 
 static void
 resize (
@@ -45,11 +40,11 @@ resize (
     int original_rows,
     int original_cols,
     int original_step,
-    uint8_t original[static const restrict original_step][original_cols],
+    unsigned char original[static const restrict original_step][original_cols],
     int resampled_rows,
     int resampled_cols,
     int resampled_step,
-    uint8_t resampled[static const restrict resampled_step][resampled_cols] ) {
+    unsigned char resampled[static const restrict resampled_step][resampled_cols] ) {
 
 #pragma scop
     // assert(resampled_rows>1);
@@ -81,10 +76,10 @@ resize (
  	    int coord_11_r = sat( coord_00_r + 1, 0, o_h - 1 );
      	    int coord_11_c = sat( coord_00_c + 1, 0, o_w - 1 );
 	    
-	    uint8_t A00 = original[coord_00_r][coord_00_c];
-	    uint8_t A10 = original[coord_10_r][coord_10_c];
-	    uint8_t A01 = original[coord_01_r][coord_01_c];
-	    uint8_t A11 = original[coord_11_r][coord_11_c];
+	    unsigned char A00 = original[coord_00_r][coord_00_c];
+	    unsigned char A10 = original[coord_10_r][coord_10_c];
+	    unsigned char A01 = original[coord_01_r][coord_01_c];
+	    unsigned char A11 = original[coord_11_r][coord_11_c];
 	    
 	    resampled[n_r][n_c] = bilinear( A00, A01, A11, A10, r, c );
      	} // for n_c, n_r
@@ -95,8 +90,8 @@ resize (
 
 void
 pencil_resize_LN (
-    int original_rows,  int original_cols,  int original_step,  uint8_t original[],
-    int resampled_rows, int resampled_cols, int resampled_step, uint8_t resampled[] ) {
+    int original_rows,  int original_cols,  int original_step,  unsigned char original[],
+    int resampled_rows, int resampled_cols, int resampled_step, unsigned char resampled[] ) {
 
     resize(original_cols, original_rows, original_cols, original_step, original, 
 	    resampled_rows, resampled_cols, resampled_step, resampled );

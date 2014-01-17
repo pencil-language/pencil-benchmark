@@ -153,15 +153,14 @@ time_resize( carp::opencl::device & device, T0 & pool )
                 pencil_resize.create(size, CV_8UC1);
 
                 const auto pencil_start = std::chrono::high_resolution_clock::now();
-                pencil_resize_LN(
-                    cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr(),
-                    pencil_resize.rows, pencil_resize.cols, pencil_resize.step1(), pencil_resize.ptr() );
+                pencil_resize_LN(cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr(), pencil_resize.rows, pencil_resize.cols, pencil_resize.step1(), pencil_resize.ptr() );
                 const auto pencil_end = std::chrono::high_resolution_clock::now();
                 elapsed_time_pencil += carp::microseconds(pencil_end - pencil_start);
 
                 // Verifying the results
                 if (( cv::norm(cpu_resize - check, cv::NORM_INF) > 1 ) ||
-                    ( cv::norm(cpu_resize - pencil_resize, cv::NORM_INF) > 1 )) {
+                    ( cv::norm(cpu_resize - pencil_resize, cv::NORM_INF) > 1 )) 
+		{
                     PRINT(cv::norm(check - cpu_resize, cv::NORM_INF));
                     PRINT(cv::norm(cpu_resize - pencil_resize, cv::NORM_INF));
                     
