@@ -39,8 +39,8 @@ filter2D(
 		    row = row < rows ? row : rows - 1;
 		    col = col < 0 ? 0 : col;
 		    col = col < cols ? col : cols - 1;
-	    	    // if ( (row>=0) && (row<rows) && (col>=0) && (col<cols) )
-		    prod += src[row][col] * kernel_[e][r];
+	    	    if ( (row>=0) && (row<rows) && (col>=0) && (col<cols) )
+		      prod += src[row][col] * kernel_[e][r];
      	    	}
 	    conv[q][w] = prod;
      	}
