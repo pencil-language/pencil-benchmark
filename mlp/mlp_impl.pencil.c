@@ -248,7 +248,7 @@ static void expFloat(int rows, int cols, float Mat[rows][cols]) {
 
     for (int i = 0; i < rows; i++)
         for (int j = 0; j < cols; j++)
-            Mat[i][j] = expf(Mat[i][j]);
+            Mat[i][j] = exp(Mat[i][j]);	//This should be expf in C and exp in OpenCL
 
 #pragma endscop
     return;
@@ -406,7 +406,7 @@ static float generateResponseMapPatch(
         -dotProduct(wOutRows, wOutCols, xOutRows, xOutCols, wOutArray, xOutArray);
 
     result -= bOut;
-    result = 1.0f / (1.0f + expf(result));
+    result = 1.0f / (1.0f + exp(result)); //This should be expf in C and exp in OpenCL
 
     free(patchArray);
     free(xOutArray);
@@ -467,7 +467,7 @@ static float generateResponseMapPatchNoMemory(
                         k % imagePatchRows + j + imageOffsetCol] +
                      shift);
             }
-            xOutArray = expf(xOutArray);
+            xOutArray = exp(xOutArray);	//This should be expf in C and exp in OpenCL
             xOutArray = xOutArray + 1.0f;
             xOutArray = 2.0f / xOutArray;
             xOutArray = xOutArray + -1.0f;
@@ -477,7 +477,7 @@ static float generateResponseMapPatchNoMemory(
 
     result = - result;
     result -= bOut;
-    result = 1.0f / (1.0f + expf(result));
+    result = 1.0f / (1.0f + exp(result)); //This should be expf in C and exp in OpenCL
 #pragma endscop
     return result;
 }

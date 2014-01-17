@@ -37,7 +37,7 @@ int main()
     carp::conductor_t conductor;
     int fail = 0;
     long int elapsed_time = 0;
-    
+    int i = 1;
     
     for ( conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id);
           ((conductor.id != -1) && (conductor.id != processed_frames));
@@ -50,6 +50,7 @@ int main()
 
         // here comes the function call
         {
+	    std::cout << i++ << "/" << processed_frames << std::endl;
             // preparing the inputs
             MatChar alignedImage = carp::convertCVToMatChar(conductor.hack.alignedImage);
             MatFloat shape = carp::convertCVToMatFloat(conductor.hack.shape);
