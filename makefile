@@ -11,7 +11,7 @@ BOOST_LIBS=-lboost_date_time -lboost_filesystem -lboost_iostreams -lboost_progra
 
 OPENCV_INCLUDE_DIR=/usr/local/include/
 OPENCV_LIB_DIR=/usr/local/lib/
-OPENCV_LIBS=-lopencv_calib3d -lopencv_flann -lopencv_legacy -lopencv_ocl -lopencv_ts -lopencv_contrib -lopencv_gpu -lopencv_ml -lopencv_photo -lopencv_video -lopencv_core -lopencv_highgui -lopencv_nonfree -lopencv_stitching -lopencv_videostab -lopencv_features2d -lopencv_imgproc -lopencv_objdetect -lopencv_superres
+OPENCV_LIBS=-lopencv_core -lopencv_imgproc -lopencv_ocl -lopencv_highgui
 
 TBB_INCLUDE_DIR=/usr/include/
 TBB_LIB_DIR=/usr/lib/
