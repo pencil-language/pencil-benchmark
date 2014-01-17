@@ -168,14 +168,16 @@ namespace carp {
                 this->m_set = true;
             } // operator set
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
             template <class ...MT>
             kernel & operator() ( MT ... mt ) {
                 assert(m_set);
                 int pos=0; // the position of the parameters
                 bool err[] = { setparameter(pos, mt)... };
-
                 return *this;
             } // operator ()
+#pragma GCC diagnostic pop
             
             void
             groupsize( std::vector<size_t> groupsize, std::vector<size_t> worksize ) {
@@ -503,47 +505,40 @@ namespace carp {
             typedef T0 value_type;
             
         private:
-            int m_rows;
-            int m_cols;
             cl_context cqContext;
             cl_command_queue cqCommandQueue;
+            int m_rows;
+            int m_cols;
             opencl::array_<value_type> buf;
 
             image( const image<T0> & ) { }
             
         public:
-            image( const cl_context & cqContext,
-                   const cl_command_queue & cqCommandQueue,
-                   int m_rows,
-                   int m_cols ) :
-                cqContext(cqContext),
-                cqCommandQueue(cqCommandQueue),
-                m_rows(rows),
-                m_cols(cols),
-                buf(cqContext, cqCommandQueue, m_rows * m_cols )
-                { }
+            image( const cl_context & cqContext, const cl_command_queue & cqCommandQueue, int m_rows, int m_cols )
+	    : cqContext(cqContext)
+	    , cqCommandQueue(cqCommandQueue)
+	    , m_rows(rows)
+	    , m_cols(cols)
+	    , buf(cqContext, cqCommandQueue, m_rows * m_cols )
+	    { }
 
-            image( opencl::device & device,
-                   int rows,
-                   int cols ) :
-                cqContext(device.get_context()),
-                cqCommandQueue(device.get_queue()),
-                m_rows(rows),
-                m_cols(cols),
-                buf(cqContext, cqCommandQueue, rows * cols )
-                { }
+            image( opencl::device & device, int rows, int cols )
+	    : cqContext(device.get_context())
+	    , cqCommandQueue(device.get_queue())
+	    , m_rows(rows)
+	    , m_cols(cols)
+	    , buf(cqContext, cqCommandQueue, rows * cols )
+	    { }
             
-            image( opencl::device & device,
-                   cv::Mat_<T0> input ) :
-                cqContext(device.get_context()),
-                cqCommandQueue(device.get_queue()),
-                m_rows(input.rows),
-                m_cols(input.cols),
-                buf(cqContext, cqCommandQueue, input.rows * input.cols )
-                {
-                    this->set(input);                    
-                } // image
-
+            image( opencl::device & device, cv::Mat_<T0> input )
+	    : cqContext(device.get_context())
+	    , cqCommandQueue(device.get_queue())
+	    , m_rows(input.rows)
+	    , m_cols(input.cols)
+	    , buf(cqContext, cqCommandQueue, input.rows * input.cols )
+	    {
+	      this->set(input);
+	    }
             
             int rows() const { return m_rows; };
 
