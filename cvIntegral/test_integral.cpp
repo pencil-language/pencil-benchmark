@@ -121,7 +121,7 @@ int main(int argc, char* argv[])
     cv::ocl::Context * context = cv::ocl::Context::getContext();
     carp::opencl::device device(context);
     device.source_compile( imgproc_integral_sum_cl, imgproc_integral_sum_cl_len,
-                           carp::string_vector("integral_sum_cols_D4", "integral_sum_rows_D4", "integral_sum_cols_D5", "integral_sum_rows_D5" ),
+                           carp::make_vector<std::string>("integral_sum_cols_D4", "integral_sum_rows_D4", "integral_sum_cols_D5", "integral_sum_rows_D5" ),
                            " -D DOUBLE_SUPPORT" );
     time_integral( device, pool, 10 );
     return EXIT_SUCCESS;    

@@ -135,7 +135,7 @@ namespace carp {
 
         if (noZero) compile_option += " -D RECTKERNEL ";
                 
-        device.source_compile( filtering_morph_cl, filtering_morph_cl_len,  carp::string_vector(kernelName), compile_option );
+        device.source_compile( filtering_morph_cl, filtering_morph_cl_len,  make_vector<std::string>(kernelName), compile_option );
         device[kernelName](
             reinterpret_cast<cl_mem>(src.data),
             reinterpret_cast<cl_mem>(dst.data),

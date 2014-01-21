@@ -51,30 +51,12 @@ namespace carp {
         std::cout << "]" << std::endl;
     } // print_image
 
-    template <class T0>
-    bool
-    push( std::vector<T0> & self, T0 t0 )
-    {
-        self.push_back(t0);
-        return true;
-    } // push
-
     template<class T0, class... Types>
     std::vector<T0>
     make_vector( T0 input0, Types... inputs )
     {
         return std::vector<T0>{ input0, inputs... };
     }
-
-
-    template <class... Types>
-    std::vector<std::string>
-    string_vector( Types... inputs)
-    {
-        return make_vector<std::string>(inputs...);
-    } // string_vector
-
-
 
     template <class T0>
     std::chrono::microseconds::rep

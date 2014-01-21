@@ -22,7 +22,7 @@ int main()
     std::vector<carp::hack_t> packages;    
     carp::conductor_t conductor; // the class for importing the input from the clm
     carp::opencl::device device;
-    device.source_compile( mlp_impl_cl, mlp_impl_cl_len, carp::string_vector("calculateMaps") );
+    device.source_compile( mlp_impl_cl, mlp_impl_cl_len, carp::make_vector<std::string>("calculateMaps") );
 
     for ( conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id);
           ((conductor.id != -1) && (conductor.id != processed_frames));

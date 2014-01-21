@@ -155,7 +155,7 @@ int main(int argc, char* argv[])
     cv::ocl::Context * context = cv::ocl::Context::getContext();
     carp::opencl::device device(context);
     device.source_compile( imgproc_convolve_cl, imgproc_convolve_cl_len,
-                           carp::string_vector("convolve_D5" ) );
+                           carp::make_vector<std::string>("convolve_D5" ) );
     time_filter2D( device, pool, 1 );
     return EXIT_SUCCESS;    
 } // main

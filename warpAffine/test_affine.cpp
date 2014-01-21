@@ -68,7 +68,7 @@ namespace carp {
                 for(int n = 0; n < 3; n++)
                     float_coeffs[m][n] = coeffs[m][n];
 
-            carp::opencl::array coeffs_cm = carp::opencl::array_<float>( device, 2 * 3, float_coeffs, CL_MEM_READ_ONLY );
+            coeffs_cm = carp::opencl::array_<float>( device, 2 * 3, float_coeffs, CL_MEM_READ_ONLY );
         }
         
         //TODO: improve this kernel
@@ -191,22 +191,3 @@ int main(int argc, char* argv[])
     time_affine( device, pool );
     return EXIT_SUCCESS;    
 } // main
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// LuM end of file

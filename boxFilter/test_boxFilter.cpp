@@ -89,7 +89,7 @@ time_boxFilter( carp::opencl::device & device, T0 & pool )
                 device.source_compile(
                     filtering_boxFilter_cl,
                     filtering_boxFilter_cl_len,
-                    carp::string_vector("boxFilter_C1_D0"),
+                    carp::make_vector<std::string>("boxFilter_C1_D0"),
                     "   -D anX=" + carp::cast<std::string>(anchor.x)
                     + " -D anY=" + carp::cast<std::string>(anchor.y)
                     + " -D ksX=" + carp::cast<std::string>(ksize.width)
@@ -149,22 +149,3 @@ int main(int argc, char* argv[])
 
     return EXIT_SUCCESS;    
 } // main
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// LuM end of file

@@ -8,9 +8,8 @@
 #include <CL/cl.h>
 #include <fstream>
 #include <stdexcept>
-#include <boost/foreach.hpp>
-#include <boost/smart_ptr.hpp>
 #include <opencv2/core/core.hpp>
+#include <memory>
 
 #include "cltypes.h"
 #include "errors.hpp"
@@ -99,50 +98,25 @@ namespace carp {
 
         
         class array {
-        protected:
-            boost::shared_ptr<_cl_mem> cl_ptr;
-            size_t m_size;
-            cl_context cqContext;
-            cl_command_queue cqCommandQueue;
-
-        public:
-
-            array ( const array & other )
-                : cl_ptr(other.cl_ptr), m_size(other.m_size), cqContext(other.cqContext), cqCommandQueue(other.cqCommandQueue)
-                { }; // copy constructor forbidden
-            
-            array()
-                : m_size(0), cqContext(NULL), cqCommandQueue(NULL)
-                { }
-                       
-            virtual cl_mem cl() { assert(cl_ptr); return cl_ptr.get(); }
-
-            virtual size_t size1() { assert(m_size>0); return m_size; }
-
-            virtual ~array() { }
-            
-            
-            
-        }; // class array
+	protected:
+	  std::shared_ptr<_cl_mem> cl_ptr;
+	  size_t m_size;
+	  cl_context cqContext;
+	  cl_command_queue cqCommandQueue;
+	  
+	public:
+	  array() : cl_ptr(nullptr), m_size(0), cqContext(nullptr), cqCommandQueue(nullptr) {}
+	  array ( const array & other ) = delete;
+	  virtual cl_mem cl() { assert(cl_ptr); return cl_ptr.get(); }
+	  virtual size_t size1() { assert(m_size>0); return m_size; }
+	  virtual ~array() { }
+	}; // class array
 
         
         class kernel {
         private:
-
-            template <class MT0>
-            class preparator {
-            private:
-                void * m_ptr;
-                size_t m_size;
-                
-            public:
-                preparator( MT0 & mt0 ) : m_ptr(reinterpret_cast<void*>(&mt0)), m_size(sizeof(mt0)) { }
-                void * ptr() { return m_ptr; } // ptr
-                size_t size() { return m_size; } // size                 
-            }; // class preparator
-            
-            boost::shared_ptr<_cl_kernel> cqKernel;
-            boost::shared_ptr<_cl_command_queue> cqCommandQueue;
+            std::shared_ptr<_cl_kernel> cqKernel;
+            std::shared_ptr<_cl_command_queue> cqCommandQueue;
             bool m_set;
 
             template <class MT0, class Pos>
@@ -150,9 +124,7 @@ namespace carp {
             setparameter( Pos & pos, MT0 & mt0 ) {
                 assert(cqKernel);
 
-                kernel::preparator<MT0> parameter(mt0);                
-                
-                utility::checkerror( clSetKernelArg( cqKernel.get(), pos, parameter.size(), parameter.ptr() ), __FILE__, __LINE__, "(arg from 0: " + carp::cast<std::string>(pos) + ") " );
+                utility::checkerror( clSetKernelArg( cqKernel.get(), pos, sizeof(mt0), reinterpret_cast<void*>(&mt0) ), __FILE__, __LINE__, "(arg from 0: " + carp::cast<std::string>(pos) + ") " );
                 pos++; // move the position of the parameter applied
                 return true;
             } // setparameter
@@ -161,8 +133,8 @@ namespace carp {
             kernel() : m_set(false) { };
 
             void
-            set( boost::shared_ptr<_cl_kernel> cqKernel,
-                 boost::shared_ptr<_cl_command_queue> cqCommandQueue ) {
+            set( std::shared_ptr<_cl_kernel> cqKernel,
+                 std::shared_ptr<_cl_command_queue> cqCommandQueue ) {
                 this->cqKernel = cqKernel;
                 this->cqCommandQueue = cqCommandQueue;
                 this->m_set = true;
@@ -190,35 +162,21 @@ namespace carp {
             } // groupsize 
         }; // class kernel
 
-        
-        template <>
-        class carp::opencl::kernel::preparator<opencl::buffer> {
-        private:
-            void * m_ptr;
-            size_t m_size;
-                
-        public:
-            preparator( opencl::buffer & mt0 ) : m_ptr(NULL), m_size(mt0.size()) { }
-            void * ptr() { return m_ptr; } // ptr
-            size_t size() { return m_size; } // size                 
-        }; // class preparator <opencl::buffer>
-
-                
         class device {
         private:
             typedef std::map<std::string, opencl::kernel> kernels_t;            
             
-            boost::shared_ptr<_cl_context> cxGPUContext;         // OpenCL context
-            boost::shared_ptr<_cl_command_queue> cqCommandQueue; // OpenCL command queue
-            boost::shared_ptr<cl_platform_id> cpPlatform;       // OpenCL platform
+            std::shared_ptr<_cl_context> cxGPUContext;         // OpenCL context
+            std::shared_ptr<_cl_command_queue> cqCommandQueue; // OpenCL command queue
+            std::shared_ptr<cl_platform_id> cpPlatform;       // OpenCL platform
             std::vector<cl_device_id> devices;
             // cl_device_id cdDevice;          // OpenCL device
-            boost::shared_ptr<_cl_program> cpProgram;           // OpenCL program
+            std::shared_ptr<_cl_program> cpProgram;           // OpenCL program
             kernels_t kernels; // OpenCL kernel            
             cl_uint num_platforms;          // The number of OpenCL platforms
             cl_uint num_devices;            // The number of OpenCL devices
 
-            device( const device & ){ } // device is not copyable
+            device( const device & ) = delete; // device is not copyable
             
         public:
 
@@ -330,7 +288,7 @@ namespace carp {
                     cl_kernel tmp_kernel;
                     tmp_kernel = clCreateKernel( cpProgram.get(), kernel_name.c_str(), &err );
                     utility::checkerror( err, __FILE__, __LINE__ );
-                    boost::shared_ptr<_cl_kernel> btmp_kernel( tmp_kernel, clReleaseKernel );
+                    std::shared_ptr<_cl_kernel> btmp_kernel( tmp_kernel, clReleaseKernel );
                     kernels[kernel_name].set( btmp_kernel, cqCommandQueue );
                 }
 
@@ -372,7 +330,7 @@ namespace carp {
                     cl_kernel tmp_kernel;
                     tmp_kernel = clCreateKernel( cpProgram.get(), kernel_name.c_str(), &err );
                     utility::checkerror( err, __FILE__, __LINE__ );
-                    boost::shared_ptr<_cl_kernel> btmp_kernel( tmp_kernel, clReleaseKernel );
+                    std::shared_ptr<_cl_kernel> btmp_kernel( tmp_kernel, clReleaseKernel );
                     kernels[kernel_name].set( btmp_kernel, cqCommandQueue );
                 }
 
@@ -473,11 +431,9 @@ namespace carp {
                     tmp = clCreateBuffer( cqContext, flags | CL_MEM_COPY_HOST_PTR, size * sizeof(T0), reinterpret_cast<void*>(ptr), &err );
                     utility::checkerror( err, __FILE__, __LINE__ );
                     cl_ptr.reset(tmp, clReleaseMemObject);
-                }            
-            
-            ~array_() { } // ~array_
-
-            cl_mem cl() {
+                }
+                
+	    cl_mem cl() {
                 return cl_ptr.get();
             } // cl
             

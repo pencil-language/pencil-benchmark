@@ -109,28 +109,9 @@ int main(int argc, char* argv[])
     // Initializing OpenCL
     cv::ocl::Context * context = cv::ocl::Context::getContext();
     carp::opencl::device device(context);
-    device.source_compile( cvt_color_cl, cvt_color_cl_len, carp::string_vector("RGB2Gray") );
+    device.source_compile( cvt_color_cl, cvt_color_cl_len, carp::make_vector<std::string>("RGB2Gray") );
     size_t num_iterations = 10;
     time_cvtColor( device, pool, num_iterations );
 
     return EXIT_SUCCESS;    
-} // main
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// LuM end of file
+}
