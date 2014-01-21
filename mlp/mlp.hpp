@@ -329,7 +329,6 @@ void gel::MLP<T0>::update(int newMapSize) const
         // here we assume that the patches are always square-like
         int number_of_all_patches  = m_number_of_patches_per_line * m_number_of_patches_per_line;
         m_patch_line_size = 2 * m_patchSize + 1;
-        int patch_size = m_patch_line_size * m_patch_line_size;
 
         m_all_bIns.create ( bIn.rows, number_of_all_patches );
         m_all_bOuts.create( 1, number_of_all_patches );

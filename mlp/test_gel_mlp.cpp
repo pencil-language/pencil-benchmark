@@ -20,10 +20,7 @@ const int processed_frames = 100;
 int main()
 {
     carp::conductor_t conductor;
-    int fail = 0;
     long int elapsed_time = 0;
-    int64_t maxnetallocated = 0;
-    int64_t maxgrossallocated = 0;
     
     int numberOfThreads =  tbb::tbb_thread::hardware_concurrency();
     PRINT(numberOfThreads);    

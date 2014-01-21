@@ -57,15 +57,7 @@ namespace {
 
 namespace carp {
 
-    void
-    dilate(
-        carp::opencl::device & device,
-        cv::Mat cpu_gray,
-        cv::Mat & host_dilate,
-        cv::Mat structuring_element,
-        cv::Point anchor,
-        int border_type,
-        cv::Size ksize ) {
+    void dilate( carp::opencl::device & device, cv::Mat cpu_gray, cv::Mat & host_dilate, cv::Mat structuring_element, cv::Point anchor, int border_type, cv::Size ksize ) {
 
         cv::ocl::oclMat src(cpu_gray);
         cv::ocl::oclMat mat_kernel;
@@ -90,7 +82,6 @@ namespace carp {
                 
         int srcOffset_x = srcOffset % srcStep;
         int srcOffset_y = srcOffset / srcStep;
-        cv::ocl::Context *clCxt = src.clCxt;
         std::string kernelName;
         size_t localThreads[3] = {16, 16, 1};
         size_t globalThreads[3] = {(src.cols + localThreads[0] - 1) / localThreads[0] *localThreads[0], 
@@ -133,7 +124,7 @@ namespace carp {
             + " -D RADIUSY=" + carp::cast<std::string>(anchor.y)
             + " -D LSIZE0=" + carp::cast<std::string>(localThreads[0])
             + " -D LSIZE1=" + carp::cast<std::string>(localThreads[1])
-            +" -D DILATE ";
+            + " -D DILATE ";
                 
 //                if (rectKernel) compiler_option += " -D RECTKERNEL ";
 
@@ -173,22 +164,10 @@ template<class T0>
 void
 time_dilate( carp::opencl::device & device, T0 & pool )
 {
-
-    double cpu_gpu_quotient=0;
-    double pencil_gpu_quotient=0;
-    double pencil_cpu_quotient=0;
-
-    int64_t nums = 0;
-    std::vector<int> elemsizes = { 5, 7, 9 /*, 11, 15, 17*/ };
-    
     carp::TimingLong timing;
 
-    for ( auto & elemsize : elemsizes ) {
-        PRINT(elemsize);        
-        long int elapsed_time_gpu = 0;
-        long int elapsed_time_cpu = 0;
-        long int elapsed_time_pencil = 0;
-        
+    for ( auto & elemsize : { 5, /*7, 9, 11, 15, 17*/ } ) {
+        PRINT(elemsize);
         for ( auto & item : pool ) {
             PRINT(item.path());
             
@@ -198,19 +177,19 @@ time_dilate( carp::opencl::device & device, T0 & pool )
             
             cv::Mat host_dilate;
             cv::Mat check;
-            cv::Point anchor = cv::Point( elemsize/2, elemsize/2 );
+            cv::Point anchor( elemsize/2, elemsize/2 );
             cv::Size ksize(elemsize, elemsize);
             cv::Mat structuring_element = cv::getStructuringElement( cv::MORPH_ELLIPSE, ksize, anchor );
             
             auto cpu_start = std::chrono::high_resolution_clock::now();
             cv::dilate( cpu_gray, host_dilate, structuring_element, anchor, /*iteration = */1, cv::BORDER_CONSTANT );
             auto cpu_end = std::chrono::high_resolution_clock::now();
-            elapsed_time_cpu += carp::microseconds(cpu_end - cpu_start);
+            auto elapsed_time_cpu = carp::microseconds(cpu_end - cpu_start);
 
             auto gpu_start = std::chrono::high_resolution_clock::now();
             carp::dilate( device, cpu_gray, check, structuring_element, anchor, cv::BORDER_CONSTANT, ksize );
             auto gpu_end = std::chrono::high_resolution_clock::now();
-            elapsed_time_gpu += carp::microseconds(gpu_end - gpu_start);
+            auto elapsed_time_gpu = carp::microseconds(gpu_end - gpu_start);
 
             // pencil code result checking
             cv::Mat pdilate(cpu_gray.size(), CV_8U);
@@ -231,7 +210,7 @@ time_dilate( carp::opencl::device & device, T0 & pool )
                 anchor.y,
                 cv::BORDER_CONSTANT );
             const auto pencil_end = std::chrono::high_resolution_clock::now();
-            elapsed_time_pencil += carp::microseconds(pencil_end - pencil_start);
+            auto elapsed_time_pencil = carp::microseconds(pencil_end - pencil_start);
             
             // Verifying the results
             if ( (cv::norm(host_dilate - check) > 0.01) || (cv::norm(host_dilate - pdilate) > 0.01) ) {
@@ -242,21 +221,10 @@ time_dilate( carp::opencl::device & device, T0 & pool )
                 cv::imwrite("pencil_dilate.png", pdilate );
                 throw std::runtime_error("The GPU results are not equivalent with the CPU results.");                
             }
-            
-            if (elapsed_time_gpu > 1) {
-                cpu_gpu_quotient += static_cast<double>(elapsed_time_cpu) / elapsed_time_gpu;
-                pencil_gpu_quotient += static_cast<double>(elapsed_time_pencil) / elapsed_time_gpu;
-                pencil_cpu_quotient += static_cast<double>(elapsed_time_pencil) / elapsed_time_cpu;
-                nums++;
-            } // elapsed_time_gpu
-
-        } // for pool
-        
-        timing.print( "dilate image", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
-            
-    } // for elemsizes
-} // text_boxFilter
-
+            timing.print( "dilate image", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
+        }
+    }
+}
 
 int main(int argc, char* argv[])
 {
@@ -270,23 +238,4 @@ int main(int argc, char* argv[])
     carp::opencl::device device(context);
     time_dilate( device, pool );
     return EXIT_SUCCESS;    
-} // main
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// LuM end of file
+}

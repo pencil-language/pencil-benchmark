@@ -19,14 +19,6 @@
 #include "utility.hpp"
 #include "serialization.hpp"
 
-/*
-  extern int EF_ALIGNMENT = 0;
-  extern int EF_PROTECT_BELOW = 0;
-  extern int EF_PROTECT_FREE = 0;
-  extern int EF_ALLOW_MALLOC_0 = 1;
-  extern int EF_FILL = 1922;
-*/
-
 #ifndef PROCESSED_FRAMES
 #define PROCESSED_FRAMES 100
 #endif
@@ -35,7 +27,6 @@ const int processed_frames = PROCESSED_FRAMES;
 int main()
 {
     carp::conductor_t conductor;
-    int fail = 0;
     long int elapsed_time = 0;
     int i = 1;
     

@@ -84,10 +84,7 @@ time_boxFilter( carp::opencl::device & device, T0 & pool )
                 size_t globalSizeX = threads % gSize == 0 ? threads / gSize * blockSizeX : (threads / gSize + 1) * blockSizeX;
                 size_t globalSizeY = ((gpu_result.rows + 1) / 2) % blockSizeY == 0 ? ((gpu_result.rows + 1) / 2) : (((gpu_result.rows + 1) / 2) / blockSizeY + 1) * blockSizeY;
 
-                size_t globalThreads[3] = { globalSizeX, globalSizeY, 1 };
-                size_t localThreads[3]  = { blockSizeX, blockSizeY, 1 };
                 normalizeAnchor(anchor, ksize);
-
 
                 device.source_compile(
                     filtering_boxFilter_cl,
@@ -112,7 +109,6 @@ time_boxFilter( carp::opencl::device & device, T0 & pool )
                     gpu_result.cols,
                     static_cast<int>(gpu_result.step)
                     ).groupsize( { blockSizeX, blockSizeY, 1 }, { globalSizeX, globalSizeY, 1 } );
-                // //.groupsize( localThreads, globalThreads );
                 check = gpu_result;
                 auto gpu_end = std::chrono::high_resolution_clock::now();
                 elapsed_time_gpu += carp::microseconds(gpu_end - gpu_start);

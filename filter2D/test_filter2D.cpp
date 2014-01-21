@@ -39,9 +39,7 @@ namespace carp {
         CV_Assert(gpu_gray.cols == gpu_convolve.cols && gpu_gray.rows == gpu_convolve.rows);
         CV_Assert(gpu_gray.type() == gpu_convolve.type());
 
-        cv::ocl::Context  *clCxt = gpu_gray.clCxt;
         int channels = gpu_convolve.oclchannels();
-        int depth = gpu_convolve.depth();
 
         size_t vector_length = 1;
         int offset_cols = ((gpu_convolve.offset % gpu_convolve.step) / gpu_convolve.elemSize1()) & (vector_length - 1);
@@ -76,26 +74,13 @@ template<class T0>
 void
 time_filter2D( carp::opencl::device & device, T0 & pool, int iteration )
 {
-
-    double cpu_gpu_quotient=0;
-    double pencil_gpu_quotient=0;
-    double pencil_cpu_quotient=0;
-
-    int64_t nums = 0;
-    
     carp::TimingLong timing;
         
     for ( int q=0; q<iteration; q++ ) {
-        
         for ( auto & item : pool ) {
             PRINT(item.path());
-
-            long int elapsed_time_gpu = 0;
-            long int elapsed_time_cpu = 0;
-            long int elapsed_time_pencil = 0;
                     
             cv::Mat cpu_gray;
-            cv::Mat check;    
 
             cv::cvtColor( item.cpuimg(), cpu_gray, CV_RGB2GRAY );
             cpu_gray.convertTo( cpu_gray, CV_32F, 1.0/255. );
@@ -110,16 +95,15 @@ time_filter2D( carp::opencl::device & device, T0 & pool, int iteration )
             const auto cpu_start = std::chrono::high_resolution_clock::now();
             cv::filter2D( cpu_gray, host_convolve, -1, kernel_cpu, cv::Point(-1,-1), 0.0, cv::BORDER_REPLICATE );
             const auto cpu_end = std::chrono::high_resolution_clock::now();
-            elapsed_time_cpu += carp::microseconds(cpu_end - cpu_start);
+            auto elapsed_time_cpu = carp::microseconds(cpu_end - cpu_start);
 
             const auto gpu_start = std::chrono::high_resolution_clock::now();
-            cv::ocl::oclMat gpu_convolve;            
             cv::ocl::oclMat gpu_gray(cpu_gray);
             cv::ocl::oclMat kernel_gpu(kernel_cpu);
-            gpu_convolve = carp::filter2D( device, gpu_gray, kernel_gpu, cv::BORDER_REPLICATE );
-            check = gpu_convolve;
+            cv::ocl::oclMat gpu_convolve = carp::filter2D( device, gpu_gray, kernel_gpu, cv::BORDER_REPLICATE );
+            cv::Mat check(gpu_convolve);
             const auto gpu_end = std::chrono::high_resolution_clock::now();
-            elapsed_time_gpu += carp::microseconds(gpu_end - gpu_start);
+            auto elapsed_time_gpu = carp::microseconds(gpu_end - gpu_start);
 
             // pencil test:
             cv::Mat pencil_conv(cpu_gray.size(), CV_32F);
@@ -128,7 +112,7 @@ time_filter2D( carp::opencl::device & device, T0 & pool, int iteration )
                              kernel_cpu.rows, kernel_cpu.cols, kernel_cpu.step1(), kernel_cpu.ptr<float>(),
                              pencil_conv.step1(), pencil_conv.ptr<float>() );
             const auto pencil_end = std::chrono::high_resolution_clock::now();
-            elapsed_time_pencil += carp::microseconds(pencil_end - pencil_start);
+            auto elapsed_time_pencil = carp::microseconds(pencil_end - pencil_start);
             
             // Verifying the results
             if ( (cv::norm(host_convolve - check) > 0.01) ||
@@ -155,20 +139,10 @@ time_filter2D( carp::opencl::device & device, T0 & pool, int iteration )
                 throw std::runtime_error("The GPU results are not equivalent with the CPU results.");                
             }
 
-            if (elapsed_time_gpu > 1) {
-                cpu_gpu_quotient += static_cast<double>(elapsed_time_cpu) / elapsed_time_gpu;
-                pencil_gpu_quotient += static_cast<double>(elapsed_time_pencil) / elapsed_time_gpu;
-                pencil_cpu_quotient += static_cast<double>(elapsed_time_pencil) / elapsed_time_cpu;
-                nums++;
-            }
-                        
-            timing.print( "convolve image", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
-
-        } // for pool
-            
-    } // for q 
-} // text_boxFilter
-
+            timing.print( "2D filter", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
+        }
+    }
+}
 
 int main(int argc, char* argv[])
 {
@@ -185,22 +159,3 @@ int main(int argc, char* argv[])
     time_filter2D( device, pool, 1 );
     return EXIT_SUCCESS;    
 } // main
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// LuM end of file

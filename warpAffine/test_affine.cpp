@@ -55,7 +55,6 @@ namespace carp {
         int srcStep = src.step1();
         int dstStep = dst.step1();
         float float_coeffs[2][3];
-        cv::ocl::Context *clCxt = src.clCxt;
         std::string s[3] = {"NN", "Linear", "Cubic"};
         std::string kernelName = "warpAffine" + s[interpolation] + "_C1_D5";
                 
@@ -106,24 +105,12 @@ template<class T0>
 void
 time_affine( carp::opencl::device & device, T0 & pool )
 {
-
-    double cpu_gpu_quotient=0;
-    double pencil_gpu_quotient=0;
-    double pencil_cpu_quotient=0;
-
-    int64_t nums = 0;
-
     carp::TimingLong timing;
 
     for ( auto & item : pool ) {
         PRINT(item.path());
 
-        long int elapsed_time_gpu = 0;
-        long int elapsed_time_cpu = 0;
-        long int elapsed_time_pencil = 0;
-        
         cv::Mat cpu_gray;
-        cv::Mat check;    
 
         cv::cvtColor( item.cpuimg(), cpu_gray, CV_RGB2GRAY );
         cpu_gray.convertTo( cpu_gray, CV_32F, 1.0/255. );
@@ -139,17 +126,15 @@ time_affine( carp::opencl::device & device, T0 & pool )
         const auto cpu_start = std::chrono::high_resolution_clock::now();
         cv::warpAffine( cpu_gray, host_affine, transform, cpu_gray.size() );
         const auto cpu_end = std::chrono::high_resolution_clock::now();
-        elapsed_time_cpu += carp::microseconds(cpu_end - cpu_start);
+        auto elapsed_time_cpu = carp::microseconds(cpu_end - cpu_start);
 
-        {            
-            const auto gpu_start = std::chrono::high_resolution_clock::now();
-            cv::ocl::oclMat gpu_gray(cpu_gray);
-            cv::ocl::oclMat gpu_affine;
-            carp::warpAffine( device, gpu_gray, gpu_affine, transform, gpu_gray.size() );
-            check = gpu_affine;
-            const auto gpu_end = std::chrono::high_resolution_clock::now();
-            elapsed_time_gpu += carp::microseconds(gpu_end - gpu_start);
-        }
+	const auto gpu_start = std::chrono::high_resolution_clock::now();
+	cv::ocl::oclMat gpu_gray(cpu_gray);
+	cv::ocl::oclMat gpu_affine;
+	carp::warpAffine( device, gpu_gray, gpu_affine, transform, gpu_gray.size() );
+	cv::Mat check(gpu_affine);
+	const auto gpu_end = std::chrono::high_resolution_clock::now();
+	auto elapsed_time_gpu = carp::microseconds(gpu_end - gpu_start);
 
         // verifying the pencil code
         cv::Mat pencil_affine( cpu_gray.size(), CV_32F );
@@ -162,7 +147,7 @@ time_affine( carp::opencl::device & device, T0 & pool )
             transform.at<float>(0,0), transform.at<float>(0,1), transform.at<float>(1,0), transform.at<float>(1,1),
             transform.at<float>(1,2), transform.at<float>(0,2) );
         const auto pencil_end = std::chrono::high_resolution_clock::now();
-        elapsed_time_pencil += carp::microseconds(pencil_end - pencil_start);
+        auto elapsed_time_pencil = carp::microseconds(pencil_end - pencil_start);
         
         // Verifying the results
         if ( (cv::norm(cv::abs(host_affine - check), cv::NORM_INF ) > 1) ||
@@ -184,22 +169,13 @@ time_affine( carp::opencl::device & device, T0 & pool )
 
             throw std::runtime_error("The GPU results are not equivalent with the CPU results.");
         }
-
-        if (elapsed_time_gpu > 1) {
-            cpu_gpu_quotient += static_cast<double>(elapsed_time_cpu) / elapsed_time_gpu;
-            pencil_gpu_quotient += static_cast<double>(elapsed_time_pencil) / elapsed_time_gpu;
-            pencil_cpu_quotient += static_cast<double>(elapsed_time_pencil) / elapsed_time_cpu;
-            nums++;
-        }
                         
-        timing.print( "convolve image", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
-    } // for pool
-} // text_boxFilter
-
+        timing.print( "affine transform", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
+    }
+}
 
 int main(int argc, char* argv[])
 {
-
     std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;    
 
     auto pool = carp::get_pool("pool");
@@ -207,12 +183,10 @@ int main(int argc, char* argv[])
     // Initializing OpenCL
     cv::ocl::Context * context = cv::ocl::Context::getContext();
     carp::opencl::device device(context);
-    device.source_compile( imgproc_warpAffine_cl, imgproc_warpAffine_cl_len,
-                           { "warpAffineNN_C1_D0", "warpAffineLinear_C1_D0", "warpAffineCubic_C1_D0",
-                                   "warpAffineNN_C4_D0", "warpAffineLinear_C4_D0", "warpAffineCubic_C4_D0",
-                                   "warpAffineNN_C1_D5", "warpAffineLinear_C1_D5", "warpAffineCubic_C1_D5",
-                                   "warpAffineNN_C4_D5", "warpAffineLinear_C4_D5", "warpAffineCubic_C4_D5" },
-                           "-D DOUBLE_SUPPORT" );
+    device.source_compile( imgproc_warpAffine_cl, imgproc_warpAffine_cl_len
+			 , { "warpAffineNN_C1_D0", "warpAffineLinear_C1_D0", "warpAffineCubic_C1_D0", "warpAffineNN_C4_D0", "warpAffineLinear_C4_D0", "warpAffineCubic_C4_D0"
+			   , "warpAffineNN_C1_D5", "warpAffineLinear_C1_D5", "warpAffineCubic_C1_D5", "warpAffineNN_C4_D5", "warpAffineLinear_C4_D5", "warpAffineCubic_C4_D5"
+			   }, "-D DOUBLE_SUPPORT" );
     
     time_affine( device, pool );
     return EXIT_SUCCESS;    

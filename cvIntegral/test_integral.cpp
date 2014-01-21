@@ -47,7 +47,6 @@ time_integral( carp::opencl::device & device, T0 & pool, int iteration )
         
                 cv::ocl::oclMat t_sum;
                 int w = src.cols + 1, h = src.rows + 1;
-                int depth;
                 std::string integral_sum_cols;
                 std::string integral_sum_rows;            
                 // if(src.cols * src.rows <= 2901 * 2901)
@@ -71,8 +70,6 @@ time_integral( carp::opencl::device & device, T0 & pool, int iteration )
                 //     integral_sum_rows = "integral_sum_rows_D6";
                 //     integral_sum_cols = "integral_sum_cols_D6";                
                 // }
-                depth = sum.depth();
-            
                 int sum_offset = sum.offset / vlen;
                 auto gpu_start = std::chrono::high_resolution_clock::now();
                 device[integral_sum_cols](

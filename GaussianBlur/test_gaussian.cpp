@@ -82,21 +82,15 @@ namespace carp {
         cv::ocl::oclMat oclKX(kx.reshape(1,1));
         cv::ocl::oclMat oclKY(ky.reshape(1,1));
                 
-        int sdepth   = srcROI.type();                
-        int ddepth   = dstBuf.type();
-                
-        int bdepth   = std::max(std::max(sdepth, ddepth), CV_32F);
-        int bufType  = CV_MAKETYPE(bdepth, cn);
         int channels = srcROI.oclchannels();
                                                                                 
         std::vector<size_t> localThreads = {16, 16, 1};
 
-        std::string compile_option;
-        compile_option = " -D RADIUSX=" + carp::cast<std::string>(anchor.x)
-            + " -D LSIZE0=" + carp::cast<std::string>(localThreads[0])
-            + " -D LSIZE1=" + carp::cast<std::string>(localThreads[1])
-            + " -D CN=" + carp::cast<std::string>(channels)
-            + " -D " + carp::borders[bordertype];
+        std::string compile_option = " -D RADIUSX=" + carp::cast<std::string>(anchor.x)
+				   + " -D LSIZE0=" + carp::cast<std::string>(localThreads[0])
+				   + " -D LSIZE1=" + carp::cast<std::string>(localThreads[1])
+				   + " -D CN=" + carp::cast<std::string>(channels)
+				   + " -D " + carp::borders[bordertype];
 
         std::vector<size_t> globalThreads(3);
         globalThreads[1] = (dstBuf.rows + localThreads[1] - 1) / localThreads[1] * localThreads[1];
@@ -122,7 +116,6 @@ namespace carp {
             ).groupsize( localThreads, globalThreads );
                                                                                                                                 
         localThreads = {16, 16, 1};
-        compile_option = "";
                 
         globalThreads.resize(3);
         globalThreads[1] = (dstROI.rows + localThreads[1] - 1) / localThreads[1] * localThreads[1];
@@ -163,35 +156,18 @@ template<class T0>
 void
 time_gaussian( carp::opencl::device & device, T0 & pool )
 {
-
-    double cpu_gpu_quotient=0;
-    double pencil_gpu_quotient=0;
-    double pencil_cpu_quotient=0;
-
-    int64_t nums = 0;
-    std::vector<int> sizes = {5, 9, 11, 25, 41};
-    
     carp::TimingLong timing;
 
-    for ( auto & size : sizes ) {
+    for ( auto & size : {/*5,*/ 9, 11/*, 25, 41*/} ) {
         PRINT(size);
         cv::Size ksize(size, size+4);
         
         double gaussX = 7.;
         double gaussY = 9.;
-        gaussX = std::max(gaussX, 0.0);
-        gaussY = std::max(gaussY, 0.0);
-
         int bordertype = cv::BORDER_REPLICATE;
         
         for ( auto & item : pool ) {
-
-            long int elapsed_time_gpu = 0;
-            long int elapsed_time_cpu = 0;
-            long int elapsed_time_pencil = 0;
-            
             cv::Mat cpu_gray;
-            cv::Mat check;    
 
             cv::cvtColor( item.cpuimg(), cpu_gray, CV_RGB2GRAY );
             cpu_gray.convertTo( cpu_gray, CV_32F, 1.0/255. );
@@ -200,39 +176,35 @@ time_gaussian( carp::opencl::device & device, T0 & pool )
             const auto cpu_start = std::chrono::high_resolution_clock::now();
             cv::GaussianBlur( cpu_gray, host_blur, ksize, gaussX, gaussY, bordertype );
             const auto cpu_end = std::chrono::high_resolution_clock::now();
-            elapsed_time_cpu += carp::microseconds(cpu_end - cpu_start);
+            auto elapsed_time_cpu = carp::microseconds(cpu_end - cpu_start);
 
+            const auto gpu_start = std::chrono::high_resolution_clock::now();
             cv::ocl::oclMat dst;
             cv::ocl::oclMat src(cpu_gray);                
-            const auto gpu_start = std::chrono::high_resolution_clock::now();
             carp::gaussian(device, src, dst, ksize, gaussX, gaussY, bordertype );            
+            cv::Mat check(dst);                
             const auto gpu_end = std::chrono::high_resolution_clock::now();
-            elapsed_time_gpu += carp::microseconds(gpu_end - gpu_start);                            
-            check = dst;                
+            auto elapsed_time_gpu = carp::microseconds(gpu_end - gpu_start);                            
 
             cv::Mat kernel = cv::getGaussianKernel(ksize.width, gaussX, CV_32F).t();
             cv::Mat t_kernel = cv::getGaussianKernel(ksize.height, gaussY, CV_32F);
             
-            cv::Mat pencil;            
-            {
-                cv::Mat intermediate;
-                intermediate.create( cpu_gray.size(), CV_32F );
+            cv::Mat pencil;
+	    cv::Mat intermediate;
+	    intermediate.create( cpu_gray.size(), CV_32F );
 
-                pencil.create( cpu_gray.size(), CV_32F );
-                
-                const auto pencil_start = std::chrono::high_resolution_clock::now();
-                pencil_gaussian(
-                    cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<float>(),
-                    kernel.rows, kernel.cols, kernel.step1(), kernel.ptr<float>(),
-                    t_kernel.rows, t_kernel.cols, t_kernel.step1(), t_kernel.ptr<float>(),
-                    intermediate.step1(), intermediate.ptr<float>(),
-                    pencil.step1(), pencil.ptr<float>()
-                    );
-                const auto pencil_end = std::chrono::high_resolution_clock::now();
-                elapsed_time_pencil += carp::microseconds(pencil_end - pencil_start);
-
-            }
-            
+	    pencil.create( cpu_gray.size(), CV_32F );
+	    
+	    const auto pencil_start = std::chrono::high_resolution_clock::now();
+	    pencil_gaussian(
+		cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<float>(),
+		kernel.rows, kernel.cols, kernel.step1(), kernel.ptr<float>(),
+		t_kernel.rows, t_kernel.cols, t_kernel.step1(), t_kernel.ptr<float>(),
+		intermediate.step1(), intermediate.ptr<float>(),
+		pencil.step1(), pencil.ptr<float>()
+		);
+	    const auto pencil_end = std::chrono::high_resolution_clock::now();
+	    auto elapsed_time_pencil = carp::microseconds(pencil_end - pencil_start);
             
             // Verifying the results
             if ( (cv::norm( host_blur - check ) > 0.01) ||
@@ -258,20 +230,11 @@ time_gaussian( carp::opencl::device & device, T0 & pool )
                 
                 throw std::runtime_error("The GPU results are not equivalent with the CPU results.");
             }
-
-            if (elapsed_time_gpu > 1) {
-                cpu_gpu_quotient += static_cast<double>(elapsed_time_cpu) / elapsed_time_gpu;
-                pencil_gpu_quotient += static_cast<double>(elapsed_time_pencil) / elapsed_time_gpu;
-                pencil_cpu_quotient += static_cast<double>(elapsed_time_pencil) / elapsed_time_cpu;
-                nums++;
-            }
                         
-            timing.print( "blur image", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
-
-        } // for pool
-    } // sizes
-} // text_boxFilter
-
+            timing.print( "gaussian blur", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
+        }
+    }
+}
 
 int main(int argc, char* argv[])
 {
@@ -288,22 +251,3 @@ int main(int argc, char* argv[])
     time_gaussian( device, pool );
     return EXIT_SUCCESS;    
 } // main
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// LuM end of file

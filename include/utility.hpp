@@ -22,17 +22,17 @@ const int GiB=1024*KiB;
 //#define PRINT(var)  std::cout << "debug: " << BOOST_PP_STRINGIZE(var) << " = " << var << std::endl
 #define PRINT(var)
 
-namespace carp {    
+namespace carp {
 
     template<class T0>
     void
     print_image( cv::Mat_<T0> input, std::string name )
     {
         std::cout << name << " = [" << std::endl;
-    
+
         for (int q=0; q<input.rows; q++)
         {
-            std::cout << "[ ";        
+            std::cout << "[ ";
             for (int w=0; w<input.cols; w++)
             {
                 std::cout << input(q,w);
@@ -48,7 +48,7 @@ namespace carp {
                 std::cout << "] " << std::endl;
         }
 
-        std::cout << "]" << std::endl;    
+        std::cout << "]" << std::endl;
     } // print_image
 
     template <class T0>
@@ -71,11 +71,11 @@ namespace carp {
     std::vector<std::string>
     string_vector( Types... inputs)
     {
-        return make_vector<std::string>(inputs...);        
+        return make_vector<std::string>(inputs...);
     } // string_vector
 
 
-    
+
     template <class T0>
     std::chrono::microseconds::rep
     microseconds( T0 t0 )
@@ -149,31 +149,31 @@ namespace carp {
             cv::Mat cpuimg = cv::imread(m_path.string());
             cv::Mat img_resize = cpuimg;
             // cv::resize(cpuimg, img_resize, cv::Size(300,400));
-            
+
             return img_resize;
         }
 
         std::string path() const {
-            return m_path.string();            
-        }        
+            return m_path.string();
+        }
 
         record_t( const boost::filesystem::path & path )
             : m_path(path)  { }
-        
+
     }; // record_t
-            
-    
+
+
     template <class T0>
     std::vector<record_t>
     get_pool( T0 pathname )
     {
         boost::filesystem::path path(pathname);
-    
+
         if ( (!boost::filesystem::exists(path)) or (!boost::filesystem::is_directory(path)) )
             throw std::runtime_error( std::string("Directory `") + pathname + "' does not exists. The directory should contain the testing images.");
 
         std::vector<record_t> pool;
-    
+
         boost::filesystem::directory_iterator end_iter;
         for ( boost::filesystem::directory_iterator iter(path); iter!= end_iter; ++iter )
         {
@@ -181,26 +181,26 @@ namespace carp {
             {
                 std::string extension = iter->path().extension().string();
                 if ( (extension ==".jpg") or (extension==".jpeg") ) {
-                    PRINT(iter->path().string());                    
+                    PRINT(iter->path().string());
                     pool.push_back(record_t(iter->path()));
-                }                
+                }
             }
         }
 
-        return pool;        
+        return pool;
     } // get_pool
 
-    
+
     template <class RT, class T0>
     RT cast( const T0 & from )
     {
         std::stringstream stringstream;
-        RT to;    
+        RT to;
         stringstream << from;
         stringstream >> to;
-        return to;    
+        return to;
     } // gel_cast
-     
+
     static std::map<int, std::string> borders = boost::assign::map_list_of
     ( cv::BORDER_CONSTANT, "BORDER_CONSTANT" )
     ( cv::BORDER_REPLICATE, "BORDER_REPLICATE" )
@@ -208,8 +208,8 @@ namespace carp {
     ( cv::BORDER_WRAP, "BORDER_WRAP" )
     ( cv::BORDER_REFLECT_101, "BORDER_REFLECT_101" )
     ; // borders
-        
-    
+
+
 } // namespace carp
 
 
