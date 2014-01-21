@@ -82,6 +82,8 @@ time_filter2D( carp::opencl::device & device, T0 & pool, int iteration )
     double pencil_cpu_quotient=0;
 
     int64_t nums = 0;
+    
+    carp::TimingLong timing;
         
     for ( int q=0; q<iteration; q++ ) {
         
@@ -160,16 +162,11 @@ time_filter2D( carp::opencl::device & device, T0 & pool, int iteration )
                 nums++;
             }
                         
-            carp::Timing::print( "convolve image", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
+            timing.print( "convolve image", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
 
         } // for pool
             
     } // for q 
-
-    carp::Timing::CSI( cpu_gpu_quotient, pencil_gpu_quotient, pencil_cpu_quotient, nums );    
-
-
-    return;
 } // text_boxFilter
 
 
@@ -182,7 +179,6 @@ int main(int argc, char* argv[])
 
     // Initializing OpenCL
     cv::ocl::Context * context = cv::ocl::Context::getContext();
-    carp::Timing::printHeader();
     carp::opencl::device device(context);
     device.source_compile( imgproc_convolve_cl, imgproc_convolve_cl_len,
                            carp::string_vector("convolve_D5" ) );

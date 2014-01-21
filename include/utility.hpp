@@ -84,71 +84,61 @@ namespace carp {
     }
 
 
-    struct Timing
+    class TimingLong
     {
-        // Timing(const std::string& name, const std::chrono::milliseconds& cpu, const std::chrono::milliseconds& gpu)
-        //     : name(name)
-        //     , cpu(cpu)
-        //     , gpu(gpu)
-        //     {}
-        // std::string name;
-        // std::chrono::milliseconds cpu;
-        // std::chrono::milliseconds gpu;
+    	std::vector<double> gpu_speedups;
+    	std::vector<double> pen_speedups;
+    public:
+    	TimingLong() {
+    		std::cout << "    Operator - CPU Time - GPU Time - Pencil Time - GPU speedup - Pencil speedup" << std::endl;
+    	}
 
-        static void printHeader()
-            {
-                std::cout << "    Operator - CPU Time - GPU Time - Pencil Time - CPU/GPU - CPU/Pencil - GPU/Pencil" << std::endl;
-            }
+    	void print( const std::string & name, const long int & cpu, const long int & gpu, const long int & pen ) {
+    		auto gpu_speedup = static_cast<double>(cpu)/static_cast<double>(gpu);
+    		auto pen_speedup = static_cast<double>(cpu)/static_cast<double>(pen);
+    		std::cout << std::fixed << std::setprecision(3);
+    		std::cout << std::setw(12) << name << " - "
+    				<< std::setw(7) << (cpu/1000000.) << "s - "
+    				<< std::setw(7) << (gpu/1000000.) << "s - "
+    				<< std::setw(7) << (pen/1000000.) << "s - "
+    				<< std::setw(7) << gpu_speedup << 'x' << " - "
+    				<< std::setw(7) << pen_speedup << 'x' << std::endl;
+    		gpu_speedups.push_back(gpu_speedup);
+    		pen_speedups.push_back(pen_speedup);
+    	}
 
-        static void printShortHeader()
-            {
-                std::cout << "    Operator - CPU Time - GPU Time - CPU/GPU" << std::endl;
-            }
+    	~TimingLong() {
+    		std::cout << "Cumulated Speed Improvement: " << std::endl
+    				<< "    GPU speed / CPU speed: " << std::accumulate(gpu_speedups.begin(),gpu_speedups.end(),0.0) / gpu_speedups.size() << "x" << std::endl
+    				<< "    Pen speed / CPU speed: " << std::accumulate(pen_speedups.begin(),pen_speedups.end(),0.0) / pen_speedups.size() << "x" << std::endl
+    				;
+    	}
+    };
 
-        
-        static void print( const std::string & name, const long int & cpu, const long int & gpu, const long int & pencil )
-            {
-                auto cpu_gpu = static_cast<double>(cpu)/static_cast<double>(gpu);
-                auto cpu_pen = static_cast<double>(cpu)/static_cast<double>(pencil);
-                auto gpu_pen = static_cast<double>(gpu)/static_cast<double>(pencil);
-		std::cout << std::fixed << std::setprecision(3);
-                std::cout << std::setw(12) << name << " - "
-                          << std::setw(7) << (cpu/1000000.) << "s - "
-                          << std::setw(7) << (gpu/1000000.) << "s - "
-                          << std::setw(7) << (pencil/1000000.) << "s - "
-                          << std::setw(7) << cpu_gpu << 'x' << " - "
-                          << std::setw(7) << cpu_pen << 'x' << " - "
-                          << std::setw(7) << gpu_pen << 'x' << std::endl;
-            } // print
+    class TimingShort
+    {
+    	std::vector<double> gpu_speedups;
+    public:
+    	TimingShort() {
+    		std::cout << "    Operator - CPU Time - GPU Time - CPU/GPU" << std::endl;
+    	}
 
-        static void print( const std::string & name, const long int & cpu, const long int & gpu )
-            {
-                auto speedup = static_cast<double>(cpu)/static_cast<double>(gpu);
-		std::cout << std::fixed << std::setprecision(3);
-                std::cout << std::setw(12) << name << " - "
-                          << std::setw(7) << (cpu/1000000.) << "s - "
-                          << std::setw(7) << (gpu/1000000.) << "s - "
-                          << std::setw(7) << speedup << 'x' << std::endl;
-            } // print
+    	void print( const std::string & name, const long int & cpu, const long int & gpu ) {
+    		auto speedup = static_cast<double>(cpu)/static_cast<double>(gpu);
+    		std::cout << std::fixed << std::setprecision(3);
+    		std::cout << std::setw(12) << name << " - "
+    				<< std::setw(7) << (cpu/1000000.) << "s - "
+    				<< std::setw(7) << (gpu/1000000.) << "s - "
+    				<< std::setw(7) << speedup << 'x' << std::endl;
+    		gpu_speedups.push_back(speedup);
+	    }
 
-        
-        static void CSI( double cpu_gpu_quotient, double pencil_gpu_quotient, double pencil_cpu_quotient, int64_t nums )
-            {
-                std::cout << "Cumulated Speed Improvement: " << std::endl 
-                          << "    CPU time / GPU time: " << (cpu_gpu_quotient / nums) << "x" << std::endl 
-                          << "    CPU time / Pencil time: " << (nums / pencil_cpu_quotient) << "x" << std::endl
-                          << "    GPU time / Pencil time: " << (nums / pencil_gpu_quotient) << "x" << std::endl;
-            }
-
-        static void CSI( double cpu_gpu_quotient, int64_t nums )
-            {
-                std::cout << "Cumulated Speed Improvement: " << std::endl 
-                          << "    CPU time / GPU time: " << (cpu_gpu_quotient / nums) << "x" << std::endl;                
-            }
-
-        
-    }; // struct Timing
-
+    	~TimingShort() {
+    		std::cout << "Cumulated Speed Improvement: " << std::endl
+    				<< "    GPU speed / CPU speed: " << std::accumulate(gpu_speedups.begin(),gpu_speedups.end(),0.0) / gpu_speedups.size() << "x" << std::endl
+    				;
+    	}
+    };
 
     class record_t {
     private:

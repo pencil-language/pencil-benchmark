@@ -181,6 +181,8 @@ time_dilate( carp::opencl::device & device, T0 & pool )
     int64_t nums = 0;
     std::vector<int> elemsizes = { 5, 7, 9 /*, 11, 15, 17*/ };
     
+    carp::TimingLong timing;
+
     for ( auto & elemsize : elemsizes ) {
         PRINT(elemsize);        
         long int elapsed_time_gpu = 0;
@@ -250,13 +252,9 @@ time_dilate( carp::opencl::device & device, T0 & pool )
 
         } // for pool
         
-        carp::Timing::print( "dilate image", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
+        timing.print( "dilate image", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
             
     } // for elemsizes
-
-    carp::Timing::CSI( cpu_gpu_quotient, pencil_gpu_quotient, pencil_cpu_quotient, nums );    
-
-    return;
 } // text_boxFilter
 
 
@@ -269,7 +267,6 @@ int main(int argc, char* argv[])
 
     // Initializing OpenCL
     cv::ocl::Context * context = cv::ocl::Context::getContext();
-    carp::Timing::printHeader();
     carp::opencl::device device(context);
     time_dilate( device, pool );
     return EXIT_SUCCESS;    

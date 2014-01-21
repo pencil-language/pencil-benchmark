@@ -45,6 +45,7 @@ time_boxFilter( carp::opencl::device & device, T0 & pool )
     
     double sum_quotient = 0;
 
+    carp::TimingShort timing;
         
     for ( auto & item : pool ) {
 
@@ -127,7 +128,7 @@ time_boxFilter( carp::opencl::device & device, T0 & pool )
 
             } // for border_type
 
-            carp::Timing::print( "boxFilter", elapsed_time_cpu, elapsed_time_gpu );
+            timing.print( "boxFilter", elapsed_time_cpu, elapsed_time_gpu );
             
             if (elapsed_time_gpu > 1)
                 sum_quotient += static_cast<double>(elapsed_time_cpu) / elapsed_time_gpu;
@@ -135,10 +136,6 @@ time_boxFilter( carp::opencl::device & device, T0 & pool )
         } // for size
         
     } // for item
-    
-    std::cout << "Cumulated Speed Improvement: " << (sum_quotient/pool.size()/ksizes.size()) << "x" << std::endl;    
-    
-    return;
 } // text_boxFilter
 
 
@@ -151,7 +148,6 @@ int main(int argc, char* argv[])
 
     // Initializing OpenCL
     cv::ocl::Context * context = cv::ocl::Context::getContext();
-    carp::Timing::printShortHeader();
     carp::opencl::device device(context);
     time_boxFilter( device, pool );
 

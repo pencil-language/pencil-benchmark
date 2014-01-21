@@ -112,7 +112,9 @@ time_affine( carp::opencl::device & device, T0 & pool )
     double pencil_cpu_quotient=0;
 
     int64_t nums = 0;
-        
+
+    carp::TimingLong timing;
+
     for ( auto & item : pool ) {
         PRINT(item.path());
 
@@ -190,13 +192,8 @@ time_affine( carp::opencl::device & device, T0 & pool )
             nums++;
         }
                         
-        carp::Timing::print( "convolve image", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
+        timing.print( "convolve image", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
     } // for pool
-
-    carp::Timing::CSI( cpu_gpu_quotient, pencil_gpu_quotient, pencil_cpu_quotient, nums );    
-    // std::cout << "Cumulated Speed Improvement: " << (sum_quotient/nums) << "x" << std::endl;    
-
-    return;
 } // text_boxFilter
 
 
@@ -209,7 +206,6 @@ int main(int argc, char* argv[])
 
     // Initializing OpenCL
     cv::ocl::Context * context = cv::ocl::Context::getContext();
-    carp::Timing::printHeader();
     carp::opencl::device device(context);
     device.source_compile( imgproc_warpAffine_cl, imgproc_warpAffine_cl_len,
                            { "warpAffineNN_C1_D0", "warpAffineLinear_C1_D0", "warpAffineCubic_C1_D0",

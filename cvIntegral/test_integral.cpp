@@ -14,13 +14,8 @@ template<class T0>
 void
 time_integral( carp::opencl::device & device, T0 & pool, int iteration )
 {
+    carp::TimingShort timing;
 
-    double cpu_gpu_quotient=0;
-    double pencil_gpu_quotient=0;
-    double pencil_cpu_quotient=0;
-
-    int64_t nums = 0;
-      
     for ( int q=0; q<iteration; q++ ) {
         
         for ( auto & item : pool ) {
@@ -113,22 +108,10 @@ time_integral( carp::opencl::device & device, T0 & pool, int iteration )
                 throw std::runtime_error("The GPU results are not equivalent with the CPU results.");                
             }
 
-            if (elapsed_time_gpu > 1) {
-                cpu_gpu_quotient += static_cast<double>(elapsed_time_cpu) / elapsed_time_gpu;
-                nums++;
-            }
-                        
-            carp::Timing::print( "integral image", elapsed_time_cpu, elapsed_time_gpu );
-
-        } // for pool
-        
-    } // for q 
-    
-    carp::Timing::CSI( cpu_gpu_quotient, nums );    
-
-    return;
-} // text_boxFilter
-
+            timing.print( "integral image", elapsed_time_cpu, elapsed_time_gpu );
+        }
+    }
+}
 
 int main(int argc, char* argv[])
 {
@@ -139,30 +122,10 @@ int main(int argc, char* argv[])
 
     // Initializing OpenCL
     cv::ocl::Context * context = cv::ocl::Context::getContext();
-    carp::Timing::printShortHeader();
     carp::opencl::device device(context);
     device.source_compile( imgproc_integral_sum_cl, imgproc_integral_sum_cl_len,
                            carp::string_vector("integral_sum_cols_D4", "integral_sum_rows_D4", "integral_sum_cols_D5", "integral_sum_rows_D5" ),
                            " -D DOUBLE_SUPPORT" );
     time_integral( device, pool, 10 );
     return EXIT_SUCCESS;    
-} // main
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// LuM end of file
+}

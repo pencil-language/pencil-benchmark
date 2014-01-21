@@ -108,18 +108,14 @@ template<class T0>
 void
 time_resize( carp::opencl::device & device, T0 & pool )
 {
-
-    double cpu_gpu_quotient=0;
-    double pencil_gpu_quotient=0;
-    double pencil_cpu_quotient=0;
-
-    int64_t nums = 0;
     // std::vector<cv::Size> sizes = { {10,10}, {503, 786}, {1230, 2341}, {4243, 2324}  };
     std::vector<cv::Size> sizes = { {640, 480 } };
     std::vector<int> methods = { cv::INTER_LINEAR /*, cv::INTER_NEAREST*/ };
 
-    for ( auto & size : sizes )
-        for (auto & method : methods )
+    carp::TimingLong timing;
+
+    for ( auto & size : sizes ) {
+        for (auto & method : methods ) {
             for ( auto & item : pool ) {
                 PRINT(item.path());
 
@@ -170,22 +166,12 @@ time_resize( carp::opencl::device & device, T0 & pool )
                     
                     throw std::runtime_error("The GPU results are not equivalent with the CPU results.");                
                 }
-
-                if (elapsed_time_gpu > 1) {
-                    cpu_gpu_quotient += static_cast<double>(elapsed_time_cpu) / elapsed_time_gpu;
-                    pencil_gpu_quotient += static_cast<double>(elapsed_time_pencil) / elapsed_time_gpu;
-                    pencil_cpu_quotient += static_cast<double>(elapsed_time_pencil) / elapsed_time_cpu;
-                    nums++;
-                }
                         
-                carp::Timing::print( "convolve image", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
+                timing.print( "resize", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
             } // for pool
-
-    carp::Timing::CSI( cpu_gpu_quotient, pencil_gpu_quotient, pencil_cpu_quotient, nums );
-
-    return;
+	}
+    }
 } // text_boxFilter
-
 
 int main(int argc, char* argv[])
 {
@@ -196,28 +182,8 @@ int main(int argc, char* argv[])
 
     // Initializing OpenCL
     cv::ocl::Context * context = cv::ocl::Context::getContext();
-    carp::Timing::printHeader();
     carp::opencl::device device(context);
     device.source_compile( imgproc_resize_cl, imgproc_resize_cl_len, { "resizeLN_C1_D0", "resizeLN_C4_D0", "resizeLN_C1_D5", "resizeLN_C4_D5", "resizeNN_C1_D0", "resizeNN_C4_D0", "resizeNN_C1_D5", "resizeNN_C4_D5" } );    
     time_resize( device, pool );
     return EXIT_SUCCESS;    
 } // main
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// LuM end of file

@@ -18,14 +18,14 @@ time_cvtColor( carp::opencl::device & device, T0 & pool, size_t iterations)
     cv::Mat check;
     cv::Mat pencil_gray;
     
-    long int elapsed_time_gpu = 0;
-    long int elapsed_time_cpu = 0;
-    long int elapsed_time_pencil = 0;
-    
-    for(int i = 0; i < iterations; ++i) {
-        PRINT(i);        
-        for ( auto & record : pool ) {
-            PRINT(record.path());
+    carp::TimingLong timing;
+    for ( auto & record : pool ) {
+	PRINT(record.path());
+	long int elapsed_time_gpu = 0;
+	long int elapsed_time_cpu = 0;
+	long int elapsed_time_pencil = 0;
+	for(int i = 0; i < iterations; ++i) {
+	    PRINT(i);        
             cv::Mat cpuimg = record.cpuimg();                
             // CPU Bench
             {
@@ -93,9 +93,8 @@ time_cvtColor( carp::opencl::device & device, T0 & pool, size_t iterations)
                 throw std::runtime_error("The GPU results are not equivalent with the CPU results.");                
             }
         }
+        timing.print("cvtColor", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil);
     }
-    
-    carp::Timing::print( "cvtColor", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
     return;
 }
 
@@ -112,7 +111,6 @@ int main(int argc, char* argv[])
     carp::opencl::device device(context);
     device.source_compile( cvt_color_cl, cvt_color_cl_len, carp::string_vector("RGB2Gray") );
     size_t num_iterations = 10;
-    carp::Timing::printHeader();
     time_cvtColor( device, pool, num_iterations );
 
     return EXIT_SUCCESS;    

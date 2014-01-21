@@ -170,6 +170,8 @@ time_gaussian( carp::opencl::device & device, T0 & pool )
 
     int64_t nums = 0;
     std::vector<int> sizes = {5, 9, 11, 25, 41};
+    
+    carp::TimingLong timing;
 
     for ( auto & size : sizes ) {
         PRINT(size);
@@ -264,16 +266,10 @@ time_gaussian( carp::opencl::device & device, T0 & pool )
                 nums++;
             }
                         
-            carp::Timing::print( "blur image", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
+            timing.print( "blur image", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
 
         } // for pool
     } // sizes
-    
-    carp::Timing::CSI( cpu_gpu_quotient, pencil_gpu_quotient, pencil_cpu_quotient, nums );    
-
-
-
-    return;
 } // text_boxFilter
 
 
@@ -286,7 +282,6 @@ int main(int argc, char* argv[])
 
     // Initializing OpenCL
     cv::ocl::Context * context = cv::ocl::Context::getContext();
-    carp::Timing::printHeader();
     carp::opencl::device device(context);
 //    device.source_compile( imgproc_convolve_cl, imgproc_convolve_cl_len,
 //                           carp::string_vector("convolve_D5" ) );
