@@ -29,7 +29,6 @@ dilate (
 #       pragma independent
 	for ( int w = 0; w < cols; w++ ) {
 	    uint8_t sup = 0;
-#           pragma reduce max on sup
 	    for ( int e = 0; e < se_rows; e++ ) {
 		for ( int r = 0; r < se_cols; r++ ) {
 		    int candidate_row = q - anchor_row + e;
