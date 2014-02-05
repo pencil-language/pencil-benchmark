@@ -25,12 +25,11 @@ filter2D(
     int center_row = kernel_rows / 2;
     int center_col = kernel_cols / 2;
    
-#   pragma independent
+#   pragma independent reduction(+:prod)
     for ( int q = 0; q < rows; q++ ) 
-#       pragma independent
+#       pragma independent reduction(+:prod)
      	for ( int w = 0; w < cols; w++ ) { 
      	    float prod = 0.;
-#           pragma reduction sum on prod
      	    for ( int e = 0; e < kernel_rows; e++ )
      	    	for ( int r = 0; r < kernel_cols; r++ )
 	    	{
