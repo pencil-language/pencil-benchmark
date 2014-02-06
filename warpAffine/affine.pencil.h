@@ -2,8 +2,6 @@
 // UjoImro, 2013
 // Experimental Code for the CARP Project
 
-#include <stdint.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
