@@ -24,9 +24,9 @@ dilate (
     int anchor_col,
     int border_type ) {
 #pragma scop
-#   pragma independent
+#   pragma pencil independent
     for ( int q = 0; q < rows; q++ ) {
-#       pragma independent
+#       pragma pencil independent
 	for ( int w = 0; w < cols; w++ ) {
 	    uint8_t sup = 0;
 	    for ( int e = 0; e < se_rows; e++ ) {
