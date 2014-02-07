@@ -32,7 +32,7 @@ bilinear( float A00, float A01, float A11, float A10, float r, float c ) {
     return result;
 } // bilinear
 
-#define sat( val, lo, hi ) ((val >= lo) ? ((val <= hi) ? val : hi) : lo);
+#define sat( val, lo, hi ) ((val >= lo) ? ((val <= hi) ? val : hi) : lo)
 
 static void
 resize (
