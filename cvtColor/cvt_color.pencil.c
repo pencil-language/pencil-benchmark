@@ -20,9 +20,9 @@ RGB2Gray(
     DATA_TYPE dst[static const restrict rows][dst_step] )
 {
 #pragma scop
-#   pragma independent
+#   pragma pencil independent
     for ( int q = 0; q < rows; q++ )
-#       pragma independent
+#       pragma pencil independent
 	for( int w = 0; w < cols; w++ )
 	    dst[q][w] = CV_DESCALE( (src[q][w][bidx] * B2Y + src[q][w][1] * G2Y + src[q][w][(bidx^2)] * R2Y ), yuv_shift );
 #pragma endscop

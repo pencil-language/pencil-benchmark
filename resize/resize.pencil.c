@@ -54,9 +54,9 @@ resize (
     float o_w = original_col;
     float n_h = resampled_rows;
     float n_w = resampled_cols;
-#   pragma independent
+#   pragma pencil independent
     for ( int n_r = 0; n_r < resampled_rows; n_r++ )
-#       pragma independent
+#       pragma pencil independent
      	for ( int n_c = 0; n_c < resampled_cols; n_c++ ) {
 	    float o_r = ( n_r + 0.5 ) * (o_h) / (n_h) - 0.5;
  	    float o_c = ( n_c + 0.5 ) * (o_w) / (n_w) - 0.5;
