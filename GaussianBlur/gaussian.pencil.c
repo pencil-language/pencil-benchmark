@@ -25,9 +25,9 @@ filter2D(
     int center_row = kernel_rows / 2;
     int center_col = kernel_cols / 2;
    
-#   pragma pencil independent reduction(+:prod)
+#   pragma pencil independent
     for ( int q = 0; q < rows; q++ ) 
-#       pragma pencil independent reduction(+:prod)
+#       pragma pencil independent
      	for ( int w = 0; w < cols; w++ ) { 
      	    float prod = 0.;
      	    for ( int e = 0; e < kernel_rows; e++ )
