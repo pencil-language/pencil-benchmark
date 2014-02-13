@@ -24,7 +24,7 @@ RGB2Gray(
     for ( int q = 0; q < rows; q++ )
 #       pragma pencil independent
 	for( int w = 0; w < cols; w++ )
-	    dst[q][w] = CV_DESCALE( (src[q][w][bidx] * B2Y + src[q][w][1] * G2Y + src[q][w][(bidx^2)] * R2Y ), yuv_shift );
+	    dst[q][w] = CV_DESCALE( (src[q][w][bidx] * B2Y + src[q][w][1] * G2Y + src[q][w][(2-bidx)] * R2Y ), yuv_shift );
 #pragma endscop
     return;
 
