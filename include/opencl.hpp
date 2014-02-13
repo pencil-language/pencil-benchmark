@@ -285,8 +285,7 @@ namespace carp {
                 for( const std::string & kernel_name : kernelnames )
                 {
                     cl_int err;
-                    cl_kernel tmp_kernel;
-                    tmp_kernel = clCreateKernel( cpProgram.get(), kernel_name.c_str(), &err );
+                    cl_kernel tmp_kernel = clCreateKernel( cpProgram.get(), kernel_name.c_str(), &err );
                     utility::checkerror( err, __FILE__, __LINE__ );
                     std::shared_ptr<_cl_kernel> btmp_kernel( tmp_kernel, clReleaseKernel );
                     kernels[kernel_name].set( btmp_kernel, cqCommandQueue );
@@ -365,7 +364,7 @@ namespace carp {
         template <class T0 = uint8_t >
         class array_ : public array {
         private:
-            array_( const array_<T0> & ) { } // copy constructor forbidden
+            array_( const array_<T0> & ) = delete; // copy constructor forbidden
             
         public:
             
@@ -467,7 +466,7 @@ namespace carp {
             int m_cols;
             opencl::array_<value_type> buf;
 
-            image( const image<T0> & ) { }
+            image( const image<T0> & ) = delete;
             
         public:
             image( const cl_context & cqContext, const cl_command_queue & cqCommandQueue, int m_rows, int m_cols )
