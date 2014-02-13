@@ -22,15 +22,7 @@ The coordinates of P are [r,c] (row, col). The function returns
 bilinear interpolation of the value of P.
  */
 
-static inline float 
-bilinear( float A00, float A01, float A11, float A10, float r, float c ) {
-    // assert(c>=0);
-    // assert(c<=1);
-    // assert(r>=0);
-    // assert(r<=1);
-    float result = (1-c) * ( (1-r) * A00 + r * A10 ) + c * ( (1-r) * A01 + r * A11 );
-    return result;
-} // bilinear
+#define bilinear( A00, A01, A11, A10, r, c ) ((1-c) * ( (1-r) * A00 + r * A10 ) + c * ( (1-r) * A01 + r * A11 ))
 
 #define sat( val, lo, hi ) ((val >= lo) ? ((val <= hi) ? val : hi) : lo)
 
