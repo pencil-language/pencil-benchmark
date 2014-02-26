@@ -462,9 +462,10 @@ static float generateResponseMapPatchNoMemory(
             float xOutArray;
             xOutArray = beta * bInArray[i][j];
             for (int k = 0; k < wInCols; k++) {
+		int index1 = k / imagePatchCols + imageOffsetRow;
+		int index2 = k % imagePatchRows + j + imageOffsetCol;
                 xOutArray += alpha * wInArray[i][k] *
-                    (quotient * Image[k / imagePatchCols + imageOffsetRow][
-                        k % imagePatchRows + j + imageOffsetCol] +
+                    (quotient * Image[index1][index2] +
                      shift);
             }
             xOutArray = exp(xOutArray);	//This should be expf in C and exp in OpenCL
