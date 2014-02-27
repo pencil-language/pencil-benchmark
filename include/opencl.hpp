@@ -224,11 +224,17 @@ namespace carp {
                     assert(num_platforms==1);  // there is only one supported platform at the time
 
                     // getting the number of devices
-                    utility::checkerror(clGetDeviceIDs(*cpPlatform, CL_DEVICE_TYPE_GPU, 0, NULL, &num_devices), __FILE__, __LINE__ );
-                    assert(num_devices>0);                
-                    devices.resize(num_devices);
-                
-                    utility::checkerror(clGetDeviceIDs(*cpPlatform, CL_DEVICE_TYPE_GPU, devices.size(), devices.data(), NULL ), __FILE__, __LINE__ );
+                    clGetDeviceIDs(*cpPlatform, CL_DEVICE_TYPE_GPU, 0, NULL, &num_devices);
+
+		    if (num_devices>0) {
+	                    devices.resize(num_devices);
+        	            utility::checkerror(clGetDeviceIDs(*cpPlatform, CL_DEVICE_TYPE_GPU, devices.size(), devices.data(), NULL ), __FILE__, __LINE__ );
+		    } else if (num_devices<=0) {
+	                    utility::checkerror(clGetDeviceIDs(*cpPlatform, CL_DEVICE_TYPE_CPU, 0, NULL, &num_devices), __FILE__, __LINE__ );
+	                    devices.resize(num_devices);
+        	            utility::checkerror(clGetDeviceIDs(*cpPlatform, CL_DEVICE_TYPE_CPU, devices.size(), devices.data(), NULL ), __FILE__, __LINE__ );
+		    }
+
                     if (num_devices>1)
                         PRINT("warning: more then one GPU device!");                
                     //                assert(num_devices==1);
