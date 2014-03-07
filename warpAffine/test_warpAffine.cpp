@@ -9,7 +9,7 @@
 #include "opencl.hpp"
 #include "utility.hpp"
 #include "imgproc_warpAffine.clh"
-#include "affine.pencil.h"
+#include "warpAffine.pencil.h"
 
 namespace
 {
