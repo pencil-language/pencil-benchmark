@@ -72,19 +72,21 @@ namespace carp {
     	std::vector<double> pen_speedups;
     public:
     	TimingLong() {
-    		std::cout << "    Operator - CPU Time - GPU Time - Pencil Time - GPU speedup - Pencil speedup" << std::endl;
+    		std::cout << "    Operator - CPU Time - GPU Time - Pencil Time - GPU speedup - Pencil speedup - GPU/Pencil" << std::endl;
     	}
 
     	void print( const std::string & name, const long int & cpu, const long int & gpu, const long int & pen ) {
     		auto gpu_speedup = static_cast<double>(cpu)/static_cast<double>(gpu);
     		auto pen_speedup = static_cast<double>(cpu)/static_cast<double>(pen);
+    		double gpu_div_pen = static_cast<double>(gpu)/static_cast<double>(pen);
     		std::cout << std::fixed << std::setprecision(3);
     		std::cout << std::setw(12) << name << " - "
     				<< std::setw(7) << (cpu/1000000.) << "s - "
     				<< std::setw(7) << (gpu/1000000.) << "s - "
     				<< std::setw(7) << (pen/1000000.) << "s - "
     				<< std::setw(7) << gpu_speedup << 'x' << " - "
-    				<< std::setw(7) << pen_speedup << 'x' << std::endl;
+    				<< std::setw(14) << pen_speedup << 'x' << " - "
+				<< std::setw(12) << gpu_div_pen  << 'x' << std::endl;
     		gpu_speedups.push_back(gpu_speedup);
     		pen_speedups.push_back(pen_speedup);
     	}
