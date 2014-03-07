@@ -91,7 +91,7 @@ namespace carp {
     				<< std::setw(14) << pen_speedup << 'x' << " - "
 				<< std::setw(12) << gpu_div_pen  << 'x' << std::endl;
 #else
-    		std::cout << gpu_div_pen  << std::endl;
+    		std::cout << gpu_div_pen;
 #endif
     		gpu_speedups.push_back(gpu_speedup);
     		pen_speedups.push_back(pen_speedup);
