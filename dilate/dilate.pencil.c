@@ -13,13 +13,13 @@ dilate (
     const int rows,
     const int cols,
     const int cpu_step,
-    const uint8_t cpu_gray[static const restrict rows][cpu_step],
+    const unsigned char cpu_gray[static const restrict rows][cpu_step],
     int dilate_step,
-    uint8_t dilate[static const restrict rows][dilate_step],
+    unsigned char dilate[static const restrict rows][dilate_step],
     int se_rows,
     int se_cols,
     int se_step,
-    const uint8_t se[static const restrict se_rows][se_step],
+    const unsigned char se[static const restrict se_rows][se_step],
     int anchor_row,
     int anchor_col,
     int border_type ) {
@@ -28,7 +28,7 @@ dilate (
     for ( int q = 0; q < rows; q++ ) {
 #       pragma pencil independent
 	for ( int w = 0; w < cols; w++ ) {
-	    uint8_t sup = 0;
+	    unsigned char sup = 0;
 	    for ( int e = 0; e < se_rows; e++ ) {
 		for ( int r = 0; r < se_cols; r++ ) {
 		    int candidate_row = q - anchor_row + e;
@@ -42,7 +42,7 @@ dilate (
 		    int high_col = 0;
 		    if (candidate_col < cols) high_col = 1;
 		    if ( (low_row) && (low_col) && (high_row) && (high_col) ) {
-			uint8_t val = cpu_gray[candidate_row][candidate_col];
+			unsigned char val = cpu_gray[candidate_row][candidate_col];
 			if (se[e][r]!=0)
 			    sup = (sup > val) ? sup : val;
 		    } // if
