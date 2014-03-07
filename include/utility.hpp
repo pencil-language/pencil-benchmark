@@ -72,7 +72,9 @@ namespace carp {
     	std::vector<double> pen_speedups;
     public:
     	TimingLong() {
+#ifndef BENCHMARK_PRINT_GPU_PENCIL_SPEEDUP_ONLY
     		std::cout << "    Operator - CPU Time - GPU Time - Pencil Time - GPU speedup - Pencil speedup - GPU/Pencil" << std::endl;
+#endif
     	}
 
     	void print( const std::string & name, const long int & cpu, const long int & gpu, const long int & pen ) {
@@ -80,6 +82,7 @@ namespace carp {
     		auto pen_speedup = static_cast<double>(cpu)/static_cast<double>(pen);
     		double gpu_div_pen = static_cast<double>(gpu)/static_cast<double>(pen);
     		std::cout << std::fixed << std::setprecision(3);
+#ifndef BENCHMARK_PRINT_GPU_PENCIL_SPEEDUP_ONLY
     		std::cout << std::setw(12) << name << " - "
     				<< std::setw(7) << (cpu/1000000.) << "s - "
     				<< std::setw(7) << (gpu/1000000.) << "s - "
@@ -87,15 +90,20 @@ namespace carp {
     				<< std::setw(7) << gpu_speedup << 'x' << " - "
     				<< std::setw(14) << pen_speedup << 'x' << " - "
 				<< std::setw(12) << gpu_div_pen  << 'x' << std::endl;
+#else
+    		std::cout << gpu_div_pen  << std::endl;
+#endif
     		gpu_speedups.push_back(gpu_speedup);
     		pen_speedups.push_back(pen_speedup);
     	}
 
     	~TimingLong() {
+#ifndef BENCHMARK_PRINT_GPU_PENCIL_SPEEDUP_ONLY
     		std::cout << "Cumulated Speed Improvement: " << std::endl
     				<< "    GPU speed / CPU speed: " << std::accumulate(gpu_speedups.begin(),gpu_speedups.end(),0.0) / gpu_speedups.size() << "x" << std::endl
     				<< "    Pen speed / CPU speed: " << std::accumulate(pen_speedups.begin(),pen_speedups.end(),0.0) / pen_speedups.size() << "x" << std::endl
     				;
+#endif
     	}
     };
 
