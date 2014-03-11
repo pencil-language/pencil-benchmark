@@ -48,8 +48,8 @@ o_c -- old col
 */
 static inline void
 affine (
-    int src_rows, int src_cols, int src_step, float src[static const restrict src_step][src_cols],
-    int dst_rows, int dst_cols, int dst_step, float dst[static const restrict dst_step][dst_cols],
+    int src_rows, int src_cols, int src_step, float src[static const restrict src_rows][src_step],
+    int dst_rows, int dst_cols, int dst_step, float dst[static const restrict dst_rows][dst_step],
     float a00, float a01, float a10, float a11, float b00, float b10 ) {
 #pragma scop
 #   pragma pencil independent
