@@ -32,11 +32,11 @@ resize (
     int original_rows,
     int original_cols,
     int original_step,
-    unsigned char original[static const restrict original_step][original_cols],
+    unsigned char original[static const restrict original_rows][original_step],
     int resampled_rows,
     int resampled_cols,
     int resampled_step,
-    unsigned char resampled[static const restrict resampled_step][resampled_cols] ) {
+    unsigned char resampled[static const restrict resampled_rows][resampled_step] ) {
 
 #pragma scop
     // assert(resampled_rows>1);
