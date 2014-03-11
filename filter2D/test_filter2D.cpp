@@ -134,9 +134,9 @@ time_filter2D( carp::opencl::device & device, T0 & pool, int iteration )
                 cv::imwrite( "host_convolve.png", cpu );
                 cv::imwrite( "gpu_convolve.png", gpu );
                 cv::imwrite( "pencil_convolve.png", pencil );
-                cv::imwrite( "diff.png", cv::abs(gpu-pencil) );
+                cv::imwrite( "diff_convolve.png", cv::abs(gpu-pencil) );
                 
-                throw std::runtime_error("The GPU results are not equivalent with the CPU results.");                
+                throw std::runtime_error("The GPU results are not equivalent with the CPU results.");
             }
 
             timing.print( "2D filter", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
