@@ -186,8 +186,8 @@ time_gaussian( carp::opencl::device & device, T0 & pool )
             const auto gpu_end = std::chrono::high_resolution_clock::now();
             auto elapsed_time_gpu = carp::microseconds(gpu_end - gpu_start);                            
 
-            cv::Mat kernel = cv::getGaussianKernel(ksize.width, gaussX, CV_32F).t();
-            cv::Mat t_kernel = cv::getGaussianKernel(ksize.height, gaussY, CV_32F);
+            cv::Mat kernel_x = cv::getGaussianKernel(ksize.width, gaussX, CV_32F).t();
+            cv::Mat kernel_y = cv::getGaussianKernel(ksize.height, gaussY, CV_32F);
             
             cv::Mat pencil;
 	    cv::Mat intermediate;
@@ -198,10 +198,10 @@ time_gaussian( carp::opencl::device & device, T0 & pool )
 	    const auto pencil_start = std::chrono::high_resolution_clock::now();
 	    pencil_gaussian(
 		cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<float>(),
-		kernel.rows, kernel.cols, kernel.step1(), kernel.ptr<float>(),
-		t_kernel.rows, t_kernel.cols, t_kernel.step1(), t_kernel.ptr<float>(),
-		intermediate.step1(), intermediate.ptr<float>(),
-		pencil.step1(), pencil.ptr<float>()
+		kernel_x.rows, kernel_x.cols, kernel_x.step1(), kernel_x.ptr<float>(),
+		kernel_y.rows, kernel_y.cols, kernel_y.step1(), kernel_y.ptr<float>(),
+		intermediate.ptr<float>(),
+		pencil.ptr<float>()
 		);
 	    const auto pencil_end = std::chrono::high_resolution_clock::now();
 	    auto elapsed_time_pencil = carp::microseconds(pencil_end - pencil_start);

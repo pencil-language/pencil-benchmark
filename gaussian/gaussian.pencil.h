@@ -22,9 +22,7 @@ extern "C" {
 	int kernelY_cols,
 	int kernelY_step,
 	float kernelY[],
-	int temp_step,
 	float temp[],
-	int conv_step, 
 	float conv[] );
     
 

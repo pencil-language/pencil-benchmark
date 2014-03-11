@@ -110,7 +110,7 @@ time_filter2D( carp::opencl::device & device, T0 & pool, int iteration )
             const auto pencil_start = std::chrono::high_resolution_clock::now();
             pencil_filter2D( cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<float>(),
                              kernel_cpu.rows, kernel_cpu.cols, kernel_cpu.step1(), kernel_cpu.ptr<float>(),
-                             pencil_conv.step1(), pencil_conv.ptr<float>() );
+                             pencil_conv.ptr<float>() );
             const auto pencil_end = std::chrono::high_resolution_clock::now();
             auto elapsed_time_pencil = carp::microseconds(pencil_end - pencil_start);
             

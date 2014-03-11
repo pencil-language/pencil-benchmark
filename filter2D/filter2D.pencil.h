@@ -12,13 +12,12 @@ extern "C" {
     pencil_filter2D( 
         int rows,
         int cols,
-        int src_step,
+        int step,
         float src[],
         int kernel_rows,
         int kernel_cols,
         int kernel_step,
         float kernel[],
-        int conv_step, 
         float conv[] );
     
 #ifdef __cplusplus

@@ -12,14 +12,13 @@ static void
 filter2D(     
     int rows,
     int cols,
-    int src_step,
-    const float src[static const restrict src_step][cols],
+    int step,
+    const float src[static const restrict rows][step],
     int kernel_rows,
     int kernel_cols,
     int kernel_step,
-    const float kernel_[static const restrict kernel_step][kernel_cols],
-    int conv_step, 
-    float conv[static const restrict conv_step][cols] ) {
+    const float kernel_[static const restrict kernel_rows][kernel_step],
+    float conv[static const restrict step][cols] ) {
 #pragma scop    
     int center_row = kernel_rows / 2;
     int center_col = kernel_cols / 2;
@@ -51,16 +50,15 @@ void
 pencil_filter2D( 
     int rows,
     int cols,
-    int src_step,
+    int step,
     float src[],
     int kernel_rows,
     int kernel_cols,
     int kernel_step,
     float kernel_[],
-    int conv_step, 
     float conv[] ) {
 
-    filter2D( rows, cols, src_step, src, kernel_rows, kernel_cols, kernel_step, kernel_, conv_step, conv );
+    filter2D( rows, cols, step, src, kernel_rows, kernel_cols, kernel_step, kernel_, conv );
 
     return;
 } // filter2D

@@ -12,14 +12,13 @@ static void
 filter2D(     
     int rows,
     int cols,
-    int src_step,
-    const float src[static const restrict src_step][cols],
+    int step,
+    const float src[static const restrict rows][step],
     int kernel_rows,
     int kernel_cols,
     int kernel_step,
-    const float kernel_[static const restrict kernel_step][kernel_cols],
-    int conv_step, 
-    float conv[static const restrict conv_step][cols] ) {
+    const float kernel_[static const restrict kernel_rows][kernel_step],
+    float conv[static const restrict step][cols] ) {
 
 #pragma scop    
     int center_row = kernel_rows / 2;
@@ -53,8 +52,8 @@ static void
 gaussian (    
     int rows,
     int cols,
-    int src_step,
-    const float src[static const restrict src_step][cols],
+    int step,
+    const float src[static const restrict step][cols],
     int kernelX_rows,
     int kernelX_cols,
     int kernelX_step,
@@ -63,12 +62,10 @@ gaussian (
     int kernelY_cols,
     int kernelY_step,
     const float kernelY[static const restrict kernelY_step][kernelY_cols],
-    int temp_step,
-    float temp[static const restrict temp_step][cols],
-    int conv_step, 
-    float conv[static const restrict conv_step][cols] ) {
-    filter2D( rows, cols, src_step,  src,  kernelX_rows, kernelX_cols, kernelX_step, kernelX, temp_step, temp );    
-    filter2D( rows, cols, temp_step, temp, kernelY_rows, kernelY_cols, kernelY_step, kernelY, conv_step, conv );
+    float temp[static const restrict step][cols],
+    float conv[static const restrict step][cols] ) {
+    filter2D( rows, cols, step,  src, kernelX_rows, kernelX_cols, kernelX_step, kernelX, temp );    
+    filter2D( rows, cols, step, temp, kernelY_rows, kernelY_cols, kernelY_step, kernelY, conv );
     return;
 
 } // gaussian
@@ -77,7 +74,7 @@ void
 pencil_gaussian( 
     int rows,
     int cols,
-    int src_step,
+    int step,
     float src[],
     int kernelX_rows,
     int kernelX_cols,
@@ -87,11 +84,9 @@ pencil_gaussian(
     int kernelY_cols,
     int kernelY_step,
     float kernelY[],
-    int temp_step,
     float temp[],
-    int conv_step, 
     float conv[] ) {
-    gaussian ( rows, cols, src_step, src, kernelX_rows, kernelX_cols, kernelX_step, kernelX, kernelY_rows, kernelY_cols, kernelY_step, kernelY, temp_step, temp, conv_step, conv );
+    gaussian ( rows, cols, step, src, kernelX_rows, kernelX_cols, kernelX_step, kernelX, kernelY_rows, kernelY_cols, kernelY_step, kernelY, temp, conv );
     return;
 
 } // gaussian
