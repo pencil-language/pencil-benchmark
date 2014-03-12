@@ -20,10 +20,10 @@ const int processed_frames = 100;
 int main()
 {
     carp::conductor_t conductor;
-    long int elapsed_time = 0;
-    
+    std::chrono::duration<float> elapsed_time(0);
+
     int numberOfThreads =  tbb::tbb_thread::hardware_concurrency();
-    PRINT(numberOfThreads);    
+    PRINT(numberOfThreads);
     tbb::task_scheduler_init init(numberOfThreads);
     //tbb::task_scheduler_init init(1);
 
@@ -37,7 +37,7 @@ int main()
         conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.hack);
 
         // here comes the function call
-        {           
+        {
             gel::MLP<double> mlp;
             tbb::concurrent_vector< cv::Mat_<double> > calculatedResults(conductor.hack.m_visibleLandmarks_size);
             auto start = std::chrono::high_resolution_clock::now();
@@ -48,7 +48,7 @@ int main()
                 }
                     ); // tbb::parallel_for
             auto end = std::chrono::high_resolution_clock::now();
-            elapsed_time += carp::microseconds(end - start);
+            elapsed_time += (end - start);
 
             // testing the output
             for (int q=0; q<conductor.hack.m_visibleLandmarks_size; q++)
@@ -58,16 +58,16 @@ int main()
             }
         }
     }
-    
-    std::cout << "total elapsed time = " << elapsed_time / 1000000. << " s." << std::endl;
+
+    std::cout << "total elapsed time = " << elapsed_time.count() << " s." << std::endl;
     std::cout << std::setprecision(2) << std::fixed;
-    std::cout << "processing speed   = " << 1000000. * processed_frames / elapsed_time << "fps" << std::endl;
+    std::cout << "processing speed   = " << processed_frames / elapsed_time.count() << "fps" << std::endl;
 
     //conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.hack);
 
     PRINT(maxnetallocated);
     PRINT(maxgrossallocated);
-    
+
     return EXIT_SUCCESS;
 } // int main
 

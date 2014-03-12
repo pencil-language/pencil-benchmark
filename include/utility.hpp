@@ -58,14 +58,6 @@ namespace carp {
         return std::vector<T0>{ input0, inputs... };
     }
 
-    template <class T0>
-    std::chrono::microseconds::rep
-    microseconds( T0 t0 )
-    {
-        return std::chrono::duration_cast<std::chrono::microseconds>(t0).count();
-    }
-
-
     class TimingLong
     {
     	std::vector<double> gpu_speedups;
@@ -88,12 +80,12 @@ namespace carp {
     		std::cout << std::fixed << std::setprecision(3);
 #ifndef BENCHMARK_PRINT_GPU_PENCIL_SPEEDUP_ONLY
     		std::cout << std::setw(12) << name << " - "
-    				<< std::setw(7) << (cpu/1000000.) << "s - "
-    				<< std::setw(7) << (gpu/1000000.) << "s - "
-    				<< std::setw(7) << (pen/1000000.) << "s - "
-    				<< std::setw(7) << gpu_speedup << 'x' << " - "
-    				<< std::setw(14) << pen_speedup << 'x' << " - "
-				<< std::setw(12) << gpu_div_pen  << 'x' << std::endl;
+    		          << std::setw(7) << (cpu/1000000.) << "s - "
+    		          << std::setw(7) << (gpu/1000000.) << "s - "
+    		          << std::setw(7) << (pen/1000000.) << "s - "
+    		          << std::setw(7)  << gpu_speedup << 'x' << " - "
+    		          << std::setw(14) << pen_speedup << 'x' << " - "
+    		          << std::setw(12) << gpu_div_pen << 'x' << std::endl;
 #else
     		std::cout << gpu_div_pen;
 #endif
@@ -108,31 +100,6 @@ namespace carp {
     				<< "    Pen speed / CPU speed: " << std::accumulate(pen_speedups.begin(),pen_speedups.end(),0.0) / pen_speedups.size() << "x" << std::endl
     				;
 #endif
-    	}
-    };
-
-    class TimingShort
-    {
-    	std::vector<double> gpu_speedups;
-    public:
-    	TimingShort() {
-    		std::cout << "    Operator - CPU Time - GPU Time - CPU/GPU" << std::endl;
-    	}
-
-    	void print( const std::string & name, const long int & cpu, const long int & gpu ) {
-    		auto speedup = static_cast<double>(cpu)/static_cast<double>(gpu);
-    		std::cout << std::fixed << std::setprecision(3);
-    		std::cout << std::setw(12) << name << " - "
-    				<< std::setw(7) << (cpu/1000000.) << "s - "
-    				<< std::setw(7) << (gpu/1000000.) << "s - "
-    				<< std::setw(7) << speedup << 'x' << std::endl;
-    		gpu_speedups.push_back(speedup);
-	    }
-
-    	~TimingShort() {
-    		std::cout << "Cumulated Speed Improvement: " << std::endl
-    				<< "    GPU speed / CPU speed: " << std::accumulate(gpu_speedups.begin(),gpu_speedups.end(),0.0) / gpu_speedups.size() << "x" << std::endl
-    				;
     	}
     };
 

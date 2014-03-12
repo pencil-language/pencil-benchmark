@@ -27,9 +27,9 @@ const int processed_frames = PROCESSED_FRAMES;
 int main()
 {
     carp::conductor_t conductor;
-    long int elapsed_time = 0;
+    std::chrono::duration<double> elapsed_time(0);
     int i = 1;
-    
+
     for ( conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id);
           ((conductor.id != -1) && (conductor.id != processed_frames));
           // conductor.id != -1;
@@ -59,7 +59,7 @@ int main()
                 &responseMaps
                 );
             auto end = std::chrono::high_resolution_clock::now();
-            elapsed_time += carp::microseconds(end - start);
+            elapsed_time += (end - start);
 
             // releasing the inputs
             freeMatChar(&alignedImage);
@@ -74,22 +74,22 @@ int main()
                 nextResult = carp::convertMatFloatToCV( responseMaps[q] );
                 calculatedResults.push_back(nextResult);
             }
-            
+
             // testing the output
             for (int q=0; q<conductor.hack.m_visibleLandmarks_size; q++)
             {
                 if (cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) > 0.0001) throw std::runtime_error("conductor.hack.responseMaps[q] - calculatedResults[q] ) < 0.0001 failed");
             }
-            
+
             // releasing the outputs
             carp::freeResponseMaps( &responseMaps, conductor.hack.m_visibleLandmarks_size );
 
         }
     }
-    
-    std::cout << "total elapsed time = " << elapsed_time / 1000000. << " s." << std::endl;
+
+    std::cout << "total elapsed time = " << elapsed_time.count() << " s." << std::endl;
     std::cout << std::setprecision(2) << std::fixed;
-    std::cout << "processing speed   = " << 1000000. * processed_frames / elapsed_time << "fps" << std::endl;
+    std::cout << "processing speed   = " << processed_frames / elapsed_time.count() << "fps" << std::endl;
 
     //conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.hack);
 
