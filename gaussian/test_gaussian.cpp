@@ -42,7 +42,7 @@ namespace
         CV_Assert(roi.x >= 0 && roi.y >= 0 && roi.width <= src_size.width && roi.height <= src_size.height);
     }
 
-} // unnamed namespace 
+} // unnamed namespace
 
 namespace carp {
     void gaussian( carp::opencl::device & device, const cv::ocl::oclMat & src, cv::ocl::oclMat & dst, const cv::Size & ksize, const double & gaussX, const double & gaussY, int bordertype ) {
@@ -58,7 +58,7 @@ namespace carp {
         cv::ocl::oclMat dstBufROI;
         dstBuf.create(src_size.height + ksize.height - 1, src_size.width, CV_MAKETYPE(CV_32F, cn));
         cv::Rect roi = cv::Rect(0, 0, -1, -1);
-                
+
         normalizeROI(roi, ksize, anchor, src_size);
 
         srcROI = src(roi);
@@ -78,12 +78,12 @@ namespace carp {
         {
             ky = cv::getGaussianKernel(ksize.height, gaussY, std::max(depth, CV_32F));
         }
-                                                
+
         cv::ocl::oclMat oclKX(kx.reshape(1,1));
         cv::ocl::oclMat oclKY(ky.reshape(1,1));
-                
+
         int channels = srcROI.oclchannels();
-                                                                                
+
         std::vector<size_t> localThreads = {16, 16, 1};
 
         std::string compile_option = " -D RADIUSX=" + carp::cast<std::string>(anchor.x)
@@ -110,25 +110,25 @@ namespace carp {
         //dst_offset_in_pixel = dstBuf.offset / dstBuf.elemSize();
         int ridusy = (dstBuf.rows - srcROI.rows) >> 1;
         device.source_compile( filter_sep_row_cl, filter_sep_row_cl_len, {"row_filter_C1_D5"}, compile_option );
-                
+
         device["row_filter_C1_D5"]( reinterpret_cast<cl_mem>(srcROI.data), reinterpret_cast<cl_mem>(dstBuf.data), dstBuf.cols, dstBuf.rows,
             srcROI.wholecols, srcROI.wholerows, src_pix_per_row, src_offset_x, src_offset_y, dst_pix_per_row, ridusy, reinterpret_cast<cl_mem>(oclKX.data)
             ).groupsize( localThreads, globalThreads );
-                                                                                                                                
+
         localThreads = {16, 16, 1};
-                
+
         globalThreads.resize(3);
         globalThreads[1] = (dstROI.rows + localThreads[1] - 1) / localThreads[1] * localThreads[1];
         globalThreads[2] = (1 + localThreads[2] - 1) / localThreads[2] * localThreads[2];
         globalThreads[0] = (dstROI.cols + localThreads[0] - 1) / localThreads[0] * localThreads[0];
         compile_option = " -D RADIUSY=" + carp::cast<std::string>(anchor.y)
             + " -D LSIZE0=" + carp::cast<std::string>(localThreads[0])
-            + " -D LSIZE1=" + carp::cast<std::string>(localThreads[1]) 
+            + " -D LSIZE1=" + carp::cast<std::string>(localThreads[1])
             + " -D CN=" + carp::cast<std::string>(channels)
             + " -D " + carp::borders[bordertype]
             + " -D GENTYPE_SRC=" + "float"
             + " -D GENTYPE_DST=" + "float"
-            + " -D convert_to_DST=" + "";                        
+            + " -D convert_to_DST=" + "";
 
         //sanity checks
         CV_Assert(dstBuf.cols == dstROI.cols);
@@ -140,7 +140,7 @@ namespace carp {
         //src_offset_y = dstBuf.offset / dstBuf.step;
         dst_pix_per_row = dstROI.step / dstROI.elemSize();
         dst_offset_in_pixel = dstROI.offset / dstROI.elemSize();
-                
+
         device.source_compile( filter_sep_col_cl, filter_sep_col_cl_len, { "col_filter" }, compile_option );
         device["col_filter"]( reinterpret_cast<cl_mem>(dstBuf.data), reinterpret_cast<cl_mem>(dstROI.data), dstROI.cols, dstROI.rows,
             dstBuf.wholecols, dstBuf.wholerows, src_pix_per_row, dst_pix_per_row, dst_offset_in_pixel, reinterpret_cast<cl_mem>(oclKY.data)
@@ -148,89 +148,97 @@ namespace carp {
 
         device.erase("col_filter");
     } // carp::gaussian
-    
-} // namespace carp 
+
+} // namespace carp
 
 
 template<class T0>
 void
-time_gaussian( carp::opencl::device & device, T0 & pool )
+time_gaussian( T0 & pool )
 {
     carp::TimingLong timing;
 
     for ( auto & size : {/*5,*/ 9, 11/*, 25, 41*/} ) {
         PRINT(size);
         cv::Size ksize(size, size+4);
-        
+
         double gaussX = 7.;
         double gaussY = 9.;
         int bordertype = cv::BORDER_REPLICATE;
-        
+
         for ( auto & item : pool ) {
             cv::Mat cpu_gray;
 
             cv::cvtColor( item.cpuimg(), cpu_gray, CV_RGB2GRAY );
             cpu_gray.convertTo( cpu_gray, CV_32F, 1.0/255. );
-            cv::Mat host_blur;
-            
-            const auto cpu_start = std::chrono::high_resolution_clock::now();
-            cv::GaussianBlur( cpu_gray, host_blur, ksize, gaussX, gaussY, bordertype );
-            const auto cpu_end = std::chrono::high_resolution_clock::now();
-            auto elapsed_time_cpu = carp::microseconds(cpu_end - cpu_start);
+            cv::Mat cpu_result;
+            cv::Mat gpu_result;
+            cv::Mat pen_result;
+            std::chrono::microseconds elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil;
+            {
+                const auto cpu_start = std::chrono::high_resolution_clock::now();
+                cv::GaussianBlur( cpu_gray, cpu_result, ksize, gaussX, gaussY, bordertype );
+                const auto cpu_end = std::chrono::high_resolution_clock::now();
+                elapsed_time_cpu = cpu_end - cpu_start;
+                //Free up resources
+            }
+            {
+                carp::opencl::device device(cv::ocl::Context::getContext());
+                const auto gpu_start = std::chrono::high_resolution_clock::now();
+                cv::ocl::oclMat dst;
+                cv::ocl::oclMat src(cpu_gray);
+                carp::gaussian(device, src, dst, ksize, gaussX, gaussY, bordertype );
+                gpu_result = dst;
+                const auto gpu_end = std::chrono::high_resolution_clock::now();
+                elapsed_time_gpu = gpu_end - gpu_start;
+                //Free up resources
+            }
+            {
+                cv::Mat kernel_x = cv::getGaussianKernel(ksize.width, gaussX, CV_32F).t();
+                cv::Mat kernel_y = cv::getGaussianKernel(ksize.height, gaussY, CV_32F);
 
-            const auto gpu_start = std::chrono::high_resolution_clock::now();
-            cv::ocl::oclMat dst;
-            cv::ocl::oclMat src(cpu_gray);                
-            carp::gaussian(device, src, dst, ksize, gaussX, gaussY, bordertype );            
-            cv::Mat check(dst);                
-            const auto gpu_end = std::chrono::high_resolution_clock::now();
-            auto elapsed_time_gpu = carp::microseconds(gpu_end - gpu_start);                            
+                cv::Mat intermediate;
+                intermediate.create( cpu_gray.size(), CV_32F );
 
-            cv::Mat kernel_x = cv::getGaussianKernel(ksize.width, gaussX, CV_32F).t();
-            cv::Mat kernel_y = cv::getGaussianKernel(ksize.height, gaussY, CV_32F);
-            
-            cv::Mat pencil;
-	    cv::Mat intermediate;
-	    intermediate.create( cpu_gray.size(), CV_32F );
+                pen_result.create( cpu_gray.size(), CV_32F );
 
-	    pencil.create( cpu_gray.size(), CV_32F );
-	    
-	    const auto pencil_start = std::chrono::high_resolution_clock::now();
-	    pencil_gaussian(
-		cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<float>(),
-		kernel_x.rows, kernel_x.cols, kernel_x.step1(), kernel_x.ptr<float>(),
-		kernel_y.rows, kernel_y.cols, kernel_y.step1(), kernel_y.ptr<float>(),
-		intermediate.ptr<float>(),
-		pencil.ptr<float>()
-		);
-	    const auto pencil_end = std::chrono::high_resolution_clock::now();
-	    auto elapsed_time_pencil = carp::microseconds(pencil_end - pencil_start);
-            
+                const auto pencil_start = std::chrono::high_resolution_clock::now();
+                pencil_gaussian( cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<float>()
+                               , kernel_x.rows, kernel_x.cols, kernel_x.step1(), kernel_x.ptr<float>()
+                               , kernel_y.rows, kernel_y.cols, kernel_y.step1(), kernel_y.ptr<float>()
+                               , intermediate.ptr<float>()
+                               , pen_result.ptr<float>()
+                               );
+                const auto pencil_end = std::chrono::high_resolution_clock::now();
+                elapsed_time_pencil = pencil_end - pencil_start;
+                //Free up resources
+            }
             // Verifying the results
-            if ( (cv::norm( host_blur - check ) > 0.01) ||
-                 (cv::norm( host_blur - pencil) > 0.01) ) {
-                PRINT(cv::norm(check - host_blur ));
-                PRINT(cv::norm(pencil - host_blur));
-                
-                cv::Mat check8;
-                cv::Mat host_blur8;
-                cv::Mat pencil8;
+            if ( (cv::norm( cpu_result - gpu_result ) > 0.01) ||
+                 (cv::norm( cpu_result - pen_result) > 0.01) )
+            {
+                PRINT(cv::norm(gpu_result - cpu_result));
+                PRINT(cv::norm(pen_result - cpu_result));
+
+                cv::Mat gpu_result8;
+                cv::Mat cpu_result8;
+                cv::Mat pen_result8;
                 cv::Mat diff8;
-                                
-                check.convertTo( check8, CV_8UC1, 255. );
-                host_blur.convertTo( host_blur8, CV_8UC1, 255. );
-                pencil.convertTo( pencil8, CV_8UC1, 255. );
-                cv::Mat absdiff = cv::abs(pencil - host_blur);
-                absdiff.convertTo( diff8, CV_8UC1, 255. );                
-                
-                cv::imwrite( "gpu_gaussian.png", check8 );
-                cv::imwrite( "cpu_gaussian.png", host_blur8 );
-                cv::imwrite( "pencil_gaussian.png", pencil8 );
+
+                gpu_result.convertTo( gpu_result8, CV_8UC1, 255. );
+                cpu_result.convertTo( cpu_result8, CV_8UC1, 255. );
+                pen_result.convertTo( pen_result8, CV_8UC1, 255. );
+                cv::Mat absdiff = cv::abs(pen_result - cpu_result);
+                absdiff.convertTo( diff8, CV_8UC1, 255. );
+
+                cv::imwrite( "gpu_gaussian.png", gpu_result8 );
+                cv::imwrite( "cpu_gaussian.png", cpu_result8 );
+                cv::imwrite( "pencil_gaussian.png", pen_result8 );
                 cv::imwrite( "diff_gaussian.png", diff8 );
-                
+
                 throw std::runtime_error("The GPU results are not equivalent with the CPU results.");
             }
-                        
+
             timing.print( "gaussian blur", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
         }
     }
@@ -240,16 +248,10 @@ int main(int argc, char* argv[])
 {
 
 #ifndef BENCHMARK_PRINT_GPU_PENCIL_SPEEDUP_ONLY
-    std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;    
+    std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
 #endif
 
     auto pool = carp::get_pool("pool");
-
-    // Initializing OpenCL
-    cv::ocl::Context * context = cv::ocl::Context::getContext();
-    carp::opencl::device device(context);
-//    device.source_compile( imgproc_convolve_cl, imgproc_convolve_cl_len,
-//                           carp::string_vector("convolve_D5" ) );
-    time_gaussian( device, pool );
-    return EXIT_SUCCESS;    
+    time_gaussian( pool );
+    return EXIT_SUCCESS;
 } // main

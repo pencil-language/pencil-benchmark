@@ -77,7 +77,11 @@ namespace carp {
 #endif
     	}
 
-    	void print( const std::string & name, const long int & cpu, const long int & gpu, const long int & pen ) {
+        void print( const std::string & name, const std::chrono::microseconds &cpu, const std::chrono::microseconds &gpu, const std::chrono::microseconds &pen ) {
+            print(name, cpu.count(), gpu.count(), pen.count());
+        }
+
+        void print( const std::string & name, const long int & cpu, const long int & gpu, const long int & pen ) {
     		auto gpu_speedup = static_cast<double>(cpu)/static_cast<double>(gpu);
     		auto pen_speedup = static_cast<double>(cpu)/static_cast<double>(pen);
     		double gpu_div_pen = static_cast<double>(gpu)/static_cast<double>(pen);
