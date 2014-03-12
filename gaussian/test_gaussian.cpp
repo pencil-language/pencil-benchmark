@@ -171,10 +171,10 @@ time_gaussian( T0 & pool )
 
             cv::cvtColor( item.cpuimg(), cpu_gray, CV_RGB2GRAY );
             cpu_gray.convertTo( cpu_gray, CV_32F, 1.0/255. );
-            cv::Mat cpu_result;
-            cv::Mat gpu_result;
-            cv::Mat pen_result;
+
+            cv::Mat cpu_result, gpu_result, pen_result;
             std::chrono::microseconds elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil;
+
             {
                 const auto cpu_start = std::chrono::high_resolution_clock::now();
                 cv::GaussianBlur( cpu_gray, cpu_result, ksize, gaussX, gaussY, bordertype );

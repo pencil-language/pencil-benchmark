@@ -72,7 +72,7 @@ namespace carp {
 
 template<class T0>
 void
-time_filter2D( carp::opencl::device & device, T0 & pool, int iteration )
+time_filter2D( T0 & pool, int iteration )
 {
     carp::TimingLong timing;
 
@@ -83,14 +83,16 @@ time_filter2D( carp::opencl::device & device, T0 & pool, int iteration )
             cv::Mat cpu_gray;
             cv::cvtColor( item.cpuimg(), cpu_gray, CV_RGB2GRAY );
             cpu_gray.convertTo( cpu_gray, CV_32F, 1.0/255. );
-            cv::Mat cpu_result, gpu_result, pen_result;
-            std::chrono::microseconds elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil;
 
             float kernel_data[] = {-1, -1, -1
                                   , 0,  0,  0
                                   , 1,  1,  1
                                   };
             cv::Mat kernel_cpu(3, 3, CV_32F, kernel_data);
+
+            cv::Mat cpu_result, gpu_result, pen_result;
+            std::chrono::microseconds elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil;
+
             {
                 const auto cpu_start = std::chrono::high_resolution_clock::now();
                 cv::filter2D( cpu_gray, cpu_result, -1, kernel_cpu, cv::Point(-1,-1), 0.0, cv::BORDER_REPLICATE );
@@ -98,6 +100,9 @@ time_filter2D( carp::opencl::device & device, T0 & pool, int iteration )
                 elapsed_time_cpu = cpu_end - cpu_start;
             }
             {
+                cv::ocl::Context * context = cv::ocl::Context::getContext();
+                carp::opencl::device device(context);
+                device.source_compile( imgproc_convolve_cl, imgproc_convolve_cl_len, carp::make_vector<std::string>("convolve_D5" ) );
                 const auto gpu_start = std::chrono::high_resolution_clock::now();
                 cv::ocl::oclMat gpu_gray(cpu_gray);
                 cv::ocl::oclMat kernel_gpu(kernel_cpu);
@@ -155,12 +160,6 @@ int main(int argc, char* argv[])
 #endif
 
     auto pool = carp::get_pool("pool");
-
-    // Initializing OpenCL
-    cv::ocl::Context * context = cv::ocl::Context::getContext();
-    carp::opencl::device device(context);
-    device.source_compile( imgproc_convolve_cl, imgproc_convolve_cl_len,
-                           carp::make_vector<std::string>("convolve_D5" ) );
-    time_filter2D( device, pool, 1 );
+    time_filter2D( pool, 1 );
     return EXIT_SUCCESS;
 } // main

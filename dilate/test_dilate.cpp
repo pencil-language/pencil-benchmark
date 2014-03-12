@@ -17,11 +17,11 @@ namespace {
         {
             anchor = ksize >> 1;
         }
-        
+
         CV_Assert(0 <= anchor && anchor < ksize);
     } // normalizeAnchor
 
-    
+
     inline void normalizeAnchor(cv::Point & anchor, const cv::Size &ksize)
     {
         normalizeAnchor(anchor.x, ksize.width);
@@ -35,21 +35,21 @@ namespace {
         {
             *nDivisor = scale;
         }
-        
+
         cv::Mat temp(kernel.size(), type);
         kernel.convertTo(temp, type, scale);
         cv::Mat cont_krnl = temp.reshape(1, 1);
-        
+
         if (reverse)
         {
             int count = cont_krnl.cols >> 1;
-            
+
             for (int i = 0; i < count; ++i)
             {
                 std::swap(cont_krnl.at<int>(0, i), cont_krnl.at<int>(0, cont_krnl.cols - 1 - i));
             }
         }
-        
+
         gpu_krnl.upload(cont_krnl);
     } // normalizeKernel
 } // unnamed namespace
@@ -57,7 +57,7 @@ namespace {
 
 namespace carp {
 
-    void dilate( carp::opencl::device & device, cv::Mat cpu_gray, cv::Mat & host_dilate, cv::Mat structuring_element, cv::Point anchor, int border_type, cv::Size ksize ) {
+    void dilate( carp::opencl::device & device, cv::Mat cpu_gray, cv::Mat & result, cv::Mat structuring_element, cv::Point anchor, int border_type, cv::Size ksize ) {
 
         cv::ocl::oclMat src(cpu_gray);
         cv::ocl::oclMat mat_kernel;
@@ -66,8 +66,8 @@ namespace carp {
         dst.create(src.size(), src.type());
         normalizeKernel(structuring_element, mat_kernel);
         normalizeAnchor(anchor, ksize);
-                
-        //! data type supported: CV_8UC1, CV_8UC4, CV_32FC1, CV_32FC4                
+
+        //! data type supported: CV_8UC1, CV_8UC4, CV_32FC1, CV_32FC4
         //Normalize the result by default
         //float alpha = ksize.height * ksize.width;
         CV_Assert(src.clCxt == dst.clCxt);
@@ -79,14 +79,14 @@ namespace carp {
         int dstStep = dst.step1() / dst.oclchannels();
         int srcOffset = src.offset /  src.elemSize();
         int dstOffset = dst.offset /  dst.elemSize();
-                
+
         int srcOffset_x = srcOffset % srcStep;
         int srcOffset_y = srcOffset / srcStep;
         std::string kernelName;
         size_t localThreads[3] = {16, 16, 1};
-        size_t globalThreads[3] = {(src.cols + localThreads[0] - 1) / localThreads[0] *localThreads[0], 
+        size_t globalThreads[3] = {(src.cols + localThreads[0] - 1) / localThreads[0] *localThreads[0],
                                    (src.rows + localThreads[1] - 1) / localThreads[1] *localThreads[1], 1};
-                
+
         if (src.type() == CV_8UC1)
         {
             kernelName = "morph_C1_D0";
@@ -98,9 +98,9 @@ namespace carp {
             kernelName = "morph";
             CV_Assert(localThreads[0]*localThreads[1] * 2 >= (localThreads[0] + ksize.width - 1) * (localThreads[1] + ksize.height - 1));
         }
-                
+
         std::string compile_option;
-                
+
         switch (src.type())
         {
         case CV_8UC1:
@@ -125,7 +125,7 @@ namespace carp {
             + " -D LSIZE0=" + carp::cast<std::string>(localThreads[0])
             + " -D LSIZE1=" + carp::cast<std::string>(localThreads[1])
             + " -D DILATE ";
-                
+
 //                if (rectKernel) compiler_option += " -D RECTKERNEL ";
 
         bool noZero = true;
@@ -134,7 +134,7 @@ namespace carp {
                 noZero = false;
 
         if (noZero) compile_option += " -D RECTKERNEL ";
-                
+
         device.source_compile( filtering_morph_cl, filtering_morph_cl_len,  make_vector<std::string>(kernelName), compile_option );
         device[kernelName](
             reinterpret_cast<cl_mem>(src.data),
@@ -150,19 +150,19 @@ namespace carp {
             src.wholerows,
             dstOffset
             ).groupsize( { localThreads[0],  localThreads[1],  localThreads[2]}, { globalThreads[0],  globalThreads[1],  globalThreads[2]} );
-        host_dilate = dst;
-        
+        result = dst;
+
         device.erase(kernelName);
 
     } // dilate
-    
-    
+
+
 } // namespace carp
 
 
 template<class T0>
 void
-time_dilate( carp::opencl::device & device, T0 & pool )
+time_dilate( T0 & pool )
 {
     carp::TimingLong timing;
 
@@ -170,56 +170,52 @@ time_dilate( carp::opencl::device & device, T0 & pool )
         PRINT(elemsize);
         for ( auto & item : pool ) {
             PRINT(item.path());
-            
+
             // acquiring the image for the test
             cv::Mat cpu_gray;
             cv::cvtColor( item.cpuimg(), cpu_gray, CV_RGB2GRAY );
-            
-            cv::Mat host_dilate;
-            cv::Mat check;
+
             cv::Point anchor( elemsize/2, elemsize/2 );
             cv::Size ksize(elemsize, elemsize);
             cv::Mat structuring_element = cv::getStructuringElement( cv::MORPH_ELLIPSE, ksize, anchor );
-            
-            auto cpu_start = std::chrono::high_resolution_clock::now();
-            cv::dilate( cpu_gray, host_dilate, structuring_element, anchor, /*iteration = */1, cv::BORDER_CONSTANT );
-            auto cpu_end = std::chrono::high_resolution_clock::now();
-            auto elapsed_time_cpu = carp::microseconds(cpu_end - cpu_start);
 
-            auto gpu_start = std::chrono::high_resolution_clock::now();
-            carp::dilate( device, cpu_gray, check, structuring_element, anchor, cv::BORDER_CONSTANT, ksize );
-            auto gpu_end = std::chrono::high_resolution_clock::now();
-            auto elapsed_time_gpu = carp::microseconds(gpu_end - gpu_start);
+            cv::Mat cpu_result, gpu_result, pen_result;
+            std::chrono::microseconds elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil;
 
-            // pencil code result checking
-            cv::Mat pdilate(cpu_gray.size(), CV_8U);
+            {
+                auto cpu_start = std::chrono::high_resolution_clock::now();
+                cv::dilate( cpu_gray, cpu_result, structuring_element, anchor, /*iteration = */1, cv::BORDER_CONSTANT );
+                auto cpu_end = std::chrono::high_resolution_clock::now();
+                elapsed_time_cpu = cpu_end - cpu_start;
+            }
+            {
+                cv::ocl::Context * context = cv::ocl::Context::getContext();
+                carp::opencl::device device(context);
+                auto gpu_start = std::chrono::high_resolution_clock::now();
+                carp::dilate( device, cpu_gray, gpu_result, structuring_element, anchor, cv::BORDER_CONSTANT, ksize );
+                auto gpu_end = std::chrono::high_resolution_clock::now();
+                elapsed_time_gpu = gpu_end - gpu_start;
+            }
+            {
+                pen_result = cv::Mat(cpu_gray.size(), CV_8U);
 
-            const auto pencil_start = std::chrono::high_resolution_clock::now();
-            pencil_dilate(
-                cpu_gray.rows,
-                cpu_gray.cols,
-                cpu_gray.step1(),
-                cpu_gray.ptr(),
-                pdilate.step1(),
-                pdilate.ptr(),
-                structuring_element.rows,
-                structuring_element.cols,
-                structuring_element.step1(),
-                structuring_element.ptr(),
-                anchor.x,
-                anchor.y,
-                cv::BORDER_CONSTANT );
-            const auto pencil_end = std::chrono::high_resolution_clock::now();
-            auto elapsed_time_pencil = carp::microseconds(pencil_end - pencil_start);
-            
+                const auto pencil_start = std::chrono::high_resolution_clock::now();
+                pencil_dilate( cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr()
+                             , pen_result.step1(), pen_result.ptr()
+                             , structuring_element.rows, structuring_element.cols, structuring_element.step1(), structuring_element.ptr()
+                             , anchor.x, anchor.y, cv::BORDER_CONSTANT
+                             );
+                const auto pencil_end = std::chrono::high_resolution_clock::now();
+                elapsed_time_pencil = pencil_end - pencil_start;
+            }
             // Verifying the results
-            if ( (cv::norm(host_dilate - check) > 0.01) || (cv::norm(host_dilate - pdilate) > 0.01) ) {
-                PRINT(cv::norm(check - host_dilate));
-                PRINT(cv::norm(host_dilate - pdilate));
-                cv::imwrite("cpu_dilate.png", host_dilate);
-                cv::imwrite("gpu_dilate.png", check );
-                cv::imwrite("pencil_dilate.png", pdilate );
-                throw std::runtime_error("The GPU results are not equivalent with the CPU results.");                
+            if ( (cv::norm(cpu_result - gpu_result) > 0.01) || (cv::norm(cpu_result - pen_result) > 0.01) ) {
+                PRINT(cv::norm(gpu_result - cpu_result));
+                PRINT(cv::norm(cpu_result - pen_result));
+                cv::imwrite("cpu_dilate.png", cpu_result);
+                cv::imwrite("gpu_dilate.png", gpu_result );
+                cv::imwrite("pencil_dilate.png", pen_result );
+                throw std::runtime_error("The GPU results are not equivalent with the CPU results.");
             }
             timing.print( "dilate image", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
         }
@@ -230,13 +226,9 @@ int main(int argc, char* argv[])
 {
 
 #ifndef BENCHMARK_PRINT_GPU_PENCIL_SPEEDUP_ONLY
-    std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;    
+    std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
 #endif
     auto pool = carp::get_pool("pool");
-
-    // Initializing OpenCL
-    cv::ocl::Context * context = cv::ocl::Context::getContext();
-    carp::opencl::device device(context);
-    time_dilate( device, pool );
-    return EXIT_SUCCESS;    
+    time_dilate( pool );
+    return EXIT_SUCCESS;
 }
