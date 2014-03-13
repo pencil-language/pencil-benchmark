@@ -11,36 +11,30 @@
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
-    typedef enum { none, maxAbs, meanStd } NormalizationMethod;
-
-    typedef unsigned char uint8_t;
-        
     typedef struct {
         int rows;
         int cols;
         int step;
-        int start;    
+        int start;
         float * data;
-    } MatFloat; // struct MatFloat
+    } MatFloat;
 
     typedef struct {
         int rows;
         int cols;
         int step;
-        int start;    
-        uint8_t * data;    
-    } MatChar; // struct MatChar
+        int start;
+        uint8_t * data;
+    } MatChar;
 
     typedef struct {
         int m_patchSize;      /*!< \brief Radius like patch size, the true size of the patch is [(2*patchSize+1) x (2*patchSize+1)] */
-        MatFloat m_wIn; /*!< \brief */
-        MatFloat m_wOut; /*!< \brief  */
-        MatFloat m_U; /*!< \brief */
+        MatFloat m_wIn;
+        MatFloat m_wOut;
+        MatFloat m_U;
         int hidden_num;
         double rho2;
-        // NormalizationMethod preSVDNormalizationMethod /*= none*/;
-        // NormalizationMethod postSVDNormalizationMethod;
-    } mlp; // struct 
+    } mlp;
 
     MatFloat CreateMatFloat( int rows, int cols );
 
@@ -53,20 +47,19 @@ extern "C" {
     void freeMLP( mlp * classifier );
 
     void
-    calculateMaps( 
-        int m_visibleLandmarks_size, 
-        int m_mapSize, 
-        MatChar alignedImage, 
-        MatFloat shape, 
-        mlp m_classifiers[], 
+    calculateMaps(
+        int m_visibleLandmarks_size,
+        int m_mapSize,
+        MatChar alignedImage,
+        MatFloat shape,
+        mlp m_classifiers[],
         // results
-        MatFloat * responseMaps[] );    
+        MatFloat * responseMaps[] );
 
 
 
 #ifdef __cplusplus
 }
 #endif // __cplusplus
-// LuM end of file
 
-#endif /* __MLP_IMPL__H__ */
+#endif

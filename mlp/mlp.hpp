@@ -24,25 +24,21 @@
 #include <boost/serialization/vector.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 
-#include "cast.h"
-
 #include "GEL/histo.h"
-#include "GEL/linalg.h"
-
 
 const int gel_xml_export_version = 1;
 
 class exception : public std::exception {
 private:
     std::string m_message;
-    
+
 public:
-    
+
     exception( const std::string & message ) throw() : m_message(message) { }
 
     const char* what() const throw() {return m_message.c_str(); }
 
-    ~exception() throw() {}; 
+    ~exception() throw() {};
 }; // exception
 
 namespace boost
@@ -51,34 +47,34 @@ namespace boost
     {
 
         /**
-        \brief Instantiated explicit export of the cv::Mat_ class. 
+        \brief Instantiated explicit export of the cv::Mat_ class.
         This function handles the export of the cv::Mat_ class into the XML library.
-        
+
         \param archiver The serializator object (created by boost)
         \param matrix The cv::Mat_ object to serialize
         \param int unused
-        */        
+        */
         template<class T0, class T1>
         void save( T0 & archiver, const cv::Mat_<T1> & matrix, unsigned int );
 
         /**
-           \brief Instantiated explicit export of the cv::Mat_ class. 
+           \brief Instantiated explicit export of the cv::Mat_ class.
            This function handles the export of the cv::Mat_ class into the XML library.
-        
+
            \param archiver The serializator object (created by boost)
            \param matrix The cv::Mat_ object to serialize
            \param int unused
-        */        
+        */
         template<class T0, class T1>
-        void load( T0 & archiver, cv::Mat_<T1> & matrix, unsigned int );        
+        void load( T0 & archiver, cv::Mat_<T1> & matrix, unsigned int );
 
         // splitting the serialization into two functions
         template<class T0, class T1> inline
         void serialize( T0 & archiver, cv::Mat_<T1> & matrix, const unsigned int version );
-                
+
         template<class T0>
         void
-        serialize( T0 & archiver, struct tm & tm, const unsigned int );        
+        serialize( T0 & archiver, struct tm & tm, const unsigned int );
 
     } /* namespace serialization */
 } /* namespace boost */
@@ -89,23 +85,23 @@ void boost::serialization::save( T0 & archiver, const cv::Mat_<T1> & matrix, uns
     // this file has been prepared for version 1
     archiver << BOOST_SERIALIZATION_NVP(gel_xml_export_version);
 
-    int rows = matrix.rows;            
+    int rows = matrix.rows;
     int cols = matrix.cols;
     int type = matrix.type();
-            
+
     archiver << BOOST_SERIALIZATION_NVP(rows);
     archiver << BOOST_SERIALIZATION_NVP(cols);
     archiver << BOOST_SERIALIZATION_NVP(type);
-            
+
     const T1 * tmp;
     for ( int row = 0; row < matrix.rows; row++ )
     {
         archiver << BOOST_SERIALIZATION_NVP(row);
-                 
+
         tmp = reinterpret_cast<const T1*>(matrix.ptr(row));
         archiver << boost::serialization::make_array( const_cast<T1*>(tmp), matrix.cols );
     }
-    return;            
+    return;
 
 } /* save */
 
@@ -126,30 +122,30 @@ void boost::serialization::load( T0 & archiver, cv::Mat_<T1> & matrix, unsigned 
         int rows;
         int cols;
         int type;
-            
+
         archiver >> BOOST_SERIALIZATION_NVP(rows);
         archiver >> BOOST_SERIALIZATION_NVP(cols);
         archiver >> BOOST_SERIALIZATION_NVP(type);
 
-        if (matrix.type()!=type)                    
-            throw ::exception( std::string("serialization error: the matrix data type (") + gel::cast<std::string>(matrix.type()) + ") in the file is different from the class type (" + gel::cast<std::string>(type) + ")" );
+        if (matrix.type()!=type)
+            throw ::exception( std::string("serialization error: the matrix data type (") + std::to_string(matrix.type()) + ") in the file is different from the class type (" + std::to_string(type) + ")" );
 
         matrix.create(rows, cols);
-                
+
         int row;
         for ( int q = 0; q < matrix.rows; q++ )
         {
-            archiver >> BOOST_SERIALIZATION_NVP(row);                
-                    
+            archiver >> BOOST_SERIALIZATION_NVP(row);
+
             archiver >> boost::serialization::make_array( reinterpret_cast<T1*>(matrix.ptr(q)), matrix.cols );
         }
         break;
-                
+
     default:
-        throw ::exception ( std::string("serialization error: file version (") + gel::cast<std::string>(gel_xml_export_version) + ") not recognized " );
+        throw ::exception ( std::string("serialization error: file version (") + std::to_string(gel_xml_export_version) + ") not recognized " );
     } /* switch */
 
-    return;            
+    return;
 } /* load */
 
 // splitting the serialization into two functions
@@ -219,16 +215,16 @@ namespace gel
            called when a new potential mapSize comes in the function,
            but it recalculates the matrices only if the mapSize of the
            requested response map changes.
-    
+
            IMPORTANT: This function is NOT thread safe. The
            responseMaps are generated separately for each control
            point. This function however can be made thread safe for
            the cost of the synchronization overhead.
-    
+
            \param new_mapSize
          */
         void update(int newMapSize ) const;
-        
+
         /**
          * Generates a matrix with normalized patches.
          *
@@ -238,14 +234,14 @@ namespace gel
          * @return
          */
         cv::Mat_<pixel_type> generatePatch(const cv::Mat_<uint8_t>& sample,int patch_size) const;
-    
+
         /*!
           \brief Evaluate normalized samples
-          
+
           \return The values
         */
         cv::Mat_<pixel_type> evaluateSamples() const;
-    
+
         // we store the data for the response map generation if the
         // mapSize parameter does not change (and there is no reason
         // why it should in the same execution), than we can reuse the
@@ -269,7 +265,7 @@ cv::Mat_<typename gel::MLP<T0>::pixel_type> gel::MLP<T0>::generateResponseMap( c
                              const cv::Point2i& center,
                              int mapSize ) const
 {
-    // static conductor_t conductor;    
+    // static conductor_t conductor;
     // conductor.hack.center = center;
     // conductor.hack.mapSize = mapSize;
     // conductor.hack.m_patchSize = m_patchSize;
@@ -279,7 +275,7 @@ cv::Mat_<typename gel::MLP<T0>::pixel_type> gel::MLP<T0>::generateResponseMap( c
     // conductor.hack.m_wIn = m_wIn.clone();
     // conductor.hack.m_U = m_U.clone();
     // conductor.hack.m_wOut = m_wOut.clone();
-    
+
     // make sure that we have the necessary matrices
     // calculated (this is a method; it is NOT thread safe!), but it is called for each classifier once
     update(mapSize);
@@ -289,7 +285,7 @@ cv::Mat_<typename gel::MLP<T0>::pixel_type> gel::MLP<T0>::generateResponseMap( c
         cv::Mat_<pixel_type> pack_patches = generatePatch(sample, m_patch_line_size);
 
         cv::Mat_<pixel_type> target = m_all_patches( cv::Range::all(), cv::Range( ncy * m_number_of_patches_per_line, (ncy + 1) * m_number_of_patches_per_line ) );
-        gel::copyTo( pack_patches, target ); // pack_patches.copyTo(target);
+        pack_patches.copyTo(target);
     }
 
     cv::Mat_<pixel_type> result = evaluateSamples();
@@ -299,13 +295,9 @@ cv::Mat_<typename gel::MLP<T0>::pixel_type> gel::MLP<T0>::generateResponseMap( c
     // conductor.exporter << BOOST_SERIALIZATION_NVP(conductor.id);
     // conductor.exporter << BOOST_SERIALIZATION_NVP(conductor.hack);
     // conductor.id++;
-    
+
     return result.cv::Mat::reshape(0,m_number_of_patches_per_line);
 }
-
-#define WITH_IPP
-#define WITH_MKL
-#include "GEL/linalg.h"
 
 template <typename T0>
 void gel::MLP<T0>::update(int newMapSize) const
@@ -337,7 +329,7 @@ void gel::MLP<T0>::update(int newMapSize) const
         for (int q=0; q < number_of_all_patches; q++)
         {
             target = m_all_bIns( cv::Range::all(), cv::Range(q, q+1) );
-            gel::copyTo(bIn, target); // bIn.copyTo(target);
+            bIn.copyTo(target);
             m_all_bOuts( 0, q ) = bOut;
         }
     }
@@ -376,7 +368,7 @@ cv::Mat_<typename gel::MLP<T0>::pixel_type> gel::MLP<T0>::generatePatch(const cv
         cv::Mat_<pixel_type> patch_line = normalized_patch.cv::Mat::reshape(0,normalized_patch.rows * normalized_patch.cols);
         cv::Mat_<pixel_type> target = result( cv::Range::all(), cv::Range( col, col + 1) );
 
-        gel::copyTo(patch_line, target);  //patch_line.copyTo( target );
+        patch_line.copyTo( target );
 
         cv::Mat_<uint8_t> patch_line_in  = sample( cv::Range::all(), cv::Range( q, q + 1 ) );
         cv::Mat_<uint8_t> patch_line_out = sample( cv::Range::all(), cv::Range( col, col + 1 ) );
@@ -391,18 +383,18 @@ template <typename T0>
 cv::Mat_<typename gel::MLP<T0>::pixel_type> gel::MLP<T0>::evaluateSamples() const
 {
     cv::Mat_<pixel_type> xOut;
-    gel::gemm<pixel_type>( m_wIn_gemm, m_all_patches, -1., m_all_bIns, -1., xOut ); // cv::gemm
+    cv::gemm( m_wIn_gemm, m_all_patches, -1., m_all_bIns, -1., xOut );
     cv::Mat_<pixel_type> e;
-    gel::exp( xOut, e ); // cv::exp
+    cv::exp( xOut, e );
     cv::add( e, 1.0, xOut );
     cv::divide( 2.0, xOut, e );
     cv::subtract( e, 1.0, xOut );
 
     cv::Mat_<pixel_type> dot;
-    gel::gemm<pixel_type>( m_wOut_gemm, xOut, -1., m_all_bOuts, -1., dot ); // cv::gemm
+    cv::gemm( m_wOut_gemm, xOut, -1., m_all_bOuts, -1., dot );
 
     cv::Mat_<pixel_type> result;
-    gel::exp( dot, result ); // cv::exp
+    cv::exp( dot, result );
     cv::add( result, 1.0, dot );
     cv::divide( 1.0, dot, result );
 

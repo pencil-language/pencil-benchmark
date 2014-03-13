@@ -37,7 +37,7 @@ clean:
 CL_SOURCES= ./gaussian/filter_sep_row.cl ./gaussian/filter_sep_col.cl ./cvt_color/cvt_color.cl ./filter2D/imgproc_convolve.cl ./dilate/filtering_morph.cl ./mlp/mlp_impl.cl ./mlp/operators.cl ./warpAffine/imgproc_warpAffine.cl ./resize/imgproc_resize.cl
 LIB_SOURCES= 
 PENCIL_SOURCES= ./gaussian/gaussian.pencil.c ./cvt_color/cvt_color.pencil.c ./filter2D/filter2D.pencil.c ./dilate/dilate.pencil.c ./warpAffine/warpAffine.pencil.c ./resize/resize.pencil.c
-MLP_SOURCES=./mlp/serialization.cpp ./mlp/allocator.cpp ./mlp/GEL/linalg.cpp
+MLP_SOURCES=./mlp/serialization.cpp ./mlp/allocator.cpp
 
 ## OpenCL Sources
 all_opencl: $(BUILD_DIR)/filter_sep_row.clh $(BUILD_DIR)/filter_sep_col.clh $(BUILD_DIR)/cvt_color.clh $(BUILD_DIR)/imgproc_convolve.clh $(BUILD_DIR)/filtering_morph.clh $(BUILD_DIR)/mlp_impl.clh $(BUILD_DIR)/operators.clh $(BUILD_DIR)/imgproc_warpAffine.clh $(BUILD_DIR)/imgproc_resize.clh

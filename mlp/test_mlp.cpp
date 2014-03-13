@@ -13,7 +13,6 @@
 #include <boost/archive/xml_iarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 
-#include "cast.h"
 #include "mlp.hpp"
 #include "mlp_impl.h"
 #include "utility.hpp"
