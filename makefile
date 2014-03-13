@@ -7,7 +7,7 @@ XXD_COMPILER=xxd
 
 BOOST_INCLUDE_DIR=/usr/include/
 BOOST_LIB_DIR=/usr/lib/x86_64-linux-gnu/
-BOOST_LIBS=-lboost_date_time -lboost_filesystem -lboost_iostreams -lboost_program_options -lboost_serialization -lboost_system -lboost_chrono
+BOOST_LIBS=-lboost_filesystem -lboost_serialization -lboost_system
 
 OPENCV_INCLUDE_DIR=/usr/local/include/
 OPENCV_LIB_DIR=/usr/local/lib/

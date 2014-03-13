@@ -8,12 +8,13 @@
 #include <string>
 #include <iomanip>
 #include <iostream>
-#include <boost/assign.hpp>
+
 #include <opencv2/opencv.hpp>
-#include <opencv2/ocl/ocl.hpp>
-#include <boost/filesystem.hpp>
 #include <opencv2/core/core.hpp>
-#include <boost/preprocessor.hpp>
+#include <opencv2/ocl/ocl.hpp>
+
+#include <boost/filesystem.hpp>
+
 
 const int KiB=1024;
 const int MiB=1024*KiB;
@@ -164,15 +165,12 @@ namespace carp {
         return to;
     } // gel_cast
 
-    static std::map<int, std::string> borders = boost::assign::map_list_of
-    ( cv::BORDER_CONSTANT, "BORDER_CONSTANT" )
-    ( cv::BORDER_REPLICATE, "BORDER_REPLICATE" )
-    ( cv::BORDER_REFLECT, "BORDER_REFLECT" )
-    ( cv::BORDER_WRAP, "BORDER_WRAP" )
-    ( cv::BORDER_REFLECT_101, "BORDER_REFLECT_101" )
-    ; // borders
-
-
+    static std::map<int, std::string> borders{{ cv::BORDER_CONSTANT   , "BORDER_CONSTANT"    }
+                                             ,{ cv::BORDER_REPLICATE  , "BORDER_REPLICATE"   }
+                                             ,{ cv::BORDER_REFLECT    , "BORDER_REFLECT"     }
+                                             ,{ cv::BORDER_WRAP       , "BORDER_WRAP"        }
+                                             ,{ cv::BORDER_REFLECT_101, "BORDER_REFLECT_101" }
+                                             };
 } // namespace carp
 
 

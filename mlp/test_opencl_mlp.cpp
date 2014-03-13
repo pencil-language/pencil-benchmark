@@ -5,7 +5,6 @@
 
 #include <vector>
 #include <iomanip>
-#include <boost/smart_ptr.hpp>
 
 #include "opencl.hpp"
 #include "memory.hpp"
@@ -43,12 +42,12 @@ int main()
     int64_t maxgrossallocated = 0;
     for ( auto & package : packages ) {
 	int groupsize = package.m_visibleLandmarks_size;
-	boost::shared_array<char> buffer( new char[groupsize * local_memsize] );
+	std::vector<char> buffer(groupsize * local_memsize);
 
 	std::vector<carp::memory::dense> pools( groupsize, carp::memory::dense(carp::memory::allocator::sizer(local_memsize, uint8_t())));
 	carp::memory::local_memory_manager locmm( groupsize * local_memsize, groupsize, local_memsize );
 
-	char * self = buffer.get();
+	char * self = buffer.data();
 	std::vector<int> segments = locmm.get_segments();
 
 	auto calcpackages = convertHackToMlp( self, pools, segments, package );

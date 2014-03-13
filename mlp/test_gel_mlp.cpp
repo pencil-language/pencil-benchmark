@@ -3,8 +3,6 @@
 // Copyright (c) RealEyes, 2013
 // This version tests the responseMap calculation with input dumps
 
-#include <boost/smart_ptr.hpp>
-
 #include "opencl.hpp"
 #include "memory.hpp"
 #include "bench_mlp.hpp"
