@@ -74,7 +74,7 @@ template<class T0>
 void
 time_filter2D( T0 & pool, int iteration )
 {
-    carp::TimingLong timing;
+    carp::Timing timing;
 
     for ( int q=0; q<iteration; q++ ) {
         for ( auto & item : pool ) {
@@ -102,7 +102,7 @@ time_filter2D( T0 & pool, int iteration )
             {
                 cv::ocl::Context * context = cv::ocl::Context::getContext();
                 carp::opencl::device device(context);
-                device.source_compile( imgproc_convolve_cl, imgproc_convolve_cl_len, carp::make_vector<std::string>("convolve_D5" ) );
+                device.source_compile( imgproc_convolve_cl, imgproc_convolve_cl_len, { "convolve_D5" } );
                 const auto gpu_start = std::chrono::high_resolution_clock::now();
                 cv::ocl::oclMat gpu_gray(cpu_gray);
                 cv::ocl::oclMat kernel_gpu(kernel_cpu);

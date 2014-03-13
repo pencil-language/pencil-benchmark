@@ -135,7 +135,7 @@ namespace carp {
 
         if (noZero) compile_option += " -D RECTKERNEL ";
 
-        device.source_compile( filtering_morph_cl, filtering_morph_cl_len,  make_vector<std::string>(kernelName), compile_option );
+        device.source_compile( filtering_morph_cl, filtering_morph_cl_len, {kernelName}, compile_option );
         device[kernelName](
             reinterpret_cast<cl_mem>(src.data),
             reinterpret_cast<cl_mem>(dst.data),
@@ -164,7 +164,7 @@ template<class T0>
 void
 time_dilate( T0 & pool )
 {
-    carp::TimingLong timing;
+    carp::Timing timing;
 
     for ( auto & elemsize : { 5, /*7, 9, 11, 15, 17*/ } ) {
         PRINT(elemsize);

@@ -112,7 +112,7 @@ time_resize( T0 & pool )
     std::vector<cv::Size> sizes = { {640, 480 } };
     std::vector<int> methods = { cv::INTER_LINEAR /*, cv::INTER_NEAREST*/ };
 
-    carp::TimingLong timing;
+    carp::Timing timing;
 
     for ( auto & size : sizes ) {
         for (auto & method : methods ) {

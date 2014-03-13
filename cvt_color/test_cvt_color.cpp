@@ -14,7 +14,7 @@ void
 time_cvtColor( T0 & pool, size_t iterations)
 {
     int bidx = 2;
-    carp::TimingLong timing;
+    carp::Timing timing;
     for ( auto & record : pool ) {
         PRINT(record.path());
 
@@ -35,7 +35,7 @@ time_cvtColor( T0 & pool, size_t iterations)
             {
                 cv::ocl::Context * context = cv::ocl::Context::getContext();
                 carp::opencl::device device(context);
-                device.source_compile( cvt_color_cl, cvt_color_cl_len, carp::make_vector<std::string>("RGB2Gray") );
+                device.source_compile( cvt_color_cl, cvt_color_cl_len, {"RGB2Gray"} );
 
                 auto start = std::chrono::high_resolution_clock::now();
                 cv::ocl::oclMat gpu_gray;
@@ -44,7 +44,7 @@ time_cvtColor( T0 & pool, size_t iterations)
 
                 device["RGB2Gray"]( gpuimg.cols, gpuimg.rows, static_cast<int>(gpuimg.step), static_cast<int>(gpu_gray.step)
                                   , gpuimg.channels()+1, bidx, reinterpret_cast<cl_mem>(gpuimg.data), reinterpret_cast<cl_mem>(gpu_gray.data)
-                                  ).groupsize( carp::make_vector<size_t>(16,16), carp::make_vector<size_t>(cpuimg.cols,cpuimg.rows) );
+                                  ).groupsize( {16,16}, {cpuimg.cols, cpuimg.rows});
                 gpu_result = gpu_gray;
                 auto end = std::chrono::high_resolution_clock::now();
                 elapsed_time_gpu += (end - start);

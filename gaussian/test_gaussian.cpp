@@ -156,7 +156,7 @@ template<class T0>
 void
 time_gaussian( T0 & pool )
 {
-    carp::TimingLong timing;
+    carp::Timing timing;
 
     for ( auto & size : {/*5,*/ 9, 11/*, 25, 41*/} ) {
         PRINT(size);

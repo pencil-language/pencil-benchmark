@@ -105,7 +105,7 @@ template<class T0>
 void
 time_affine( T0 & pool )
 {
-    carp::TimingLong timing;
+    carp::Timing timing;
 
     for ( auto & item : pool ) {
         PRINT(item.path());

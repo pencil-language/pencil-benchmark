@@ -15,93 +15,52 @@
 
 #include <boost/filesystem.hpp>
 
-
-const int KiB=1024;
-const int MiB=1024*KiB;
-const int GiB=1024*KiB;
-
 //#define PRINT(var)  std::cout << "debug: " << BOOST_PP_STRINGIZE(var) << " = " << var << std::endl
 #define PRINT(var)
 
 namespace carp {
-
-    template<class T0>
-    void
-    print_image( cv::Mat_<T0> input, std::string name )
-    {
-        std::cout << name << " = [" << std::endl;
-
-        for (int q=0; q<input.rows; q++)
-        {
-            std::cout << "[ ";
-            for (int w=0; w<input.cols; w++)
-            {
-                std::cout << input(q,w);
-                if (w<input.cols-1)
-                    std::cout << ", ";
-                else
-                    std::cout << " ";
-            }
-
-            if (q<input.rows-1)
-                std::cout << "], " << std::endl;
-            else
-                std::cout << "] " << std::endl;
-        }
-
-        std::cout << "]" << std::endl;
-    } // print_image
-
-    template<class T0, class... Types>
-    std::vector<T0>
-    make_vector( T0 input0, Types... inputs )
-    {
-        return std::vector<T0>{ input0, inputs... };
-    }
-
-    class TimingLong
+    class Timing
     {
     	std::vector<double> gpu_speedups;
     	std::vector<double> pen_speedups;
+    	std::vector<double> gpu_div_pens;
     public:
-    	TimingLong() {
+    	Timing() {
 #ifndef BENCHMARK_PRINT_GPU_PENCIL_SPEEDUP_ONLY
-    		std::cout << "    Operator - CPU Time - GPU Time - Pencil Time - GPU speedup - Pencil speedup - GPU/Pencil" << std::endl;
+    		std::cout << "    Operator - CPU Time - GPU Time - Pencil Time - CPU/GPU - CPU/Pencil - GPU/Pencil" << std::endl;
 #endif
     	}
 
-        void print( const std::string & name, const std::chrono::microseconds &cpu, const std::chrono::microseconds &gpu, const std::chrono::microseconds &pen ) {
-            print(name, cpu.count(), gpu.count(), pen.count());
-        }
-
-        void print( const std::string & name, const long int & cpu, const long int & gpu, const long int & pen ) {
-    		auto gpu_speedup = static_cast<double>(cpu)/static_cast<double>(gpu);
-    		auto pen_speedup = static_cast<double>(cpu)/static_cast<double>(pen);
-    		double gpu_div_pen = static_cast<double>(gpu)/static_cast<double>(pen);
+        void print( const std::string & name, const std::chrono::duration<double> &cpu, const std::chrono::duration<double> &gpu, const std::chrono::duration<double> &pen ) {
+    		auto gpu_speedup = cpu / gpu;
+    		auto pen_speedup = cpu / pen;
+    		auto gpu_div_pen = gpu / pen;
     		std::cout << std::fixed << std::setprecision(3);
 #ifndef BENCHMARK_PRINT_GPU_PENCIL_SPEEDUP_ONLY
     		std::cout << std::setw(12) << name << " - "
-    		          << std::setw(7) << (cpu/1000000.) << "s - "
-    		          << std::setw(7) << (gpu/1000000.) << "s - "
-    		          << std::setw(7) << (pen/1000000.) << "s - "
-    		          << std::setw(7)  << gpu_speedup << 'x' << " - "
-    		          << std::setw(14) << pen_speedup << 'x' << " - "
-    		          << std::setw(12) << gpu_div_pen << 'x' << std::endl;
+    		          << std::setw(7) << cpu.count() << "s - "
+    		          << std::setw(7) << gpu.count() << "s - "
+    		          << std::setw(7) << pen.count() << "s - "
+    		          << std::setw(7) << gpu_speedup << "x - "
+    		          << std::setw(7) << pen_speedup << "x - "
+    		          << std::setw(7) << gpu_div_pen << 'x' << std::endl;
 #else
     		std::cout << gpu_div_pen;
 #endif
     		gpu_speedups.push_back(gpu_speedup);
     		pen_speedups.push_back(pen_speedup);
+    		gpu_div_pens.push_back(gpu_div_pen);
     	}
 
-    	~TimingLong() {
+        ~Timing() {
 #ifndef BENCHMARK_PRINT_GPU_PENCIL_SPEEDUP_ONLY
-    		std::cout << "Cumulated Speed Improvement: " << std::endl
-    				<< "    GPU speed / CPU speed: " << std::accumulate(gpu_speedups.begin(),gpu_speedups.end(),0.0) / gpu_speedups.size() << "x" << std::endl
-    				<< "    Pen speed / CPU speed: " << std::accumulate(pen_speedups.begin(),pen_speedups.end(),0.0) / pen_speedups.size() << "x" << std::endl
-    				;
+            std::cout << "Average speed ratios: " << std::endl
+                    << "    GPU speed / CPU speed: " << std::accumulate(gpu_speedups.begin(),gpu_speedups.end(),0.0) / gpu_speedups.size() << "x\n"
+                    << "    Pen speed / CPU speed: " << std::accumulate(pen_speedups.begin(),pen_speedups.end(),0.0) / pen_speedups.size() << "x\n"
+                    << "    Pen speed / GPU speed: " << std::accumulate(gpu_div_pens.begin(),gpu_div_pens.end(),0.0) / gpu_div_pens.size() << "x" << std::endl
+                    ;
 #endif
-    	}
+        }
     };
 
     class record_t {
@@ -110,11 +69,7 @@ namespace carp {
 
     public:
         cv::Mat cpuimg() {
-            cv::Mat cpuimg = cv::imread(m_path.string());
-            cv::Mat img_resize = cpuimg;
-            // cv::resize(cpuimg, img_resize, cv::Size(300,400));
-
-            return img_resize;
+            return cv::imread(m_path.string());
         }
 
         std::string path() const {
