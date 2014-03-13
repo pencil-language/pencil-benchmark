@@ -86,10 +86,10 @@ namespace carp {
 
         std::vector<size_t> localThreads = {16, 16, 1};
 
-        std::string compile_option = " -D RADIUSX=" + carp::cast<std::string>(anchor.x)
-				   + " -D LSIZE0=" + carp::cast<std::string>(localThreads[0])
-				   + " -D LSIZE1=" + carp::cast<std::string>(localThreads[1])
-				   + " -D CN=" + carp::cast<std::string>(channels)
+        std::string compile_option = " -D RADIUSX=" + std::to_string(anchor.x)
+				   + " -D LSIZE0=" + std::to_string(localThreads[0])
+				   + " -D LSIZE1=" + std::to_string(localThreads[1])
+				   + " -D CN=" + std::to_string(channels)
 				   + " -D " + carp::borders[bordertype];
 
         std::vector<size_t> globalThreads(3);
@@ -121,10 +121,10 @@ namespace carp {
         globalThreads[1] = (dstROI.rows + localThreads[1] - 1) / localThreads[1] * localThreads[1];
         globalThreads[2] = (1 + localThreads[2] - 1) / localThreads[2] * localThreads[2];
         globalThreads[0] = (dstROI.cols + localThreads[0] - 1) / localThreads[0] * localThreads[0];
-        compile_option = " -D RADIUSY=" + carp::cast<std::string>(anchor.y)
-            + " -D LSIZE0=" + carp::cast<std::string>(localThreads[0])
-            + " -D LSIZE1=" + carp::cast<std::string>(localThreads[1])
-            + " -D CN=" + carp::cast<std::string>(channels)
+        compile_option = " -D RADIUSY=" + std::to_string(anchor.y)
+            + " -D LSIZE0=" + std::to_string(localThreads[0])
+            + " -D LSIZE1=" + std::to_string(localThreads[1])
+            + " -D CN=" + std::to_string(channels)
             + " -D " + carp::borders[bordertype]
             + " -D GENTYPE_SRC=" + "float"
             + " -D GENTYPE_DST=" + "float"

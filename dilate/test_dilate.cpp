@@ -120,10 +120,10 @@ namespace carp {
         default:
             CV_Error(CV_StsUnsupportedFormat, "unsupported type");
         }
-        compile_option += " -D RADIUSX=" + carp::cast<std::string>(anchor.x)
-            + " -D RADIUSY=" + carp::cast<std::string>(anchor.y)
-            + " -D LSIZE0=" + carp::cast<std::string>(localThreads[0])
-            + " -D LSIZE1=" + carp::cast<std::string>(localThreads[1])
+        compile_option += " -D RADIUSX=" + std::to_string(anchor.x)
+            + " -D RADIUSY=" + std::to_string(anchor.y)
+            + " -D LSIZE0=" + std::to_string(localThreads[0])
+            + " -D LSIZE1=" + std::to_string(localThreads[1])
             + " -D DILATE ";
 
 //                if (rectKernel) compiler_option += " -D RECTKERNEL ";
