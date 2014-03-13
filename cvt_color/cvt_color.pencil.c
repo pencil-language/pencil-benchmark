@@ -42,9 +42,7 @@ pencil_RGB2Gray (
     const DATA_TYPE src[], 
     DATA_TYPE dst[] )
 {
-#pragma scop
     RGB2Gray( rows, cols, src_step, dst_step, channels, bidx, src, dst );
-#pragma endscop
     return;
 } // pencil_RGB2Gray
 
