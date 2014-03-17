@@ -8,7 +8,7 @@ static void filter2D( int rows
                     , int kernel_cols
                     , int kernel_step
                     , const float kernel_[static const restrict kernel_rows][kernel_step]
-                    , float conv[static const restrict step][cols]
+                    , float conv[static const restrict rows][step]
                     )
 {
 #pragma scop

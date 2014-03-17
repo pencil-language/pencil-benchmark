@@ -8,7 +8,7 @@ static void filter2D( int rows
                     , int kernel_cols
                     , int kernel_step
                     , const float kernel_[static const restrict kernel_rows][kernel_step]
-                    , float conv[static const restrict step][cols]
+                    , float conv[static const restrict rows][step]
                     )
 {
 #pragma scop
@@ -39,17 +39,17 @@ static void filter2D( int rows
 static void gaussian( int rows
                     , int cols
                     , int step
-                    , const float src[static const restrict step][cols]
+                    , const float src[static const restrict rows][step]
                     , int kernelX_rows
                     , int kernelX_cols
                     , int kernelX_step
-                    , const float kernelX[static const restrict kernelX_step][kernelX_cols]
+                    , const float kernelX[static const restrict kernelX_rows][kernelX_step]
                     , int kernelY_rows
                     , int kernelY_cols
                     , int kernelY_step
-                    , const float kernelY[static const restrict kernelY_step][kernelY_cols]
-                    , float temp[static const restrict step][cols]
-                    , float conv[static const restrict step][cols]
+                    , const float kernelY[static const restrict kernelY_rows][kernelY_step]
+                    , float temp[static const restrict rows][step]
+                    , float conv[static const restrict rows][step]
                     )
 {
     filter2D( rows, cols, step,  src, kernelX_rows, kernelX_cols, kernelX_step, kernelX, temp );
