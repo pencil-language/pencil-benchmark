@@ -15,7 +15,6 @@
 #include "errors.hpp"
 #include "utility.hpp"
 
-
 namespace carp {
 
 namespace opencl {
@@ -112,7 +111,6 @@ public:
     virtual ~array() { }
 }; // class array
 
-
 class kernel {
 private:
     std::shared_ptr<_cl_kernel> cqKernel;
@@ -120,11 +118,10 @@ private:
     bool m_set;
 
     template <class MT0>
-    bool
-    setparameter( int pos, MT0 & mt0 ) {
+    bool setparameter( int& pos, const MT0& mt0 ) {
         assert(cqKernel);
-
-        utility::checkerror( clSetKernelArg( cqKernel.get(), pos, sizeof(mt0), reinterpret_cast<void*>(&mt0) ), __FILE__, __LINE__, "(arg from 0: " + std::to_string(pos) + ") " );
+        utility::checkerror( clSetKernelArg( cqKernel.get(), pos, sizeof(mt0), reinterpret_cast<const void*>(&mt0) ), __FILE__, __LINE__, "(arg[" + std::to_string(pos) + "]) " );
+//        utility::checkerror( clSetKernelArg( cqKernel.get(), pos, sizeof(mt0), reinterpret_cast<const void*>(&mt0) ), __FILE__, __LINE__, "(arg[" + std::to_string(pos) + "]=" + std::to_string(mt0) + ") " );
         pos++; // move the position of the parameter applied
         return true;
     } // setparameter
@@ -143,7 +140,7 @@ public:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
     template <class ...MT>
-    kernel & operator() ( MT ... mt ) {
+    kernel & operator() ( const MT&... mt ) {
         assert(m_set);
         int pos=0; // the position of the parameters
         bool err[] = { setparameter(pos, mt)... };
