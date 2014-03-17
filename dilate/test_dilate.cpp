@@ -83,9 +83,11 @@ namespace carp {
         int srcOffset_x = srcOffset % srcStep;
         int srcOffset_y = srcOffset / srcStep;
         std::string kernelName;
-        size_t localThreads[3] = {16, 16, 1};
-        size_t globalThreads[3] = {(src.cols + localThreads[0] - 1) / localThreads[0] *localThreads[0],
-                                   (src.rows + localThreads[1] - 1) / localThreads[1] *localThreads[1], 1};
+        std::vector<size_t> localThreads = {16, 16, 1};
+        std::vector<size_t> globalThreads = { (src.cols + localThreads[0] - 1) / localThreads[0] *localThreads[0]
+                                            , (src.rows + localThreads[1] - 1) / localThreads[1] *localThreads[1]
+                                            , 1
+                                            };
 
         if (src.type() == CV_8UC1)
         {
@@ -149,7 +151,7 @@ namespace carp {
             src.wholecols,
             src.wholerows,
             dstOffset
-            ).groupsize( { localThreads[0],  localThreads[1],  localThreads[2]}, { globalThreads[0],  globalThreads[1],  globalThreads[2]} );
+            ).groupsize( localThreads, globalThreads );
         result = dst;
 
         device.erase(kernelName);
@@ -159,17 +161,14 @@ namespace carp {
 
 } // namespace carp
 
-
-template<class T0>
-void
-time_dilate( T0 & pool )
+void time_dilate( const std::vector<carp::record_t>& pool, const std::vector<int>& elemsizes )
 {
     carp::Timing timing;
 
-    for ( auto & elemsize : { 5, /*7, 9, 11, 15, 17*/ } ) {
-        PRINT(elemsize);
-        for ( auto & item : pool ) {
-            PRINT(item.path());
+    for ( auto & item : pool ) {
+        PRINT(item.path());
+        for ( auto & elemsize : elemsizes ) {
+            PRINT(elemsize);
 
             // acquiring the image for the test
             cv::Mat cpu_gray;
@@ -229,6 +228,6 @@ int main(int argc, char* argv[])
     std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
 #endif
     auto pool = carp::get_pool("pool");
-    time_dilate( pool );
+    time_dilate( pool, { /*5, 7,*/ 9/*, 11, 15, 17*/ } );
     return EXIT_SUCCESS;
 }

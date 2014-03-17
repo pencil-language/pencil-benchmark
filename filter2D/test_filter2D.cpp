@@ -69,10 +69,7 @@ namespace carp {
 
 } // namespace carp
 
-
-template<class T0>
-void
-time_filter2D( T0 & pool, int iteration )
+void time_filter2D( const std::vector<carp::record_t>& pool, int iteration )
 {
     carp::Timing timing;
 
@@ -160,6 +157,6 @@ int main(int argc, char* argv[])
 #endif
 
     auto pool = carp::get_pool("pool");
-    time_filter2D( pool, 1 );
+    time_filter2D( pool, 3 );
     return EXIT_SUCCESS;
 } // main

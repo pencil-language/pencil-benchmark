@@ -104,69 +104,61 @@ resize( carp::opencl::device & device,
 
 } // namespace carp
 
-template<class T0>
-void
-time_resize( T0 & pool )
+void time_resize( const std::vector<carp::record_t>& pool, const std::vector<cv::Size>& sizes )
 {
-    // std::vector<cv::Size> sizes = { {10,10}, {503, 786}, {1230, 2341}, {4243, 2324}  };
-    std::vector<cv::Size> sizes = { {640, 480 } };
-    std::vector<int> methods = { cv::INTER_LINEAR /*, cv::INTER_NEAREST*/ };
-
     carp::Timing timing;
 
     for ( auto & size : sizes ) {
-        for (auto & method : methods ) {
-            for ( auto & item : pool ) {
-                PRINT(item.path());
-                cv::Mat cpu_gray;
-                cv::cvtColor( item.cpuimg(), cpu_gray, CV_RGB2GRAY );
+        for ( auto & item : pool ) {
+            PRINT(item.path());
+            cv::Mat cpu_gray;
+            cv::cvtColor( item.cpuimg(), cpu_gray, CV_RGB2GRAY );
 
-                cv::Mat cpu_result, gpu_result, pen_result;
-                std::chrono::microseconds elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil;
+            cv::Mat cpu_result, gpu_result, pen_result;
+            std::chrono::microseconds elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil;
 
-                {
-                    const auto cpu_start = std::chrono::high_resolution_clock::now();
-                    cv::resize( cpu_gray, cpu_result, size, method );
-                    const auto cpu_end = std::chrono::high_resolution_clock::now();
-                    elapsed_time_cpu = cpu_end - cpu_start;
-                }
-                {
-                    cv::ocl::Context * context = cv::ocl::Context::getContext();
-                    carp::opencl::device device(context);
-                    device.source_compile( imgproc_resize_cl, imgproc_resize_cl_len, { "resizeLN_C1_D0", "resizeLN_C4_D0", "resizeLN_C1_D5", "resizeLN_C4_D5", "resizeNN_C1_D0", "resizeNN_C4_D0", "resizeNN_C1_D5", "resizeNN_C4_D5" } );
-                    const auto gpu_start = std::chrono::high_resolution_clock::now();
-                    cv::ocl::oclMat gpu_gray(cpu_gray);
-                    cv::ocl::oclMat gpu_resize;
-                    carp::resize( device, gpu_gray, gpu_resize, size, method );
-                    gpu_result = gpu_resize;
-                    const auto gpu_end = std::chrono::high_resolution_clock::now();
-                    elapsed_time_gpu = gpu_end - gpu_start;
-                }
-                {
-                    // pencil verification
-                    pen_result.create(size, CV_8UC1);
+            {
+                const auto cpu_start = std::chrono::high_resolution_clock::now();
+                cv::resize( cpu_gray, cpu_result, size, cv::INTER_LINEAR );
+                const auto cpu_end = std::chrono::high_resolution_clock::now();
+                elapsed_time_cpu = cpu_end - cpu_start;
+            }
+            {
+                cv::ocl::Context * context = cv::ocl::Context::getContext();
+                carp::opencl::device device(context);
+                device.source_compile( imgproc_resize_cl, imgproc_resize_cl_len, { "resizeLN_C1_D0", "resizeLN_C4_D0", "resizeLN_C1_D5", "resizeLN_C4_D5", "resizeNN_C1_D0", "resizeNN_C4_D0", "resizeNN_C1_D5", "resizeNN_C4_D5" } );
+                const auto gpu_start = std::chrono::high_resolution_clock::now();
+                cv::ocl::oclMat gpu_gray(cpu_gray);
+                cv::ocl::oclMat gpu_resize;
+                carp::resize( device, gpu_gray, gpu_resize, size, cv::INTER_LINEAR );
+                gpu_result = gpu_resize;
+                const auto gpu_end = std::chrono::high_resolution_clock::now();
+                elapsed_time_gpu = gpu_end - gpu_start;
+            }
+            {
+                // pencil verification
+                pen_result.create(size, CV_8UC1);
 
-                    const auto pencil_start = std::chrono::high_resolution_clock::now();
-                    pencil_resize_LN(cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr(), pen_result.rows, pen_result.cols, pen_result.step1(), pen_result.ptr() );
-                    const auto pencil_end = std::chrono::high_resolution_clock::now();
-                    elapsed_time_pencil = pencil_end - pencil_start;
-                }
-                // Verifying the results
-                if (( cv::norm(cpu_result - gpu_result, cv::NORM_INF) > 1 ) || ( cv::norm(cpu_result - pen_result, cv::NORM_INF) > 1 ))
-                {
-                    PRINT(cv::norm(cpu_result - gpu_result, cv::NORM_INF));
-                    PRINT(cv::norm(cpu_result - pen_result, cv::NORM_INF));
+                const auto pencil_start = std::chrono::high_resolution_clock::now();
+                pencil_resize_LN(cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr(), pen_result.rows, pen_result.cols, pen_result.step1(), pen_result.ptr() );
+                const auto pencil_end = std::chrono::high_resolution_clock::now();
+                elapsed_time_pencil = pencil_end - pencil_start;
+            }
+            // Verifying the results
+            if (( cv::norm(cpu_result - gpu_result, cv::NORM_INF) > 1 ) || ( cv::norm(cpu_result - pen_result, cv::NORM_INF) > 1 ))
+            {
+                PRINT(cv::norm(cpu_result - gpu_result, cv::NORM_INF));
+                PRINT(cv::norm(cpu_result - pen_result, cv::NORM_INF));
 
-                    cv::imwrite( "gpu_resize.png", gpu_result );
-                    cv::imwrite( "cpu_resize.png", cpu_result );
-                    cv::imwrite( "pencil_resize.png", pen_result );
+                cv::imwrite( "gpu_resize.png", gpu_result );
+                cv::imwrite( "cpu_resize.png", cpu_result );
+                cv::imwrite( "pencil_resize.png", pen_result );
 
-                    throw std::runtime_error("The GPU results are not equivalent with the CPU results.");
-                }
+                throw std::runtime_error("The GPU results are not equivalent with the CPU results.");
+            }
 
-                timing.print( "resize", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
-            } // for pool
-        }
+            timing.print( "resize", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
+        } // for pool
     }
 } // text_boxFilter
 
@@ -178,6 +170,7 @@ int main(int argc, char* argv[])
 #endif
 
     auto pool = carp::get_pool("pool");
-    time_resize( pool );
+    std::vector<cv::Size> sizes{ {320, 240}, {640, 480}, {1024, 768}, {1200, 900}, {1600, 1200} };
+    time_resize( pool, sizes );
     return EXIT_SUCCESS;
 } // main

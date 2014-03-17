@@ -101,9 +101,7 @@ void warpAffine( carp::opencl::device & device, const cv::ocl::oclMat & src, cv:
 
 } // namespace carp
 
-template<class T0>
-void
-time_affine( T0 & pool )
+void time_affine( const std::vector<carp::record_t>& pool )
 {
     carp::Timing timing;
 

@@ -151,14 +151,11 @@ namespace carp {
 
 } // namespace carp
 
-
-template<class T0>
-void
-time_gaussian( T0 & pool )
+void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<int>& sizes )
 {
     carp::Timing timing;
 
-    for ( auto & size : {/*5,*/ 9, 11/*, 25, 41*/} ) {
+    for ( auto & size : sizes ) {
         PRINT(size);
         cv::Size ksize(size, size+4);
 
@@ -252,6 +249,6 @@ int main(int argc, char* argv[])
 #endif
 
     auto pool = carp::get_pool("pool");
-    time_gaussian( pool );
+    time_gaussian( pool, {/*5,*/ 9, 11/*, 25, 41*/} );
     return EXIT_SUCCESS;
 } // main

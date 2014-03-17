@@ -9,9 +9,7 @@
 #include "cvt_color.clh"
 #include "cvt_color.pencil.h"
 
-template<class T0>
-void
-time_cvtColor( T0 & pool, size_t iterations)
+void time_cvtColor( const std::vector<carp::record_t>& pool, size_t iterations)
 {
     int bidx = 2;
     carp::Timing timing;

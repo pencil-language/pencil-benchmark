@@ -68,7 +68,7 @@ namespace carp {
         boost::filesystem::path m_path;
 
     public:
-        cv::Mat cpuimg() {
+        cv::Mat cpuimg() const {
             return cv::imread(m_path.string());
         }
 
