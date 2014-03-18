@@ -91,7 +91,7 @@ private:
 public:
     buffer(size_t size) : m_size(size) { }
 
-    size_t size() { return m_size; }
+    size_t size() const { return m_size; }
 
 }; // class buffer
 
@@ -122,6 +122,13 @@ private:
         assert(cqKernel);
         utility::checkerror( clSetKernelArg( cqKernel.get(), pos, sizeof(mt0), reinterpret_cast<const void*>(&mt0) ), __FILE__, __LINE__, "(arg[" + std::to_string(pos) + "]) " );
 //        utility::checkerror( clSetKernelArg( cqKernel.get(), pos, sizeof(mt0), reinterpret_cast<const void*>(&mt0) ), __FILE__, __LINE__, "(arg[" + std::to_string(pos) + "]=" + std::to_string(mt0) + ") " );
+        pos++; // move the position of the parameter applied
+        return true;
+    } // setparameter
+
+    bool setparameter( int& pos, const buffer& b ) {
+        assert(cqKernel);
+        utility::checkerror( clSetKernelArg( cqKernel.get(), pos, b.size(), nullptr ), __FILE__, __LINE__, "(arg[" + std::to_string(pos) + "]) " );
         pos++; // move the position of the parameter applied
         return true;
     } // setparameter
