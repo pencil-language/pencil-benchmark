@@ -103,7 +103,7 @@ void warpAffine( carp::opencl::device & device, const cv::ocl::oclMat & src, cv:
 
 void time_affine( const std::vector<carp::record_t>& pool )
 {
-    carp::Timing timing;
+    carp::Timing timing("affine transform");
 
     for ( auto & item : pool ) {
         PRINT(item.path());
@@ -178,7 +178,7 @@ void time_affine( const std::vector<carp::record_t>& pool )
             throw std::runtime_error("The GPU results are not equivalent with the CPU results.");
         }
 
-        timing.print( "affine transform", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
+        timing.print( elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
     }
 }
 

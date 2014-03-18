@@ -153,7 +153,7 @@ namespace carp {
 
 void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<int>& sizes )
 {
-    carp::Timing timing;
+    carp::Timing timing("gaussian blur");
 
     for ( auto & size : sizes ) {
         PRINT(size);
@@ -236,7 +236,7 @@ void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<i
                 throw std::runtime_error("The GPU results are not equivalent with the CPU results.");
             }
 
-            timing.print( "gaussian blur", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
+            timing.print( elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
         }
     }
 }

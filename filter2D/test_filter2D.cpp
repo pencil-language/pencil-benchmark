@@ -71,7 +71,7 @@ namespace carp {
 
 void time_filter2D( const std::vector<carp::record_t>& pool, int iteration )
 {
-    carp::Timing timing;
+    carp::Timing timing("2D filter");
 
     for ( int q=0; q<iteration; q++ ) {
         for ( auto & item : pool ) {
@@ -144,7 +144,7 @@ void time_filter2D( const std::vector<carp::record_t>& pool, int iteration )
                 throw std::runtime_error("The GPU results are not equivalent with the CPU results.");
             }
 
-            timing.print( "2D filter", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
+            timing.print( elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
         }
     }
 }

@@ -163,7 +163,7 @@ namespace carp {
 
 void time_dilate( const std::vector<carp::record_t>& pool, const std::vector<int>& elemsizes )
 {
-    carp::Timing timing;
+    carp::Timing timing("dilate image");
 
     for ( auto & item : pool ) {
         PRINT(item.path());
@@ -216,7 +216,7 @@ void time_dilate( const std::vector<carp::record_t>& pool, const std::vector<int
                 cv::imwrite("pencil_dilate.png", pen_result );
                 throw std::runtime_error("The GPU results are not equivalent with the CPU results.");
             }
-            timing.print( "dilate image", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
+            timing.print( elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
         }
     }
 }

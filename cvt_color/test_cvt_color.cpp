@@ -12,7 +12,7 @@
 void time_cvtColor( const std::vector<carp::record_t>& pool, size_t iterations)
 {
     int bidx = 2;
-    carp::Timing timing;
+    carp::Timing timing("cvt_color");
     for ( auto & record : pool ) {
         PRINT(record.path());
 
@@ -68,7 +68,7 @@ void time_cvtColor( const std::vector<carp::record_t>& pool, size_t iterations)
                 throw std::runtime_error("The GPU results are not equivalent with the CPU results.");
             }
         }
-        timing.print("cvtColor", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil);
+        timing.print(elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil);
     }
     return;
 }

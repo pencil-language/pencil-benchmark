@@ -106,7 +106,7 @@ resize( carp::opencl::device & device,
 
 void time_resize( const std::vector<carp::record_t>& pool, const std::vector<cv::Size>& sizes )
 {
-    carp::Timing timing;
+    carp::Timing timing("resize");
 
     for ( auto & size : sizes ) {
         for ( auto & item : pool ) {
@@ -157,7 +157,7 @@ void time_resize( const std::vector<carp::record_t>& pool, const std::vector<cv:
                 throw std::runtime_error("The GPU results are not equivalent with the CPU results.");
             }
 
-            timing.print( "resize", elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
+            timing.print( elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
         } // for pool
     }
 } // text_boxFilter
