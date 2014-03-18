@@ -115,7 +115,7 @@ void time_resize( const std::vector<carp::record_t>& pool, const std::vector<cv:
             cv::cvtColor( item.cpuimg(), cpu_gray, CV_RGB2GRAY );
 
             cv::Mat cpu_result, gpu_result, pen_result;
-            std::chrono::microseconds elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil;
+            std::chrono::microseconds elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil;
 
             {
                 const auto cpu_start = std::chrono::high_resolution_clock::now();
@@ -127,13 +127,16 @@ void time_resize( const std::vector<carp::record_t>& pool, const std::vector<cv:
                 cv::ocl::Context * context = cv::ocl::Context::getContext();
                 carp::opencl::device device(context);
                 device.source_compile( imgproc_resize_cl, imgproc_resize_cl_len, { "resizeLN_C1_D0", "resizeLN_C4_D0", "resizeLN_C1_D5", "resizeLN_C4_D5", "resizeNN_C1_D0", "resizeNN_C4_D0", "resizeNN_C1_D5", "resizeNN_C4_D5" } );
-                const auto gpu_start = std::chrono::high_resolution_clock::now();
+                const auto gpu_start_copy = std::chrono::high_resolution_clock::now();
                 cv::ocl::oclMat gpu_gray(cpu_gray);
                 cv::ocl::oclMat gpu_resize;
+                const auto gpu_start = std::chrono::high_resolution_clock::now();
                 carp::resize( device, gpu_gray, gpu_resize, size, cv::INTER_LINEAR );
-                gpu_result = gpu_resize;
                 const auto gpu_end = std::chrono::high_resolution_clock::now();
-                elapsed_time_gpu = gpu_end - gpu_start;
+                gpu_result = gpu_resize;
+                const auto gpu_end_copy = std::chrono::high_resolution_clock::now();
+                elapsed_time_gpu_p_copy = gpu_end_copy - gpu_start_copy;
+                elapsed_time_gpu_nocopy = gpu_end      - gpu_start;
             }
             {
                 // pencil verification
@@ -157,7 +160,7 @@ void time_resize( const std::vector<carp::record_t>& pool, const std::vector<cv:
                 throw std::runtime_error("The GPU results are not equivalent with the CPU results.");
             }
 
-            timing.print( elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
+            timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil );
         } // for pool
     }
 } // text_boxFilter

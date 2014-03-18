@@ -23,50 +23,39 @@ namespace carp {
 class Timing
 {
     std::vector<double> cpu_timings;
-    std::vector<double> gpu_timings;
+    std::vector<double> gpu_p_copy_timings;
+    std::vector<double> gpu_nocopy_timings;
     std::vector<double> pen_timings;
-    std::vector<double> cpu_div_gpus;
-    std::vector<double> cpu_div_pens;
-    std::vector<double> gpu_div_pens;
 public:
     Timing(const std::string & name) {
 #ifndef BENCHMARK_PRINT_GPU_PENCIL_SPEEDUP_ONLY
         std::cout << "Measuring performance of " << name << std::endl;
-        std::cout << " CPU Time - GPU Time - PEN Time -  CPU/GPU -  CPU/PEN -  GPU/PEN" << std::endl;
+        std::cout << " CPU Time - GPU+copy - GPU Time - PEN Time" << std::endl;
 #endif
     }
 
-    void print( const std::chrono::duration<double> &cpu, const std::chrono::duration<double> &gpu, const std::chrono::duration<double> &pen ) {
-        auto cpu_div_gpu = cpu / gpu;
-        auto cpu_div_pen = cpu / pen;
-        auto gpu_div_pen = gpu / pen;
+    void print( const std::chrono::duration<double> &cpu, const std::chrono::duration<double> &gpu_p_copy, const std::chrono::duration<double> &gpu_nocopy, const std::chrono::duration<double> &pen ) {
         std::cout << std::fixed << std::setprecision(3);
 #ifndef BENCHMARK_PRINT_GPU_PENCIL_SPEEDUP_ONLY
-        std::cout << std::setw(8) << cpu.count() << "s -";
-        std::cout << std::setw(8) << gpu.count() << "s -";
-        std::cout << std::setw(8) << pen.count() << "s -";
-        std::cout << std::setw(8) << cpu_div_gpu << "x -";
-        std::cout << std::setw(8) << cpu_div_pen << "x -";
-        std::cout << std::setw(8) << gpu_div_pen << 'x' << std::endl;
+        std::cout << std::setw(8) << cpu       .count() << "s -";
+        std::cout << std::setw(8) << gpu_p_copy.count() << "s -";
+        std::cout << std::setw(8) << gpu_nocopy.count() << "s -";
+        std::cout << std::setw(8) << pen       .count() << "s" << std::endl;
 #else
-        std::cout << gpu_div_pen;
+        std::cout << gpu_p_copy / pen;
 #endif
-        cpu_timings.push_back(cpu.count());
-        gpu_timings.push_back(gpu.count());
-        pen_timings.push_back(pen.count());
-        cpu_div_gpus.push_back(cpu_div_gpu);
-        cpu_div_pens.push_back(cpu_div_pen);
-        gpu_div_pens.push_back(gpu_div_pen);
+        cpu_timings       .push_back(cpu       .count());
+        gpu_p_copy_timings.push_back(gpu_p_copy.count());
+        gpu_nocopy_timings.push_back(gpu_nocopy.count());
+        pen_timings       .push_back(pen       .count());
     }
 
     ~Timing() {
 #ifndef BENCHMARK_PRINT_GPU_PENCIL_SPEEDUP_ONLY
-        std::cout << "    Total CPU time: " << std::accumulate(cpu_timings.begin(),cpu_timings.end(),0.0) << "s\n";
-        std::cout << "    Total GPU time: " << std::accumulate(gpu_timings.begin(),gpu_timings.end(),0.0) << "s\n";
-        std::cout << "    Total Pen time: " << std::accumulate(pen_timings.begin(),pen_timings.end(),0.0) << "s\n";
-        std::cout << "    AVG GPU / CPU speed ratio: " << std::accumulate(cpu_div_gpus.begin(),cpu_div_gpus.end(),0.0) / cpu_div_gpus.size() << "x\n";
-        std::cout << "    AVG Pen / CPU speed ratio: " << std::accumulate(cpu_div_pens.begin(),cpu_div_pens.end(),0.0) / cpu_div_pens.size() << "x\n";
-        std::cout << "    AVG Pen / GPU speed ratio: " << std::accumulate(gpu_div_pens.begin(),gpu_div_pens.end(),0.0) / gpu_div_pens.size() << "x" << std::endl;
+        std::cout << "    Total CPU time           : " << std::accumulate(cpu_timings       .begin(),cpu_timings       .end(),0.0) << "s\n";
+        std::cout << "    Total GPU time (inc copy): " << std::accumulate(gpu_p_copy_timings.begin(),gpu_p_copy_timings.end(),0.0) << "s\n";
+        std::cout << "    Total GPU time (w/o copy): " << std::accumulate(gpu_nocopy_timings.begin(),gpu_nocopy_timings.end(),0.0) << "s\n";
+        std::cout << "    Total Pen time           : " << std::accumulate(pen_timings       .begin(),pen_timings       .end(),0.0) << "s\n";
 #endif
     }
 };

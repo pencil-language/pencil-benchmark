@@ -170,7 +170,7 @@ void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<i
             cpu_gray.convertTo( cpu_gray, CV_32F, 1.0/255. );
 
             cv::Mat cpu_result, gpu_result, pen_result;
-            std::chrono::microseconds elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil;
+            std::chrono::microseconds elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil;
 
             {
                 const auto cpu_start = std::chrono::high_resolution_clock::now();
@@ -181,13 +181,16 @@ void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<i
             }
             {
                 carp::opencl::device device(cv::ocl::Context::getContext());
-                const auto gpu_start = std::chrono::high_resolution_clock::now();
+                const auto gpu_copy_start = std::chrono::high_resolution_clock::now();
                 cv::ocl::oclMat dst;
                 cv::ocl::oclMat src(cpu_gray);
+                const auto gpu_start = std::chrono::high_resolution_clock::now();
                 carp::gaussian(device, src, dst, ksize, gaussX, gaussY, bordertype );
-                gpu_result = dst;
                 const auto gpu_end = std::chrono::high_resolution_clock::now();
-                elapsed_time_gpu = gpu_end - gpu_start;
+                gpu_result = dst;
+                const auto gpu_copy_end = std::chrono::high_resolution_clock::now();
+                elapsed_time_gpu_p_copy = gpu_copy_end - gpu_copy_start;
+                elapsed_time_gpu_nocopy = gpu_end      - gpu_start;
                 //Free up resources
             }
             {
@@ -236,7 +239,7 @@ void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<i
                 throw std::runtime_error("The GPU results are not equivalent with the CPU results.");
             }
 
-            timing.print( elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
+            timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil );
         }
     }
 }
@@ -249,6 +252,6 @@ int main(int argc, char* argv[])
 #endif
 
     auto pool = carp::get_pool("pool");
-    time_gaussian( pool, {/*5,*/ 9, 11/*, 25, 41*/} );
+    time_gaussian( pool, {5, 9, 11, 25, 41} );
     return EXIT_SUCCESS;
 } // main

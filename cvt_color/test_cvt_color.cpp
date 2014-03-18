@@ -15,37 +15,38 @@ void time_cvtColor( const std::vector<carp::record_t>& pool, size_t iterations)
     carp::Timing timing("cvt_color");
     for ( auto & record : pool ) {
         PRINT(record.path());
-
-        std::chrono::microseconds elapsed_time_gpu(0), elapsed_time_cpu(0), elapsed_time_pencil(0);
-
         for(size_t i = 0; i < iterations; ++i) {
             PRINT(i);
-            cv::Mat cpuimg = record.cpuimg();
 
+            cv::Mat cpuimg = record.cpuimg();
             cv::Mat cpu_result, gpu_result, pen_result;
 
+            std::chrono::microseconds elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil;
             {
-                auto start = std::chrono::high_resolution_clock::now();
+                const auto start = std::chrono::high_resolution_clock::now();
                 cv::cvtColor( cpuimg, cpu_result, CV_RGB2GRAY );
-                auto end = std::chrono::high_resolution_clock::now();
-                elapsed_time_cpu += (end - start);
+                const auto end = std::chrono::high_resolution_clock::now();
+                elapsed_time_cpu = end - start;
             }
             {
                 cv::ocl::Context * context = cv::ocl::Context::getContext();
                 carp::opencl::device device(context);
                 device.source_compile( cvt_color_cl, cvt_color_cl_len, {"RGB2Gray"} );
 
-                auto start = std::chrono::high_resolution_clock::now();
+                const auto start_copy = std::chrono::high_resolution_clock::now();
                 cv::ocl::oclMat gpu_gray;
                 cv::ocl::oclMat gpuimg(cpuimg);
                 gpu_gray.create( gpuimg.rows, gpuimg.cols, CV_8U );
 
+                const auto start = std::chrono::high_resolution_clock::now();
                 device["RGB2Gray"]( gpuimg.cols, gpuimg.rows, static_cast<int>(gpuimg.step), static_cast<int>(gpu_gray.step)
                                   , gpuimg.channels()+1, bidx, reinterpret_cast<cl_mem>(gpuimg.data), reinterpret_cast<cl_mem>(gpu_gray.data)
                                   ).groupsize( {16,16}, {cpuimg.cols, cpuimg.rows});
+                const auto end = std::chrono::high_resolution_clock::now();
                 gpu_result = gpu_gray;
-                auto end = std::chrono::high_resolution_clock::now();
-                elapsed_time_gpu += (end - start);
+                const auto end_copy = std::chrono::high_resolution_clock::now();
+                elapsed_time_gpu_p_copy = end_copy - start_copy;
+                elapsed_time_gpu_nocopy = end      - start;
             }
             {
                 pen_result.create( cpu_result.rows, cpu_result.cols, CV_8U );
@@ -55,7 +56,7 @@ void time_cvtColor( const std::vector<carp::record_t>& pool, size_t iterations)
                                , cpuimg.channels(), bidx, cpuimg.data, pen_result.data
                                );
                 const auto pencil_end = std::chrono::high_resolution_clock::now();
-                elapsed_time_pencil += (pencil_end - pencil_start);
+                elapsed_time_pencil = pencil_end - pencil_start;
             }
 
             // Verifying the results
@@ -67,12 +68,10 @@ void time_cvtColor( const std::vector<carp::record_t>& pool, size_t iterations)
                 cv::imwrite( "cpu_img.png", cpu_result );
                 throw std::runtime_error("The GPU results are not equivalent with the CPU results.");
             }
+            timing.print(elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil);
         }
-        timing.print(elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil);
     }
-    return;
 }
-
 
 int main(int argc, char* argv[])
 {

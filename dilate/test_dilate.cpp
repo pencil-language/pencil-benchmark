@@ -28,7 +28,7 @@ namespace {
         normalizeAnchor(anchor.y, ksize.height);
     } // normalizeAnchor
 
-    inline void normalizeKernel(const cv::Mat &kernel, cv::ocl::oclMat &gpu_krnl, int type = CV_8U, int *nDivisor = 0, bool reverse = false)
+    inline cv::Mat normalizeKernel(const cv::Mat &kernel, int type = CV_8U, int *nDivisor = 0, bool reverse = false)
     {
         int scale = nDivisor && (kernel.depth() == CV_32F || kernel.depth() == CV_64F) ? 256 : 1;
                 if (nDivisor)
@@ -50,21 +50,15 @@ namespace {
             }
         }
 
-        gpu_krnl.upload(cont_krnl);
+        return cont_krnl;
     } // normalizeKernel
 } // unnamed namespace
 
 
 namespace carp {
+    cv::ocl::oclMat dilate( carp::opencl::device & device, cv::ocl::oclMat src, cv::ocl::oclMat mat_kernel, cv::Point anchor, int border_type, cv::Size ksize, bool noZero ) {
 
-    void dilate( carp::opencl::device & device, cv::Mat cpu_gray, cv::Mat & result, cv::Mat structuring_element, cv::Point anchor, int border_type, cv::Size ksize ) {
-
-        cv::ocl::oclMat src(cpu_gray);
-        cv::ocl::oclMat mat_kernel;
-        cv::ocl::oclMat dst;
-
-        dst.create(src.size(), src.type());
-        normalizeKernel(structuring_element, mat_kernel);
+        cv::ocl::oclMat dst(src.size(), src.type());
         normalizeAnchor(anchor, ksize);
 
         //! data type supported: CV_8UC1, CV_8UC4, CV_32FC1, CV_32FC4
@@ -130,11 +124,6 @@ namespace carp {
 
 //                if (rectKernel) compiler_option += " -D RECTKERNEL ";
 
-        bool noZero = true;
-        for(int i = 0; i < structuring_element.rows * structuring_element.cols; ++i)
-            if(structuring_element.data[i] != 1)
-                noZero = false;
-
         if (noZero) compile_option += " -D RECTKERNEL ";
 
         device.source_compile( filtering_morph_cl, filtering_morph_cl_len, {kernelName}, compile_option );
@@ -152,12 +141,12 @@ namespace carp {
             src.wholerows,
             dstOffset
             ).groupsize( localThreads, globalThreads );
-        result = dst;
-
         device.erase(kernelName);
-
+        return dst;
     } // dilate
 
+    void dilate( carp::opencl::device & device, cv::Mat cpu_gray, cv::Mat & result, cv::Mat structuring_element, cv::Point anchor, int border_type, cv::Size ksize ) {
+    }
 
 } // namespace carp
 
@@ -179,21 +168,33 @@ void time_dilate( const std::vector<carp::record_t>& pool, const std::vector<int
             cv::Mat structuring_element = cv::getStructuringElement( cv::MORPH_ELLIPSE, ksize, anchor );
 
             cv::Mat cpu_result, gpu_result, pen_result;
-            std::chrono::microseconds elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil;
+            std::chrono::microseconds elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil;
 
             {
-                auto cpu_start = std::chrono::high_resolution_clock::now();
+                const auto cpu_start = std::chrono::high_resolution_clock::now();
                 cv::dilate( cpu_gray, cpu_result, structuring_element, anchor, /*iteration = */1, cv::BORDER_CONSTANT );
-                auto cpu_end = std::chrono::high_resolution_clock::now();
+                const auto cpu_end = std::chrono::high_resolution_clock::now();
                 elapsed_time_cpu = cpu_end - cpu_start;
             }
             {
                 cv::ocl::Context * context = cv::ocl::Context::getContext();
                 carp::opencl::device device(context);
-                auto gpu_start = std::chrono::high_resolution_clock::now();
-                carp::dilate( device, cpu_gray, gpu_result, structuring_element, anchor, cv::BORDER_CONSTANT, ksize );
-                auto gpu_end = std::chrono::high_resolution_clock::now();
-                elapsed_time_gpu = gpu_end - gpu_start;
+
+                bool noZero = true;
+                for(int i = 0; i < structuring_element.rows * structuring_element.cols; ++i)
+                    if(structuring_element.data[i] != 1)    //?!? This is NOT iterating through elements, but on BYTES!!!
+                        noZero = false;
+
+                const auto gpu_start_copy = std::chrono::high_resolution_clock::now();
+                cv::ocl::oclMat src(cpu_gray);
+                cv::ocl::oclMat mat_kernel(normalizeKernel(structuring_element));
+                const auto gpu_start = std::chrono::high_resolution_clock::now();
+                auto result = carp::dilate( device, src, mat_kernel, anchor, cv::BORDER_CONSTANT, ksize, noZero );
+                const auto gpu_end = std::chrono::high_resolution_clock::now();
+                gpu_result = result;
+                const auto gpu_end_copy = std::chrono::high_resolution_clock::now();
+                elapsed_time_gpu_p_copy = gpu_end_copy - gpu_start_copy;
+                elapsed_time_gpu_nocopy = gpu_end      - gpu_start;
             }
             {
                 pen_result = cv::Mat(cpu_gray.size(), CV_8U);
@@ -216,7 +217,7 @@ void time_dilate( const std::vector<carp::record_t>& pool, const std::vector<int
                 cv::imwrite("pencil_dilate.png", pen_result );
                 throw std::runtime_error("The GPU results are not equivalent with the CPU results.");
             }
-            timing.print( elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
+            timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil );
         }
     }
 }

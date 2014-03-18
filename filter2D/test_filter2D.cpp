@@ -88,7 +88,7 @@ void time_filter2D( const std::vector<carp::record_t>& pool, int iteration )
             cv::Mat kernel_cpu(3, 3, CV_32F, kernel_data);
 
             cv::Mat cpu_result, gpu_result, pen_result;
-            std::chrono::microseconds elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil;
+            std::chrono::microseconds elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil;
 
             {
                 const auto cpu_start = std::chrono::high_resolution_clock::now();
@@ -100,13 +100,16 @@ void time_filter2D( const std::vector<carp::record_t>& pool, int iteration )
                 cv::ocl::Context * context = cv::ocl::Context::getContext();
                 carp::opencl::device device(context);
                 device.source_compile( imgproc_convolve_cl, imgproc_convolve_cl_len, { "convolve_D5" } );
-                const auto gpu_start = std::chrono::high_resolution_clock::now();
+                const auto gpu_start_copy = std::chrono::high_resolution_clock::now();
                 cv::ocl::oclMat gpu_gray(cpu_gray);
                 cv::ocl::oclMat kernel_gpu(kernel_cpu);
+                const auto gpu_start = std::chrono::high_resolution_clock::now();
                 cv::ocl::oclMat gpu_convolve = carp::filter2D( device, gpu_gray, kernel_gpu, cv::BORDER_REPLICATE );
-                gpu_result = gpu_convolve;
                 const auto gpu_end = std::chrono::high_resolution_clock::now();
-                elapsed_time_gpu = gpu_end - gpu_start;
+                gpu_result = gpu_convolve;
+                const auto gpu_end_copy = std::chrono::high_resolution_clock::now();
+                elapsed_time_gpu_p_copy = gpu_end_copy - gpu_start_copy;
+                elapsed_time_gpu_nocopy = gpu_end      - gpu_start;
             }
             {
                 // pencil test:
@@ -144,7 +147,7 @@ void time_filter2D( const std::vector<carp::record_t>& pool, int iteration )
                 throw std::runtime_error("The GPU results are not equivalent with the CPU results.");
             }
 
-            timing.print( elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
+            timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil );
         }
     }
 }

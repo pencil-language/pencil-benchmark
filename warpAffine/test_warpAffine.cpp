@@ -118,7 +118,7 @@ void time_affine( const std::vector<carp::record_t>& pool )
         cv::Mat transform( 2, 3, CV_32F, transform_data.data() );
 
         cv::Mat cpu_result, gpu_result, pen_result;
-        std::chrono::microseconds elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil;
+        std::chrono::microseconds elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil;
 
         {
             const auto cpu_start = std::chrono::high_resolution_clock::now();
@@ -136,13 +136,16 @@ void time_affine( const std::vector<carp::record_t>& pool )
                                    }
                                  , "-D DOUBLE_SUPPORT"
                                  );
-            const auto gpu_start = std::chrono::high_resolution_clock::now();
+            const auto gpu_start_copy = std::chrono::high_resolution_clock::now();
             cv::ocl::oclMat gpu_gray(cpu_gray);
             cv::ocl::oclMat gpu_affine;
+            const auto gpu_start = std::chrono::high_resolution_clock::now();
             carp::warpAffine( device, gpu_gray, gpu_affine, transform, gpu_gray.size() );
-            gpu_result = gpu_affine;
             const auto gpu_end = std::chrono::high_resolution_clock::now();
-            elapsed_time_gpu = gpu_end - gpu_start;
+            gpu_result = gpu_affine;
+            const auto gpu_end_copy = std::chrono::high_resolution_clock::now();
+            elapsed_time_gpu_p_copy = gpu_end_copy - gpu_start_copy;
+            elapsed_time_gpu_nocopy = gpu_end      - gpu_start;
         }
         {
             // verifying the pencil code
@@ -178,7 +181,7 @@ void time_affine( const std::vector<carp::record_t>& pool )
             throw std::runtime_error("The GPU results are not equivalent with the CPU results.");
         }
 
-        timing.print( elapsed_time_cpu, elapsed_time_gpu, elapsed_time_pencil );
+        timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil );
     }
 }
 
