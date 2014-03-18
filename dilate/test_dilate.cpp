@@ -229,6 +229,6 @@ int main(int argc, char* argv[])
     std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
 #endif
     auto pool = carp::get_pool("pool");
-    time_dilate( pool, { /*5, 7,*/ 9/*, 11, 15, 17*/ } );
+    time_dilate( pool, { 3, 5, 7, 9 } );
     return EXIT_SUCCESS;
 }
