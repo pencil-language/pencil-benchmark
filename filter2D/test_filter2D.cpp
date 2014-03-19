@@ -155,9 +155,7 @@ void time_filter2D( const std::vector<carp::record_t>& pool, int iteration )
 int main(int argc, char* argv[])
 {
 
-#ifndef BENCHMARK_PRINT_GPU_PENCIL_SPEEDUP_ONLY
     std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
-#endif
 
     auto pool = carp::get_pool("pool");
     time_filter2D( pool, 3 );

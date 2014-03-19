@@ -225,9 +225,8 @@ void time_dilate( const std::vector<carp::record_t>& pool, const std::vector<int
 int main(int argc, char* argv[])
 {
 
-#ifndef BENCHMARK_PRINT_GPU_PENCIL_SPEEDUP_ONLY
     std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
-#endif
+
     auto pool = carp::get_pool("pool");
     time_dilate( pool, { 3, 5, 7, 9 } );
     return EXIT_SUCCESS;

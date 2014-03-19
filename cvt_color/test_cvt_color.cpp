@@ -76,9 +76,7 @@ void time_cvtColor( const std::vector<carp::record_t>& pool, size_t iterations)
 int main(int argc, char* argv[])
 {
 
-#ifndef BENCHMARK_PRINT_GPU_PENCIL_SPEEDUP_ONLY
     std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
-#endif
 
     auto pool = carp::get_pool("pool");
     size_t num_iterations = 10;

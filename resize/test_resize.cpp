@@ -168,9 +168,7 @@ void time_resize( const std::vector<carp::record_t>& pool, const std::vector<cv:
 int main(int argc, char* argv[])
 {
 
-#ifndef BENCHMARK_PRINT_GPU_PENCIL_SPEEDUP_ONLY
     std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
-#endif
 
     auto pool = carp::get_pool("pool");
     std::vector<cv::Size> sizes{ {320, 240}, {640, 480}, {1024, 768}, {1200, 900}, {1600, 1200} };
