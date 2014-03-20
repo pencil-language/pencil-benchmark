@@ -47,20 +47,20 @@
 
 //warpAffine kernel
 //support data types: CV_8UC1, CV_8UC4, CV_32FC1, CV_32FC4, and three interpolation methods: NN, Linear, Cubic.
-#if defined (DOUBLE_SUPPORT)
-# ifdef cl_khr_fp64
-#   pragma OPENCL EXTENSION cl_khr_fp64:enable
-# elif defined (cl_amd_fp64)
-#   pragma OPENCL EXTENSION cl_amd_fp64:enable
-# endif /* cl_khr_fp64 */
-typedef double F;
-typedef double4 F4;
-# define convert_F4 convert_double4
-#else /* NOT DOUBLE_SUPPORT */
+//#if defined (DOUBLE_SUPPORT)
+//# ifdef cl_khr_fp64
+//#   pragma OPENCL EXTENSION cl_khr_fp64:enable
+//# elif defined (cl_amd_fp64)
+//#   pragma OPENCL EXTENSION cl_amd_fp64:enable
+//# endif /* cl_khr_fp64 */
+//typedef double F;
+//typedef double4 F4;
+//# define convert_F4 convert_double4
+//#else /* NOT DOUBLE_SUPPORT */
 typedef float F;
 typedef float4 F4;
 # define convert_F4 convert_float4
-#endif /* NOT DOUBLE_SUPPORT */
+//#endif /* NOT DOUBLE_SUPPORT */
 
 #define INTER_BITS 5
 #define INTER_TAB_SIZE (1 << INTER_BITS)
