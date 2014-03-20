@@ -161,7 +161,20 @@ public:
         assert(cqKernel);
         assert(cqCommandQueue);
         std::vector<size_t> kernelsize = utility::roundup(groupsize, worksize);
-        utility::checkerror(clEnqueueNDRangeKernel( cqCommandQueue.get(), cqKernel.get(), worksize.size(), NULL, kernelsize.data(), groupsize.data(), 0, NULL, NULL ), __FILE__, __LINE__ );
+
+	cl_event event;
+        long long start, end;
+        double total;
+
+        utility::checkerror(clEnqueueNDRangeKernel( cqCommandQueue.get(), cqKernel.get(), worksize.size(), NULL, kernelsize.data(), groupsize.data(), 0, NULL, &event), __FILE__, __LINE__ );
+	clWaitForEvents(1, &event);
+        clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof start, &start, NULL);
+        clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof end, &end, NULL);
+        total = (double)(end - start) / 1e9;
+#ifdef PRINT_OPENCL_PROFILING_KERNEL_EXEC_TIME
+        printf("[RealEyes]   Kernel execution time in seconds (without data copy and kernel compilation): %5.9f\n", total);
+#endif	
+
         utility::checkerror(clFinish(cqCommandQueue.get()), __FILE__, __LINE__ );
     } // groupsize
 }; // class kernel
@@ -207,7 +220,7 @@ public:
         cxGPUContext.reset( tmp_cxGPUContext, clReleaseContext );
 
         cl_command_queue tmp_cqCommandQueue;
-        tmp_cqCommandQueue = clCreateCommandQueue( cxGPUContext.get(), devices[0], /*CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE*/ 0,  &err ); // kernels are executed in order
+        tmp_cqCommandQueue = clCreateCommandQueue( cxGPUContext.get(), devices[0], CL_QUEUE_PROFILING_ENABLE /*CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE*/,  &err ); // kernels are executed in order
         utility::checkerror( err, __FILE__, __LINE__ );
         cqCommandQueue.reset( tmp_cqCommandQueue, clReleaseCommandQueue );
 
