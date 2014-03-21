@@ -1,6 +1,7 @@
 ## Building ##
 
 For building the benchmark, you need:
+- OpenCL
 - PPCG
 	Refer to PPCG readme how to build.
 - OpenCV
