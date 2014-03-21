@@ -23,7 +23,7 @@ OPENCL_LIB=-lOpenCL
 
 # Optimization Flags
 
-EXTRA_FLAGS=-O3 -DNDEBUG -march=native -fomit-frame-pointer -fPIC -ffast-math -Wall
+EXTRA_FLAGS=-O3 -DNDEBUG -march=native -fomit-frame-pointer -fPIC -ffast-math -Wall -DPRINT_OPENCL_PROFILING_KERNEL_EXEC_TIME
 CFLAGS=$(EXTRA_FLAGS) -std=c99 -Iinclude -I$(BUILD_DIR) -I$(OPENCL_INCLUDE)
 CXXFLAGS=$(EXTRA_FLAGS) -std=c++0x -Iinclude -I$(BUILD_DIR) -I$(OPENCL_INCLUDE) -I$(OPENCV_INCLUDE_DIR) -I$(TBB_INCLUDE_DIR) -Wl,-rpath=$ORIGIN:$(OPENCV_LIB_DIR)
 LDFLAGS=-L$(OPENCL_LIB_DIR) $(OPENCL_LIB) -L$(OPENCV_LIB_DIR) $(OPENCV_LIBS) -L$(TBB_LIB_DIR) $(TBB_LIBS) -L$(BUILD_DIR) $(BOOST_LIBS)
