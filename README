@@ -1,66 +1,29 @@
-## OpenCV ##
+## Building ##
 
-The benchmark has been tested with opencv 2.4.6.1. There is a bug in opencv-2.4.6.1 which results in a deadlock when initializing the OpenCL context. There is a patch in the repository called 
+For building the benchmark, you need:
+- PPCG
+	Refer to PPCG readme how to build.
+- OpenCV
+	Tested with a patched version of 2.4.6.1 - the patch is included in the repository. Simply apply 'opencv-2.4.6.1_autolock_and_gpuimg.patch' before building. Newer versions might have fixed the issue, but also might break required APIs.
+	While building OpenCV, make sure to enable opencv_ocl module in CMake.
+	For good performance it is also advised to enable all instruction sets (SSE 3/SSSE 3/SSE 4.1/SSE 4.2/AVX) supported by the processor, and Intel Threading Building Blocks (TBB).
+- xxd
+	Probably already exists in your Linux installation, install it if not.
+- Edit required paths in the makefile.
+	You probably won't have the PPCG compiler at /home/davidrobi/ppcg/ppcg..
+- "make all"
 
-opencv-2.4.6.1_autolock_and_gpuimg.patch
+## Running ##
 
-this patch needs to be applied before building OpenCV. 
+- The repository contains a set of large images, compressed. Extract files all to build_dir/pool.
+- Add build directory to LD_LIBRARY_PATH.
+	It's fine to do "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:."
+- Change to the build directory.
+- Run ppcg_test_*
+	Each executable runs a different operator with all three (C++, OpenCL, PENCIL) implementations.
+	Results are cross-checked, and if there is no difference (within a small allowed precision error), total times are reported at the end.
+(- the executables test_* run the same code, but using only C compiler; measuring Pencil-as-C compilation performance. Useful to check execution if there is a problem running the PPCG built version.)
 
-## CMake ##
+## Questions ##
 
-The benchmark has to be built with CMake. During the configuration each 
-
-test_*.cpp 
-
-will be converted into a target executable. 
-
-*.cl 
-
-files will be precompiled into .clh string headers.
-
-By convention all PENCIL source files should be called 
-
-*.pencil.c
-
-OpenCL operators are preprocessed with 
-
-xxd
-
-This executable has to be accessible to make during the compilation. 
-
-## Repository Structure ##
-
-The repository has a modular structure where each test is called 
-
-test_"operator name"
-
-Each executable tests a single operator, but can test all the implementations of it. 
-
-## Development ##
-
-The git repository should be kept in a feature-branch format, where each new operator from now gets a new branch named after the operator. Once the operator is working the feature branch should be merged back in master and deleted. Examples
-
-git clone ... 
-git checkout featurename
-git commit 
-git push origin featurename
-git commit
-git push origin featurename
-...
-git commit
-git push origin featurename
-
-git checkout master
-git merge featurename
-# testing everything works
-# hey laszlo a new feature has been included, you can delete the obsolete branch
-
-## Pool ##
-
-The input dataset for the tests is stored in directory 
-
-pool
-
-the content of pool should be extracted into directory
-
-build_dir/pool
+If you have found an error, or have any questions, don't hesitate to connect Robert at robert.david@realeyesit.com!
