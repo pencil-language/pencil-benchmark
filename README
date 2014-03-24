@@ -8,6 +8,7 @@ To build the CARP-Benchmarks, you need:
 	libboost-filesystem-dev libboost-serialization-dev libboost-system-dev (or, full Boost: libboost-all-dev)
 	libtbb-dev
 	build-essential
+	p7zip
 - Build OpenCV:
 	Tested with a patched version of 2.4.6.1 - the patch is included in the repository.
 	Download 2.4.6.1:
