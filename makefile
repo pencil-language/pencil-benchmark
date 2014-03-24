@@ -28,10 +28,16 @@ CFLAGS=$(EXTRA_FLAGS) -std=c99 -Iinclude -I$(BUILD_DIR) -I$(OPENCL_INCLUDE)
 CXXFLAGS=$(EXTRA_FLAGS) -std=c++0x -Iinclude -I$(BUILD_DIR) -I$(OPENCL_INCLUDE) -I$(OPENCV_INCLUDE_DIR) -I$(TBB_INCLUDE_DIR)
 LDFLAGS=-L$(OPENCL_LIB_DIR) $(OPENCL_LIB) -L$(OPENCV_LIB_DIR) $(OPENCV_LIBS) -L$(TBB_LIB_DIR) $(TBB_LIBS) -L$(BUILD_DIR) $(BOOST_LIBS) -Wl,-rpath=$$ORIGIN:$(OPENCV_LIB_DIR) -Wl,-z,origin
 
-all: all_test all_ppcg_test
+all: all_test all_ppcg_test mlp_data
 
 clean: 
 	-rm -f -r $(BUILD_DIR)/*
+	
+mlp_data: $(BUILD_DIR)/pool/response_dumps.xml
+
+$(BUILD_DIR)/pool/response_dumps.xml:
+	cd $(BUILD_DIR)/pool/; 7za e -y response_dumps.xml.7z
+
 
 ## Common Library
 CL_SOURCES= ./gaussian/filter_sep_row.cl ./gaussian/filter_sep_col.cl ./cvt_color/cvt_color.cl ./filter2D/imgproc_convolve.cl ./dilate/filtering_morph.cl ./mlp/mlp_impl.cl ./mlp/operators.cl ./warpAffine/imgproc_warpAffine.cl ./resize/imgproc_resize.cl
