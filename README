@@ -1,24 +1,41 @@
 ## Building ##
 
-For building the benchmark, you need:
-- OpenCL
-- PPCG
+To build the CARP-Benchmarks, you need:
+- A working OpenCL driver.
+- PPCG compiler
 	Refer to PPCG readme how to build.
-- OpenCV
-	Tested with a patched version of 2.4.6.1 - the patch is included in the repository. Simply apply 'opencv-2.4.6.1_autolock_and_gpuimg.patch' before building. Newer versions might have fixed the issue, but also might break required APIs.
+- The following packages needs to be installed (at least on Ubuntu 13.12):
+	libboost-filesystem-dev libboost-serialization-dev libboost-system-dev (or, full Boost: libboost-all-dev)
+	libtbb-dev
+	build-essential
+- Build OpenCV:
+	Tested with a patched version of 2.4.6.1 - the patch is included in the repository.
+	Download 2.4.6.1:
+	    git clone https://github.com/Itseez/opencv.git
+	    git checkout -b2.4.6.1
+	Apply 'opencv-2.4.6.1_autolock_and_gpuimg.patch' before building:
+	    cd opencv
+	    patch -p0 < index path_to_CARP-Benchmarks/opencv-2.4.6.1_autolock_and_gpuimg.patch
+	    cd ..
 	While building OpenCV, make sure to enable opencv_ocl module in CMake.
-	For good performance it is also advised to enable all instruction sets (SSE 3/SSSE 3/SSE 4.1/SSE 4.2/AVX) supported by the processor, and Intel Threading Building Blocks (TBB).
-- xxd
-	Probably already exists in your Linux installation, install it if not.
-- Edit required paths in the makefile.
-	You probably won't have the PPCG compiler at /home/davidrobi/ppcg/ppcg..
-- "make all"
+	    mkdir opencv-build
+	    cd opencv-build
+	    cmake -i ../opencv
+	This starts cmake in wizard mode, asking questions what to enable/disable. Most settings can be left as default, you need to specify OpenCL headers and libraries.
+	Required modules are: opencv_core opencv_imgproc opencv_ocl opencv_highgui, make sure they are "ON" (Should be by default)
+	For good performance it is advised to enable all instruction sets (SSE 3/SSSE 3/SSE 4.1/SSE 4.2/AVX) supported by the processor (ENABLE_SSE3=ON, etc.), and Intel Threading Building Blocks (WITH_TBB=ON).
+	And finally:
+	    make all
+	
+	Alternatively, you can try newer versions that might have fixed the issue in the patch, but those versions are not tested.
+- Edit required paths in the makefile in CARP-Benchmarks root directory:
+	Change the PPCG and OpenCV build directories.
+- Build benchmark:
+	cd path_to_CARP-Benchmarks
+	make all
 
 ## Running ##
 
-- The repository contains a set of large images, compressed. Extract files all to build_dir/pool.
-- Add build directory to LD_LIBRARY_PATH.
-	It's fine to do "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:."
 - Change to the build directory.
 - Run ppcg_test_*
 	Each executable runs a different operator with all three (C++, OpenCL, PENCIL) implementations.
