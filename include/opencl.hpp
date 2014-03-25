@@ -213,9 +213,7 @@ public:
         devices.resize(num_devices);
         utility::checkerror(clGetDeviceIDs( *cpPlatform, CL_DEVICE_TYPE_GPU, devices.size(), devices.data(), NULL ), __FILE__, __LINE__ );
         if (num_devices>1)
-            PRINT("warning: more then one GPU device!");
-        //                assert(num_devices==1);
-
+            std::cout << "warning: more then one GPU device detected, only the first will be used." << std::endl;
 
         cl_context tmp_cxGPUContext = clCreateContext( NULL, devices.size(), devices.data(), NULL, NULL, &err );
         utility::checkerror( err, __FILE__, __LINE__ );
@@ -259,9 +257,7 @@ public:
         }
 
         if (num_devices>1)
-            PRINT("warning: more then one GPU device!");
-        //                assert(num_devices==1);
-
+            std::cout << "warning: more then one GPU device detected, only the first will be used." << std::endl;
     } // device
 
     ~device() {
@@ -292,8 +288,7 @@ public:
             lengths.push_back(sources.back().size());
         }
 
-        cl_program tmp_cpProgram;
-        tmp_cpProgram = clCreateProgramWithSource( cxGPUContext.get(), sources.size(), &(c_strs[0]), lengths.data(), &err );
+        cl_program tmp_cpProgram = clCreateProgramWithSource( cxGPUContext.get(), sources.size(), &(c_strs[0]), lengths.data(), &err );
         utility::checkerror(err, __FILE__, __LINE__ );
         cpProgram.reset( tmp_cpProgram, clReleaseProgram );
 
@@ -307,7 +302,8 @@ public:
             utility::checkerror( clGetProgramBuildInfo( cpProgram.get(), devices[0], CL_PROGRAM_BUILD_LOG, buffer.size(), buffer.data(), &len ), __FILE__, __LINE__ );
 
             std::cerr << buffer.data() << std::endl;
-            throw std::runtime_error("error: OpenCL: The compilation has failed.");
+            utility::checkerror(err, __FILE__, __LINE__ );
+            throw std::runtime_error("error: OpenCL: The compilation has failed for unknown reason.");
         }
 
         // extracting the kernel entrances
@@ -333,8 +329,7 @@ public:
         const char * coptions = NULL;
         if (options!="") coptions = options.c_str();
 
-        cl_program tmp_cpProgram;
-        tmp_cpProgram = clCreateProgramWithSource( cxGPUContext.get(), 1, &csource, &cl_code_len, &err );
+        cl_program tmp_cpProgram = clCreateProgramWithSource( cxGPUContext.get(), 1, &csource, &cl_code_len, &err );
         utility::checkerror(err, __FILE__, __LINE__ );
         cpProgram.reset( tmp_cpProgram, clReleaseProgram );
 
@@ -348,7 +343,8 @@ public:
             utility::checkerror( clGetProgramBuildInfo( cpProgram.get(), devices[0], CL_PROGRAM_BUILD_LOG, buffer.size(), buffer.data(), &len ), __FILE__, __LINE__ );
 
             std::cerr << buffer.data() << std::endl;
-            throw std::runtime_error("error: OpenCL: The compilation has failed.");
+            utility::checkerror(err, __FILE__, __LINE__ );
+            throw std::runtime_error("error: OpenCL: The compilation has failed for unknown reason.");
         }
 
         // extracting the kernel entrances
