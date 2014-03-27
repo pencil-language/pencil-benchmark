@@ -19,7 +19,7 @@
 #include "serialization.hpp"
 
 #ifndef PROCESSED_FRAMES
-#define PROCESSED_FRAMES 1
+#define PROCESSED_FRAMES 100
 #endif
 const int processed_frames = PROCESSED_FRAMES;
 

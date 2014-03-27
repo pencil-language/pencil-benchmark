@@ -250,6 +250,6 @@ int main(int argc, char* argv[])
     std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
 
     auto pool = carp::get_pool("pool");
-    time_gaussian( pool, {5} ); /*, 9, 11, 25, 41*/
+    time_gaussian( pool, {5, 9, 11, 25, 41} );
     return EXIT_SUCCESS;
 } // main

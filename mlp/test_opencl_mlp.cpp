@@ -13,7 +13,7 @@
 // OpenCL includes
 #include "mlp_impl.clh"
 
-const int processed_frames = 1;
+const int processed_frames = 100;
 const int local_memsize = 21 * 1024;
 
 int main()
