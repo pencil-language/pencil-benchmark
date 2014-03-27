@@ -33,7 +33,7 @@ public:
     }
 
     void print( const std::chrono::duration<double> &cpu, const std::chrono::duration<double> &gpu_p_copy, const std::chrono::duration<double> &gpu_nocopy, const std::chrono::duration<double> &pen ) {
-        std::cout << std::fixed << std::setprecision(3);
+        std::cout << std::fixed << std::setprecision(6);
         std::cout << std::setw(8) << cpu       .count() << "s -";
         std::cout << std::setw(8) << gpu_p_copy.count() << "s -";
         std::cout << std::setw(8) << gpu_nocopy.count() << "s -";
