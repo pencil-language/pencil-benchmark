@@ -13,7 +13,7 @@
 #include <tbb/task_scheduler_init.h>
 
 
-const int processed_frames = 100;
+const int processed_frames = 1;
 
 int main()
 {

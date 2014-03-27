@@ -158,6 +158,6 @@ int main(int argc, char* argv[])
     std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
 
     auto pool = carp::get_pool("pool");
-    time_filter2D( pool, 3 );
+    time_filter2D( pool, 1 );
     return EXIT_SUCCESS;
 } // main
