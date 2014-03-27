@@ -17,9 +17,12 @@ TBB_INCLUDE_DIR=/usr/include/
 TBB_LIB_DIR=/usr/lib/
 TBB_LIBS=-ltbb -ltbbmalloc
 
-OPENCL_INCLUDE=/usr/include/
-OPENCL_LIB_DIR=/usr/lib/
+OPENCL_PREFIX=/usr/
+OPENCL_INCLUDE=$(OPENCL_PREFIX)/include/
+OPENCL_LIB_DIR=$(OPENCL_PREFIX)/lib/
 OPENCL_LIB=-lOpenCL
+
+PPCG_OPTIONS=--no-shared-memory 
 
 # Optimization Flags
 
@@ -148,25 +151,25 @@ $(BUILD_DIR)/test_resize: all_opencl $(BUILD_DIR)/libcarp_pencil.so ./resize/tes
 all_pencil_source: $(BUILD_DIR)/gaussian.pencil_kernel.cl $(BUILD_DIR)/cvt_color.pencil_kernel.cl $(BUILD_DIR)/filter2D.pencil_kernel.cl $(BUILD_DIR)/dilate.pencil_kernel.cl $(BUILD_DIR)/warpAffine/warpAffine.pencil_kernel.cl $(BUILD_DIR)/resize/resize.pencil_kernel.cl $(BUILD_DIR)/mlp/mlp_impl.pencil_kernel.cl
 
 $(BUILD_DIR)/gaussian.pencil_kernel.cl: ./gaussian/gaussian.pencil.c
-	cd $(BUILD_DIR); $(PPCG_COMPILER) --target=opencl ../gaussian/gaussian.pencil.c
+	cd $(BUILD_DIR); $(PPCG_COMPILER) $(PPCG_OPTIONS) --target=opencl ../gaussian/gaussian.pencil.c
 
 $(BUILD_DIR)/cvt_color.pencil_kernel.cl: ./cvt_color/cvt_color.pencil.c
-	cd $(BUILD_DIR); $(PPCG_COMPILER) --target=opencl ../cvt_color/cvt_color.pencil.c
+	cd $(BUILD_DIR); $(PPCG_COMPILER) $(PPCG_OPTIONS) --target=opencl ../cvt_color/cvt_color.pencil.c
 
 $(BUILD_DIR)/filter2D.pencil_kernel.cl: ./filter2D/filter2D.pencil.c
-	cd $(BUILD_DIR); $(PPCG_COMPILER) --target=opencl ../filter2D/filter2D.pencil.c
+	cd $(BUILD_DIR); $(PPCG_COMPILER) $(PPCG_OPTIONS) --target=opencl ../filter2D/filter2D.pencil.c
 
 $(BUILD_DIR)/dilate.pencil_kernel.cl: ./dilate/dilate.pencil.c
-	cd $(BUILD_DIR); $(PPCG_COMPILER) --target=opencl ../dilate/dilate.pencil.c
+	cd $(BUILD_DIR); $(PPCG_COMPILER) $(PPCG_OPTIONS) --target=opencl ../dilate/dilate.pencil.c
 
 $(BUILD_DIR)/warpAffine/warpAffine.pencil_kernel.cl: ./warpAffine/warpAffine.pencil.c
-	cd $(BUILD_DIR); $(PPCG_COMPILER) --target=opencl ../warpAffine/warpAffine.pencil.c
+	cd $(BUILD_DIR); $(PPCG_COMPILER) $(PPCG_OPTIONS) --target=opencl ../warpAffine/warpAffine.pencil.c
 
 $(BUILD_DIR)/resize/resize.pencil_kernel.cl: ./resize/resize.pencil.c
-	cd $(BUILD_DIR); $(PPCG_COMPILER) --target=opencl ../resize/resize.pencil.c
+	cd $(BUILD_DIR); $(PPCG_COMPILER) $(PPCG_OPTIONS) --target=opencl ../resize/resize.pencil.c
 
 $(BUILD_DIR)/mlp/mlp_impl.pencil_kernel.cl: ./mlp/mlp_impl.pencil.c
-	cd $(BUILD_DIR); $(PPCG_COMPILER) --target=opencl ../mlp/mlp_impl.pencil.c
+	cd $(BUILD_DIR); $(PPCG_COMPILER) $(PPCG_OPTIONS)--target=opencl ../mlp/mlp_impl.pencil.c
 
 PPCG_INCLUDES=-I./gaussian -I./cvt_color -I./filter2D -I./dilate -I./warpAffine -I./resize -I./mlp
 
