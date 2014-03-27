@@ -31,7 +31,7 @@ LDFLAGS=-L$(OPENCL_LIB_DIR) $(OPENCL_LIB) -L$(OPENCV_LIB_DIR) $(OPENCV_LIBS) -L$
 all: all_test all_ppcg_test mlp_data
 
 clean: 
-	-rm -f -r $(BUILD_DIR)/*
+	-rm -f $(BUILD_DIR)/*
 	
 mlp_data: $(BUILD_DIR)/pool/response_dumps.xml
 
