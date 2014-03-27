@@ -81,6 +81,11 @@ int main(int argc, char* argv[])
 
     auto pool = carp::get_pool("pool");
     size_t num_iterations = 10;
+
+#ifdef RUN_ONLY_ONE_EXPERIMENT
+    num_iterations = 1;
+#endif
+
     time_cvtColor( pool, num_iterations );
 
     return EXIT_SUCCESS;

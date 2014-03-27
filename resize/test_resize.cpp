@@ -171,7 +171,13 @@ int main(int argc, char* argv[])
     std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
 
     auto pool = carp::get_pool("pool");
+
+#ifdef RUN_ONLY_ONE_EXPERIMENT
+    std::vector<cv::Size> sizes{ {640, 480} };
+#else
     std::vector<cv::Size> sizes{ {320, 240}, {640, 480}, {1024, 768}, {1200, 900}, {1600, 1200} };
+#endif
+
     time_resize( pool, sizes );
     return EXIT_SUCCESS;
 } // main
