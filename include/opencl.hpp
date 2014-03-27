@@ -163,7 +163,11 @@ public:
         std::vector<size_t> kernelsize = utility::roundup(groupsize, worksize);
 
 #ifndef PRINT_OPENCL_PROFILING_KERNEL_EXEC_TIME
-        utility::checkerror(clEnqueueNDRangeKernel( cqCommandQueue.get(), cqKernel.get(), worksize.size(), NULL, kernelsize.data(), groupsize.data(), 0, NULL, NULL ), __FILE__, __LINE__ );
+        cl_event event;
+
+        utility::checkerror(clEnqueueNDRangeKernel( cqCommandQueue.get(), cqKernel.get(), worksize.size(), NULL, kernelsize.data(), groupsize.data(), 0, NULL, &event ), __FILE__, __LINE__ );
+        clWaitForEvents(1, &event);
+	clReleaseEvent(event);
 #else
         cl_event event;
         long long start, end;
