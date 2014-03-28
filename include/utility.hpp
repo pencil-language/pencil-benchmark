@@ -29,14 +29,14 @@ class Timing
 public:
     Timing(const std::string & name) {
         std::cout << "Measuring performance of " << name << std::endl;
-        std::cout << " CPU Time - GPU+copy - GPU Time - PEN Time" << std::endl;
+        std::cout << " CPU Time -  GPU+copy -  GPU Time -  PEN Time" << std::endl;
     }
 
     void print( const std::chrono::duration<double> &cpu, const std::chrono::duration<double> &gpu_p_copy, const std::chrono::duration<double> &gpu_nocopy, const std::chrono::duration<double> &pen ) {
         std::cout << std::fixed << std::setprecision(6);
-        std::cout << std::setw(8) << cpu       .count() << "s -";
-        std::cout << std::setw(8) << gpu_p_copy.count() << "s -";
-        std::cout << std::setw(8) << gpu_nocopy.count() << "s -";
+        std::cout << std::setw(8) << cpu       .count() << "s - ";
+        std::cout << std::setw(8) << gpu_p_copy.count() << "s - ";
+        std::cout << std::setw(8) << gpu_nocopy.count() << "s - ";
         std::cout << std::setw(8) << pen       .count() << "s" << std::endl;
 
 	cpu_timings       .push_back(cpu       .count());

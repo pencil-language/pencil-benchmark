@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
     std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
 
     auto pool = carp::get_pool("pool");
-    size_t num_iterations = 10;
+    size_t num_iterations = 100;
 
 #ifdef RUN_ONLY_ONE_EXPERIMENT
     num_iterations = 1;

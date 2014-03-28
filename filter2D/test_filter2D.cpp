@@ -162,7 +162,7 @@ int main(int argc, char* argv[])
 #ifdef RUN_ONLY_ONE_EXPERIMENT
     time_filter2D( pool, 1 );
 #else
-    time_filter2D( pool, 3 );
+    time_filter2D( pool, 35 );
 #endif
 
     return EXIT_SUCCESS;

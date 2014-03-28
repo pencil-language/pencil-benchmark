@@ -101,87 +101,89 @@ void warpAffine( carp::opencl::device & device, const cv::ocl::oclMat & src, cv:
 
 } // namespace carp
 
-void time_affine( const std::vector<carp::record_t>& pool )
+void time_affine( const std::vector<carp::record_t>& pool, int iteration )
 {
     carp::Timing timing("affine transform");
 
-    for ( auto & item : pool ) {
-        PRINT(item.path());
+    for ( int q=0; q<iteration; q++ ) {
+        for ( auto & item : pool ) {
+            PRINT(item.path());
 
-        cv::Mat cpu_gray;
-        cv::cvtColor( item.cpuimg(), cpu_gray, CV_RGB2GRAY );
-        cpu_gray.convertTo( cpu_gray, CV_32F, 1.0/255. );
+            cv::Mat cpu_gray;
+            cv::cvtColor( item.cpuimg(), cpu_gray, CV_RGB2GRAY );
+            cpu_gray.convertTo( cpu_gray, CV_32F, 1.0/255. );
 
-        std::vector<float> transform_data = { 2.0f, 0.5f, -500.0f
-                                            , 0.333f, 3.0f, -500.0f
-                                            };
-        cv::Mat transform( 2, 3, CV_32F, transform_data.data() );
+            std::vector<float> transform_data = { 2.0f, 0.5f, -500.0f
+                                                , 0.333f, 3.0f, -500.0f
+                                                };
+            cv::Mat transform( 2, 3, CV_32F, transform_data.data() );
 
-        cv::Mat cpu_result, gpu_result, pen_result;
-        std::chrono::duration<double> elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil;
+            cv::Mat cpu_result, gpu_result, pen_result;
+            std::chrono::duration<double> elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil;
 
-        {
-            const auto cpu_start = std::chrono::high_resolution_clock::now();
-            cv::warpAffine( cpu_gray, cpu_result, transform, cpu_gray.size() );
-            const auto cpu_end = std::chrono::high_resolution_clock::now();
-            elapsed_time_cpu = cpu_end - cpu_start;
+            {
+                const auto cpu_start = std::chrono::high_resolution_clock::now();
+                cv::warpAffine( cpu_gray, cpu_result, transform, cpu_gray.size() );
+                const auto cpu_end = std::chrono::high_resolution_clock::now();
+                elapsed_time_cpu = cpu_end - cpu_start;
+            }
+            {
+                cv::ocl::Context * context = cv::ocl::Context::getContext();
+                carp::opencl::device device(context);
+                device.source_compile( imgproc_warpAffine_cl, imgproc_warpAffine_cl_len
+                                     , { "warpAffineNN_C1_D0", "warpAffineLinear_C1_D0", "warpAffineCubic_C1_D0", "warpAffineNN_C4_D0"
+                                       , "warpAffineLinear_C4_D0", "warpAffineCubic_C4_D0", "warpAffineNN_C1_D5", "warpAffineLinear_C1_D5"
+                                       , "warpAffineCubic_C1_D5", "warpAffineNN_C4_D5", "warpAffineLinear_C4_D5", "warpAffineCubic_C4_D5"
+                                       }
+                                     , "-D DOUBLE_SUPPORT"
+                                     );
+                const auto gpu_start_copy = std::chrono::high_resolution_clock::now();
+                cv::ocl::oclMat gpu_gray(cpu_gray);
+                cv::ocl::oclMat gpu_affine;
+                const auto gpu_start = std::chrono::high_resolution_clock::now();
+                carp::warpAffine( device, gpu_gray, gpu_affine, transform, gpu_gray.size() );
+                const auto gpu_end = std::chrono::high_resolution_clock::now();
+                gpu_result = gpu_affine;
+                const auto gpu_end_copy = std::chrono::high_resolution_clock::now();
+                elapsed_time_gpu_p_copy = gpu_end_copy - gpu_start_copy;
+                elapsed_time_gpu_nocopy = gpu_end      - gpu_start;
+            }
+            {
+                // verifying the pencil code
+                pen_result.create( cpu_gray.size(), CV_32F );
+                convert_coeffs(reinterpret_cast<float*>(transform.data));
+
+                const auto pencil_start = std::chrono::high_resolution_clock::now();
+                pencil_affine_linear( cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<float>()
+                                    , pen_result.rows, pen_result.cols, pen_result.step1(), pen_result.ptr<float>(),
+                        transform.at<float>(0,0), transform.at<float>(0,1), transform.at<float>(1,0), transform.at<float>(1,1),
+                        transform.at<float>(1,2), transform.at<float>(0,2) );
+                const auto pencil_end = std::chrono::high_resolution_clock::now();
+                elapsed_time_pencil = pencil_end - pencil_start;
+            }
+            // Verifying the results
+            if ( (cv::norm(cv::abs(cpu_result - gpu_result), cv::NORM_INF ) > 1 ) || (cv::norm(cv::abs(cpu_result - pen_result), cv::NORM_INF ) > 1 ) )
+            {
+                PRINT(cv::norm(cv::abs(cpu_result - gpu_result), cv::NORM_INF ));
+                PRINT(cv::norm(cv::abs(cpu_result - pen_result), cv::NORM_INF ));
+
+                cv::Mat gpu_result8;
+                cv::Mat cpu_result8;
+                cv::Mat pen_result8;
+
+                gpu_result.convertTo( gpu_result8, CV_8UC1, 255. );
+                cpu_result.convertTo( cpu_result8, CV_8UC1, 255. );
+                pen_result.convertTo( pen_result8, CV_8UC1, 255. );
+
+                cv::imwrite( "gpu_affine.png", gpu_result8 );
+                cv::imwrite( "cpu_affine.png", cpu_result8 );
+                cv::imwrite( "pencil_affine.png", pen_result8 );
+
+                throw std::runtime_error("The GPU results are not equivalent with the CPU results.");
+            }
+
+            timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil );
         }
-        {
-            cv::ocl::Context * context = cv::ocl::Context::getContext();
-            carp::opencl::device device(context);
-            device.source_compile( imgproc_warpAffine_cl, imgproc_warpAffine_cl_len
-                                 , { "warpAffineNN_C1_D0", "warpAffineLinear_C1_D0", "warpAffineCubic_C1_D0", "warpAffineNN_C4_D0"
-                                   , "warpAffineLinear_C4_D0", "warpAffineCubic_C4_D0", "warpAffineNN_C1_D5", "warpAffineLinear_C1_D5"
-                                   , "warpAffineCubic_C1_D5", "warpAffineNN_C4_D5", "warpAffineLinear_C4_D5", "warpAffineCubic_C4_D5"
-                                   }
-                                 , "-D DOUBLE_SUPPORT"
-                                 );
-            const auto gpu_start_copy = std::chrono::high_resolution_clock::now();
-            cv::ocl::oclMat gpu_gray(cpu_gray);
-            cv::ocl::oclMat gpu_affine;
-            const auto gpu_start = std::chrono::high_resolution_clock::now();
-            carp::warpAffine( device, gpu_gray, gpu_affine, transform, gpu_gray.size() );
-            const auto gpu_end = std::chrono::high_resolution_clock::now();
-            gpu_result = gpu_affine;
-            const auto gpu_end_copy = std::chrono::high_resolution_clock::now();
-            elapsed_time_gpu_p_copy = gpu_end_copy - gpu_start_copy;
-            elapsed_time_gpu_nocopy = gpu_end      - gpu_start;
-        }
-        {
-            // verifying the pencil code
-            pen_result.create( cpu_gray.size(), CV_32F );
-            convert_coeffs(reinterpret_cast<float*>(transform.data));
-
-            const auto pencil_start = std::chrono::high_resolution_clock::now();
-            pencil_affine_linear( cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<float>()
-                                , pen_result.rows, pen_result.cols, pen_result.step1(), pen_result.ptr<float>(),
-                    transform.at<float>(0,0), transform.at<float>(0,1), transform.at<float>(1,0), transform.at<float>(1,1),
-                    transform.at<float>(1,2), transform.at<float>(0,2) );
-            const auto pencil_end = std::chrono::high_resolution_clock::now();
-            elapsed_time_pencil = pencil_end - pencil_start;
-        }
-        // Verifying the results
-        if ( (cv::norm(cv::abs(cpu_result - gpu_result), cv::NORM_INF ) > 1) || (cv::norm(cv::abs(cpu_result - pen_result), cv::NORM_INF ) > 1) )
-        {
-            PRINT(cv::norm(cv::abs(cpu_result - gpu_result), cv::NORM_INF ));
-            PRINT(cv::norm(cv::abs(cpu_result - pen_result), cv::NORM_INF ));
-
-            cv::Mat gpu_result8;
-            cv::Mat cpu_result8;
-            cv::Mat pen_result8;
-
-            gpu_result.convertTo( gpu_result8, CV_8UC1, 255. );
-            cpu_result.convertTo( cpu_result8, CV_8UC1, 255. );
-            pen_result.convertTo( pen_result8, CV_8UC1, 255. );
-
-            cv::imwrite( "gpu_affine.png", gpu_result8 );
-            cv::imwrite( "cpu_affine.png", cpu_result8 );
-            cv::imwrite( "pencil_affine.png", pen_result8 );
-
-            throw std::runtime_error("The GPU results are not equivalent with the CPU results.");
-        }
-
-        timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil );
     }
 }
 
@@ -191,6 +193,10 @@ int main(int argc, char* argv[])
     std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
 
     auto pool = carp::get_pool("pool");
-    time_affine( pool );
+#ifdef RUN_ONLY_ONE_EXPERIMENT
+    time_affine( pool,  1 );
+#else
+    time_affine( pool, 45 );
+#endif
     return EXIT_SUCCESS;
 } // main

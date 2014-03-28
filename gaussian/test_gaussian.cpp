@@ -251,9 +251,9 @@ int main(int argc, char* argv[])
 
     auto pool = carp::get_pool("pool");
 #ifdef RUN_ONLY_ONE_EXPERIMENT
-    time_gaussian( pool, {5} );
+    time_gaussian( pool, {25} );
 #else
-    time_gaussian( pool, {5, 9, 11, 25, 41} );
+    time_gaussian( pool, {5, 15, 25, 35, 45} );
 #endif
 
     return EXIT_SUCCESS;
