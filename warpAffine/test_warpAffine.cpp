@@ -118,7 +118,7 @@ void time_affine( const std::vector<carp::record_t>& pool )
         cv::Mat transform( 2, 3, CV_32F, transform_data.data() );
 
         cv::Mat cpu_result, gpu_result, pen_result;
-        std::chrono::microseconds elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil;
+        std::chrono::duration<double> elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil;
 
         {
             const auto cpu_start = std::chrono::high_resolution_clock::now();

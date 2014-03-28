@@ -168,7 +168,7 @@ void time_dilate( const std::vector<carp::record_t>& pool, const std::vector<int
             cv::Mat structuring_element = cv::getStructuringElement( cv::MORPH_ELLIPSE, ksize, anchor );
 
             cv::Mat cpu_result, gpu_result, pen_result;
-            std::chrono::microseconds elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil;
+            std::chrono::duration<double> elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil;
 
             {
                 const auto cpu_start = std::chrono::high_resolution_clock::now();

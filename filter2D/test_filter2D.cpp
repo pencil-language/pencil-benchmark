@@ -88,7 +88,7 @@ void time_filter2D( const std::vector<carp::record_t>& pool, int iteration )
             cv::Mat kernel_cpu(3, 3, CV_32F, kernel_data);
 
             cv::Mat cpu_result, gpu_result, pen_result;
-            std::chrono::microseconds elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil;
+            std::chrono::duration<double> elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil;
 
             {
                 const auto cpu_start = std::chrono::high_resolution_clock::now();
@@ -161,7 +161,7 @@ int main(int argc, char* argv[])
 
 #ifdef RUN_ONLY_ONE_EXPERIMENT
     time_filter2D( pool, 1 );
-#else    
+#else
     time_filter2D( pool, 3 );
 #endif
 

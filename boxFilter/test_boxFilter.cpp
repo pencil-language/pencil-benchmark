@@ -50,7 +50,7 @@ time_boxFilter( T0 & pool )
         for ( auto size : ksizes ) {
 
             PRINT(size);
-            std::chrono::microseconds elapsed_time_cpu(0), elapsed_time_gpu(0), elapsed_time_pencil(999999);
+            std::chrono::duration<double> elapsed_time_cpu(0), elapsed_time_gpu(0), elapsed_time_pencil(999999);
 
             for ( auto & border_type : border_types ) {
                 // PRINT(border_type.first);

@@ -170,7 +170,7 @@ void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<i
             cpu_gray.convertTo( cpu_gray, CV_32F, 1.0/255. );
 
             cv::Mat cpu_result, gpu_result, pen_result;
-            std::chrono::microseconds elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil;
+            std::chrono::duration<double> elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil;
 
             {
                 const auto cpu_start = std::chrono::high_resolution_clock::now();

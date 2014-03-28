@@ -26,7 +26,7 @@ time_integral( T0 & pool, int iteration )
                 cv::resize(cpu_gray, cpu_gray, cv::Size(2901,2901));
 
             cv::Mat cpu_result, gpu_result;
-            std::chrono::microseconds elapsed_time_cpu(0), elapsed_time_gpu(0), elapsed_time_pen(99999);
+            std::chrono::duration<double> elapsed_time_cpu(0), elapsed_time_gpu(0), elapsed_time_pen(99999);
 
             {
                 auto cpu_start = std::chrono::high_resolution_clock::now();

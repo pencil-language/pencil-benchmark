@@ -18,7 +18,7 @@ const int processed_frames = 100;
 int main()
 {
     carp::conductor_t conductor;
-    std::chrono::duration<float> elapsed_time(0);
+    std::chrono::duration<double> elapsed_time(0);
 
     int numberOfThreads =  tbb::tbb_thread::hardware_concurrency();
     PRINT(numberOfThreads);
