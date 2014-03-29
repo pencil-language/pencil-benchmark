@@ -138,7 +138,7 @@ run()
 	  echo -n "$DELIMITER" >> ${OUTPUT_TIME_FILE}.${KERNEL}.csv
   else
 	  echo " ERROR in ./ppcg_test_${KERNEL}" >> $LOG_FILE
-	  echo -n "0 $DELIMITER 0 $DELIMITER" >> ${OUTPUT_TIME_FILE}.${KERNEL}.csv
+	  echo -n "9999 $DELIMITER 9999 $DELIMITER" >> ${OUTPUT_TIME_FILE}.${KERNEL}.csv
   fi
 
   echo "--------------------------------------------------" >> $LOG_FILE
