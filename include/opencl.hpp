@@ -338,7 +338,7 @@ public:
         cpProgram.reset( tmp_cpProgram, clReleaseProgram );
 
         // building the OpenCL source code
-        err = clBuildProgram( cpProgram.get(), devices.size(), devices.data(), coptions, NULL, NULL );
+        err = clBuildProgram( cpProgram.get(), 1, devices.data(), coptions, NULL, NULL );
         if ( err!=CL_SUCCESS )
         {
             size_t len;
