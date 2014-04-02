@@ -177,7 +177,7 @@ int main(int argc, char* argv[])
     auto pool = carp::get_pool("pool");
 
 #ifdef RUN_ONLY_ONE_EXPERIMENT
-    std::vector<cv::Size> sizes{ {640, 480} };
+    std::vector<cv::Size> sizes{ {1024, 768} };
     int iteration = 1;
 #else
     std::vector<cv::Size> sizes{ {320, 240}, {640, 480}, {1024, 768}, {1200, 900}, {1600, 1200} };
