@@ -6,22 +6,22 @@ PPCG_COMPILER=~/src/ppcgs/ppcg-gforge-pet-tree/ppcg
 BENCH_ROOT=~/src/pencil_codes/CARP-Benchmarks/
 OPENCL_PREFIX=/opt/AMDAPP/
 
-#M104_ngc4594_sombrero_galaxy_hi-res.jpg
+#Kings_Cross_Western_Concourse_-_central_position_-_2012-05-02.75.jpg
 
 PPCG_EXTRA_OPTIONS="--target=opencl --opencl-print-kernels-exec-time" 
 
-# TUNE_WORKGROUP_AND_BLOCK_SIZES is forced to 0 when compiling MIXED kernels.
+# TUNE_WORKGROUP_AND_BLOCK_SIZES is forced to 0 when DEFAULT is used in DIMENSIONS
 TUNE_WORKGROUP_AND_BLOCK_SIZES=1
 COMPILE_WITH_PPCG=1
 AUTOTUNE=1
 
-#LIST_OF_KERNELS="cvt_color"
-#DIMENSIONS="2D"
-
 LIST_OF_KERNELS="resize dilate cvt_color warpAffine filter2D gaussian"
-DIMENSIONS="1D 1D 2D 2D MIXED MIXED"
+DIMENSIONS="1D-2D 1D-2D 1D-2D 1D-2D 1D-2D 1D-2D"
 
-NB_TESTS=5
+#LIST_OF_KERNELS="resize dilate cvt_color warpAffine filter2D gaussian"
+#DIMENSIONS="1D 1D 2D 2D DEFAULT DEFAULT"
+
+NB_TESTS=10
 PEROFRM_ONLY_ONE_TEST=1
 OUTPUT_TIME_FILE="output_time"
 TEMP_OUTPUT_FILE=temp_output_file
@@ -41,19 +41,23 @@ TUNING_FUSION[1]="--isl-schedule-fuse=min"
 # GPU options
 TUNING_SHARED_MEM[0]=""
 TUNING_SHARED_MEM[1]="--no-shared-memory"
-TUNING_PRIVATE_MEM[0]=""
-TUNING_PRIVATE_MEM[1]="--no-private-memory"
+#TUNING_PRIVATE_MEM[0]=""
+#TUNING_PRIVATE_MEM[1]="--no-private-memory"
+TUNING_PRIVATE_MEM[0]="--no-private-memory"
 
-#Work group sizes
-TUNING_TILE_SIZES[0]="64 128 256" #8 128 256 
+#Block sizes
+TUNING_TILE_SIZES[0]="64 128 256" #8 128 256
 TUNING_TILE_SIZES[1]="16,16 32,8 8,32"  #16,16  32,32  64,64
+TUNING_TILE_SIZES[2]="64 128 256 16,16 32,8 8,32"
 
-TUNING_GRID_SIZES[0]="4608896 256" #64 512 1024 128
-TUNING_GRID_SIZES[1]="2880,1664 16,16" #32,32
+TUNING_GRID_SIZES[0]="6255072 256" #64 512 1024 128
+TUNING_GRID_SIZES[1]="3712,1696 16,16" #32,32
+TUNING_GRID_SIZES[2]="6255072 256 3712,1696 16,16"
 
 #Tile sizes
 TUNING_BLOCK_SIZES[0]="1 16 32" #4 16 32 64 #8 128 256
 TUNING_BLOCK_SIZES[1]="1,1 8,8 16,16" #2,4  4,2  4,4  8,8  16,16  #4,8  8,4  16,16  32,32  8,1  1,8
+TUNING_BLOCK_SIZES[2]="16 32 8,8 16,16"
 
 #OpenCL options
 # The following option may be contradictory with the same option set in the PPCG_OMP_BASIC_OPTIONS.
@@ -66,6 +70,11 @@ DEFINES=""
 if [ $PEROFRM_ONLY_ONE_TEST = 1 ]; then
 	DEFINES="$DEFINES -DRUN_ONLY_ONE_EXPERIMENT"
 fi
+
+for dim in $DIMENSIONS; do
+        DIMENSION_ARRAY[$id]=$dim
+        id=`expr $id + 1`
+done
 ######################################################################"
 
 # INPUT: a boolean.
@@ -170,12 +179,17 @@ DIMENSION=$2
 
 	if [ $DIMENSION = "1D" ]; then
 		DIM=0
-	else if [ $DIMENSION = "2D" ]; then
-		DIM=1
-	     else if [ $DIMENSION = "MIXED" ]; then
-		     TUNE_WORKGROUP_AND_BLOCK_SIZES=0
-	          fi
-	     fi
+	else
+		if [ $DIMENSION = "2D" ]; then
+			DIM=1
+		else if [ $DIMENSION = "1D-2D" ]; then
+				DIM=2
+		     else
+			     if [ $DIMENSION = "DEFAULT" ]; then
+			     	TUNE_WORKGROUP_AND_BLOCK_SIZES=0
+	               	     fi
+	             fi	     
+	       fi
 	fi
 
 	NB_TEST_1=`echo ${TUNING_BLOCK_SIZES[$DIM]} | wc -w`
@@ -259,10 +273,10 @@ DIMENSION=$2
 cd build
 rm -rf $LOG_FILE
 
+id=0;
 for ker in ${LIST_OF_KERNELS}; do
-	id=0;
 	PREPARE_OUTPUT_FILE $ker;
-	AUTO_TUNE $ker ${DIMENSIONS[$id]}
+	AUTO_TUNE $ker ${DIMENSION_ARRAY[$id]}
 	id=`expr $id + 1`
 done
 
