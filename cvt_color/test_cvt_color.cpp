@@ -11,7 +11,6 @@
 
 void time_cvtColor( const std::vector<carp::record_t>& pool, size_t iterations)
 {
-    int bidx = 2;
     carp::Timing timing("cvt_color");
     for ( auto & record : pool ) {
         PRINT(record.path());
@@ -40,7 +39,7 @@ void time_cvtColor( const std::vector<carp::record_t>& pool, size_t iterations)
 
                 const auto start = std::chrono::high_resolution_clock::now();
                 device["RGB2Gray"]( gpuimg.cols, gpuimg.rows, static_cast<int>(gpuimg.step), static_cast<int>(gpu_gray.step)
-                                  , gpuimg.channels()+1, bidx, reinterpret_cast<cl_mem>(gpuimg.data), reinterpret_cast<cl_mem>(gpu_gray.data)
+                                  , gpuimg.channels()+1, 2, reinterpret_cast<cl_mem>(gpuimg.data), reinterpret_cast<cl_mem>(gpu_gray.data)
                                   ).groupsize( {16,16}, {cpuimg.cols, cpuimg.rows});
                 const auto end = std::chrono::high_resolution_clock::now();
                 gpu_result = gpu_gray;
@@ -53,7 +52,7 @@ void time_cvtColor( const std::vector<carp::record_t>& pool, size_t iterations)
 
                 const auto pencil_start = std::chrono::high_resolution_clock::now();
                 pencil_RGB2Gray( cpuimg.rows, cpuimg.cols, cpuimg.step1()/cpuimg.channels(), pen_result.step1()
-                               , cpuimg.channels(), bidx, cpuimg.data, pen_result.data
+                               , cpuimg.data, pen_result.data
                                );
                 const auto pencil_end = std::chrono::high_resolution_clock::now();
                 elapsed_time_pencil = pencil_end - pencil_start;

@@ -8,14 +8,10 @@
 extern "C" {
 #endif
 
-void
-pencil_resize_LN (
-    int original_rows,  int original_cols,  int original_step,  uint8_t original[],
-    int resampled_rows, int resampled_cols, int resampled_step, uint8_t resampled[] );
+void pencil_resize_LN( const int original_rows,  const int original_cols,  const int original_step,  const uint8_t original[]
+                     , const int resampled_rows, const int resampled_cols, const int resampled_step,       uint8_t resampled[]
+                     );
 
 #ifdef __cplusplus
 } // extern "C"
 #endif
-
-
-// LuM end of file

@@ -16,24 +16,27 @@ static void gaussian( const int rows
                     )
 {
 #pragma scop
-    {
-#if 0
-        __pencil_assume(kernelX_rows>0);
-        __pencil_assume(kernelX_cols>0);
-        __pencil_assume(kernelX_step>0);
-        __pencil_assume(kernelY_rows>0);
-        __pencil_assume(kernelY_cols>0);
-        __pencil_assume(kernelY_step>0);
+#if __PENCIL__
+    __pencil_assume(rows         >  0);
+    __pencil_assume(cols         >  0);
+    __pencil_assume(step         >= cols);
+    __pencil_assume(kernelX_rows >  0);
+    __pencil_assume(kernelX_cols >  0);
+    __pencil_assume(kernelX_step >= kernelX_cols);
+    __pencil_assume(kernelY_rows >  0);
+    __pencil_assume(kernelY_cols >  0);
+    __pencil_assume(kernelY_step >= kernelY_cols);
 #endif
+    {
         float temp[rows][step];
-#       pragma pencil independent
+        #pragma pencil independent
         for ( int q = 0; q < rows; q++ )
         {
-#           pragma pencil independent
+            #pragma pencil independent
             for ( int w = 0; w < cols; w++ )
             {
                 float prod = 0.;
-#               pragma pencil independent reduction (+: prod);
+                #pragma pencil independent reduction (+: prod);
                 for ( int e = 0; e < kernelX_rows; e++ )
                 {
                     for ( int r = 0; r < kernelX_cols; r++ )
@@ -50,14 +53,14 @@ static void gaussian( const int rows
                 temp[q][w] = prod;
             }
         }
-#       pragma pencil independent
+        #pragma pencil independent
         for ( int q = 0; q < rows; q++ )
         {
-#           pragma pencil independent
+            #pragma pencil independent
             for ( int w = 0; w < cols; w++ )
             {
                 float prod = 0.;
-#               pragma pencil independent reduction (+: prod);
+                #pragma pencil independent reduction (+: prod);
                 for ( int e = 0; e < kernelY_rows; e++ )
                 {
                     for ( int r = 0; r < kernelY_cols; r++ )

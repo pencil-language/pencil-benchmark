@@ -204,7 +204,7 @@ void time_dilate( const std::vector<carp::record_t>& pool, const std::vector<int
                     pencil_dilate( cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr()
                                  , pen_result.step1(), pen_result.ptr()
                                  , structuring_element.rows, structuring_element.cols, structuring_element.step1(), structuring_element.ptr()
-                                 , anchor.x, anchor.y, cv::BORDER_CONSTANT
+                                 , anchor.x, anchor.y
                                  );
                     const auto pencil_end = std::chrono::high_resolution_clock::now();
                     elapsed_time_pencil = pencil_end - pencil_start;

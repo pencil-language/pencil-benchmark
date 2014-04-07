@@ -45,19 +45,15 @@ extern "C" {
         B2Y        = 1868,
         BLOCK_SIZE = 256
     };
-    
-    
-    void 
-    pencil_RGB2Gray( 
-        int rows, 
-        int cols, 
-        int src_step,
-        int dst_step, 
-        int channels,
-        int bidx, 
-        const DATA_TYPE src[], 
-        DATA_TYPE dst[] );
-    
+
+
+    void pencil_RGB2Gray( const int rows
+                        , const int cols
+                        , const int src_step
+                        , const int dst_step
+                        , const DATA_TYPE src[]
+                        , DATA_TYPE dst[]
+                        );
 
 #ifdef __cplusplus
 } // extern "C"

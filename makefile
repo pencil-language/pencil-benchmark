@@ -22,7 +22,7 @@ OPENCL_INCLUDE=$(OPENCL_PREFIX)/include/
 OPENCL_LIB_DIR=$(OPENCL_PREFIX)/lib/
 OPENCL_LIB=-lOpenCL
 
-PPCG_OPTIONS=--no-shared-memory 
+PPCG_OPTIONS=--no-shared-memory -D__PENCIL__ 
 
 # Optimization Flags
 
