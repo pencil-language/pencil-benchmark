@@ -46,10 +46,10 @@ static void resize( const int original_rows
     __pencil_assume(resampled_step >= resampled_cols);
 #endif
     {
-        const float o_h = original_rows;
-        const float o_w = original_cols;
-        const float n_h = resampled_rows;
-        const float n_w = resampled_cols;
+        float o_h = original_rows;
+        float o_w = original_cols;
+        float n_h = resampled_rows;
+        float n_w = resampled_cols;
 
         #pragma pencil independent
         for ( int n_r = 0; n_r < resampled_rows; n_r++ )
