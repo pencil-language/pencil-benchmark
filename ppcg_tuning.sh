@@ -29,6 +29,7 @@ TEMP_TIME_FILE_1=temp_time_file_1
 TEMP_TIME_FILE_2=temp_time_file_2
 LOG_FILE=log
 DELIMITER="/"
+WAIT_TIME=180
 ######################################################################"
 # Tuning options
 
@@ -127,6 +128,16 @@ run()
   KERNEL=$1
 
   rm -rf $TEMP_TIME_FILE_1 $TEMP_TIME_FILE_2 $TEMP_OUTPUT_FILE
+
+  if [ -f $BENCH_ROOT/stop ]; then
+	echo -n "    .Waiting $WAIT_TIME seconds: "
+	for ((t=0;t<$WAIT_TIME;t++)); do
+		sleep 1
+		echo -n "$t "
+	done
+  	rm $BENCH_ROOT/stop
+	echo
+  fi
 
   echo -n "    .running ./ppcg_test_${KERNEL}: "
  
