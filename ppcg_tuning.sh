@@ -29,7 +29,7 @@ TEMP_TIME_FILE_1=temp_time_file_1
 TEMP_TIME_FILE_2=temp_time_file_2
 LOG_FILE=log
 DELIMITER="/"
-WAIT_TIME=180
+WAIT_TIME=300
 ######################################################################"
 # Tuning options
 
@@ -281,6 +281,7 @@ DIMENSION=$2
 	echo "--------------------------------------------------"
 }
 
+./prepare_pool.sh 
 cd build
 rm -rf $LOG_FILE
 
@@ -292,3 +293,5 @@ for ker in ${LIST_OF_KERNELS}; do
 done
 
 cd ..
+./restore_pool.sh
+

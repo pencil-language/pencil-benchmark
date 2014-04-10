@@ -101,6 +101,7 @@ if [ $USE_DEFAULT_MAKE_FILE = 1 ]; then
 	echo "-------------------------------------------------------"
 fi
 
+./prepare_pool.sh
 cd build
 rm -rf $LOG_FILE
 
@@ -117,3 +118,4 @@ for ker in ${LIST_OF_KERNELS}; do
 done
 
 cd ..
+./restore_pool.sh
