@@ -6,7 +6,7 @@ PPCG_COMPILER=~/src/ppcgs/ppcg-gforge-pet-tree/ppcg
 BENCH_ROOT=~/src/pencil_codes/CARP-Benchmarks/
 OPENCL_PREFIX=/opt/AMDAPP/
 
-PPCG_EXTRA_OPTIONS="--target=opencl --opencl-print-kernels-exec-time" 
+PPCG_EXTRA_OPTIONS="--target=opencl --opencl-print-kernels-time-measurements" 
 LIST_OF_KERNELS="resize dilate cvt_color warpAffine filter2D gaussian"
 
 PPCG_OPTIONS[0]="--isl-schedule-fuse=min --no-shared-memory --no-private-memory --sizes={kernel[i]->tile[128];kernel[i]->grid[256];kernel[i]->block[16]}"

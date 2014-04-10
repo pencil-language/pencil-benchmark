@@ -8,7 +8,7 @@ OPENCL_PREFIX=/opt/AMDAPP/
 
 #Kings_Cross_Western_Concourse_-_central_position_-_2012-05-02.75.jpg
 
-PPCG_EXTRA_OPTIONS="--target=opencl --opencl-print-kernels-exec-time" 
+PPCG_EXTRA_OPTIONS="--target=opencl --opencl-print-kernels-time-measurements" 
 
 # TUNE_WORKGROUP_AND_BLOCK_SIZES is forced to 0 when DEFAULT is used in DIMENSIONS
 TUNE_WORKGROUP_AND_BLOCK_SIZES=1
