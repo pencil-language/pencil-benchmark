@@ -35,8 +35,8 @@ LDFLAGS=-L$(OPENCL_LIB_DIR) $(OPENCL_LIB) -L$(OPENCV_LIB_DIR) $(OPENCV_LIBS) -L$
 all: all_test all_ppcg_test mlp_data
 
 clean: 
-	-rm -f $(BUILD_DIR)/*
-	
+	-rm -f $(BUILD_DIR)/*.cl $(BUILD_DIR)/*.clh  $(BUILD_DIR)/*.c $(BUILD_DIR)/*.o  $(BUILD_DIR)/*.h $(BUILD_DIR)/*.so $(BUILD_DIR)/*.csv $(BUILD_DIR)/ppcg_test_* $(BUILD_DIR)/test_* $(BUILD_DIR)/temp_output_file $(BUILD_DIR)/temp_time* $(BUILD_DIR)/log
+
 mlp_data: $(BUILD_DIR)/pool/response_dumps.xml
 
 $(BUILD_DIR)/pool/response_dumps.xml:
