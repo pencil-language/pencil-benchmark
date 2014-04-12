@@ -6,20 +6,23 @@ PPCG_COMPILER=~/src/ppcgs/ppcg-gforge-pet-tree/ppcg
 BENCH_ROOT=~/src/pencil_codes/CARP-Benchmarks/
 OPENCL_PREFIX=/opt/AMDAPP/
 
-PPCG_EXTRA_OPTIONS="--target=opencl --opencl-print-kernels-time-measurements -D__PENCIL__" 
-LIST_OF_KERNELS="resize dilate cvt_color warpAffine filter2D gaussian"
+PPCG_EXTRA_OPTIONS="--target=opencl --opencl-print-time-measurements -D__PENCIL__" 
 
+LIST_OF_KERNELS="resize dilate cvt_color warpAffine filter2D gaussian"
 PPCG_OPTIONS[0]="--isl-schedule-fuse=min --no-shared-memory --no-private-memory --sizes={kernel[i]->tile[128];kernel[i]->grid[256];kernel[i]->block[16]}"
-PPCG_OPTIONS[1]=""
+PPCG_OPTIONS[1]="--isl-schedule-fuse=min --no-shared-memory --no-private-memory --sizes={kernel[i]->tile[64];kernel[i]->grid[16,16];kernel[i]->block[32]}"
 PPCG_OPTIONS[2]="--isl-schedule-fuse=max --no-isl-schedule-separate-components --no-shared-memory --no-private-memory --sizes={kernel[i]->tile[64];kernel[i]->grid[256];kernel[i]->block[16]}"
 PPCG_OPTIONS[3]="--isl-schedule-fuse=min  --no-private-memory --sizes={kernel[i]->tile[64];kernel[i]->grid[256];kernel[i]->block[32]}"
 PPCG_OPTIONS[4]="--isl-schedule-fuse=max --no-isl-schedule-separate-components  --no-private-memory --sizes={kernel[i]->tile[64];kernel[i]->grid[4608896];kernel[i]->block[32]}"
 PPCG_OPTIONS[5]="--isl-schedule-fuse=min  --no-private-memory --sizes={kernel[i]->tile[64];kernel[i]->grid[256];kernel[i]->block[32]}"
 
+#LIST_OF_KERNELS="dilate"
+#PPCG_OPTIONS[0]="--isl-schedule-fuse=min --no-shared-memory --no-private-memory --sizes={kernel[i]->tile[16,16];kernel[i]->grid[232,106];kernel[i]->block[16,16]}"
+
 NB_TESTS=1
 PEROFRM_ONLY_ONE_TEST=1
 COMPILE_WITH_PPCG_AND_USE_AUTOTUNING_OPTIONS=1
-USE_DEFAULT_MAKE_FILE=1
+USE_DEFAULT_MAKE_FILE=0
 LOG_FILE=log
 ######################################################################"
 DEFINES=""

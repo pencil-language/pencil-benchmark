@@ -8,7 +8,7 @@ OPENCL_PREFIX=/opt/AMDAPP/
 
 #Kings_Cross_Western_Concourse_-_central_position_-_2012-05-02.75.jpg
 
-PPCG_EXTRA_OPTIONS="--target=opencl --opencl-print-kernels-time-measurements -D__PENCIL__" 
+PPCG_EXTRA_OPTIONS="--target=opencl --opencl-print-time-measurements -D__PENCIL__" 
 
 # TUNE_WORKGROUP_AND_BLOCK_SIZES is forced to 0 when DEFAULT is used in DIMENSIONS
 TUNE_WORKGROUP_AND_BLOCK_SIZES=1
@@ -16,10 +16,7 @@ COMPILE_WITH_PPCG=1
 AUTOTUNE=1
 
 LIST_OF_KERNELS="resize dilate cvt_color warpAffine filter2D gaussian"
-DIMENSIONS="1D-2D 1D-2D 1D-2D 1D-2D 1D-2D 1D-2D"
-
-#LIST_OF_KERNELS="resize dilate cvt_color warpAffine filter2D gaussian"
-#DIMENSIONS="1D 1D 2D 2D DEFAULT DEFAULT"
+DIMENSIONS="1D 1D 2D 2D DEFAULT DEFAULT"
 
 NB_TESTS=10
 PEROFRM_ONLY_ONE_TEST=1
@@ -46,19 +43,11 @@ TUNING_SHARED_MEM[1]="--no-shared-memory"
 #TUNING_PRIVATE_MEM[1]="--no-private-memory"
 TUNING_PRIVATE_MEM[0]="--no-private-memory"
 
-#Block sizes
-TUNING_TILE_SIZES[0]="64 128 256" #8 128 256
-TUNING_TILE_SIZES[1]="16,16 32,8 8,32"  #16,16  32,32  64,64
-TUNING_TILE_SIZES[2]="64 128 256 16,16 32,8 8,32"
+TUNING_GRID_SIZES[0]="390942  195471  97736  48868  24434  464,212  232,106  116,212  464,53  928,27  58,424"
+TUNING_BLOCK_SIZES[0]="16     32      64     128    256      8,8     16,16    32,8      8,32    4,64  64,4"
 
-TUNING_GRID_SIZES[0]="6255072 256" #64 512 1024 128
-TUNING_GRID_SIZES[1]="3712,1696 16,16" #32,32
-TUNING_GRID_SIZES[2]="6255072 256 3712,1696 16,16"
-
-#Tile sizes
-TUNING_BLOCK_SIZES[0]="1 16 32" #4 16 32 64 #8 128 256
-TUNING_BLOCK_SIZES[1]="1,1 8,8 16,16" #2,4  4,2  4,4  8,8  16,16  #4,8  8,4  16,16  32,32  8,1  1,8
-TUNING_BLOCK_SIZES[2]="16 32 8,8 16,16"
+TUNING_TILE_SIZES[0]="16 32 64 128 256" #8 128 256
+TUNING_TILE_SIZES[1]="8,8 16,16 32,8 8,32 64,64"  #16,16  32,32  64,64
 
 #OpenCL options
 # The following option may be contradictory with the same option set in the PPCG_OMP_BASIC_OPTIONS.
@@ -205,10 +194,9 @@ DIMENSION=$2
 
 	NB_TEST_1=`echo ${TUNING_BLOCK_SIZES[$DIM]} | wc -w`
 	NB_TEST_2=`echo ${TUNING_TILE_SIZES[$DIM]}| wc -w`
-	NB_TEST_3=`echo ${TUNING_GRID_SIZES[$DIM]} | wc -w`
 
 	if [ $TUNE_WORKGROUP_AND_BLOCK_SIZES = 1 ]; then
-		TOTAL_NUMBER_OF_TESTS=`expr ${#TUNING_FUSION[@]} \* ${#TUNING_SHARED_MEM[@]} \* ${#TUNING_PRIVATE_MEM[@]} \* ${#TUNING_OPENCL_COMPILER_OPTIONS[@]} + ${#TUNING_FUSION[@]} \* ${#TUNING_SHARED_MEM[@]} \* ${#TUNING_PRIVATE_MEM[@]} \* ${#TUNING_OPENCL_COMPILER_OPTIONS[@]} \* $NB_TEST_1 \* $NB_TEST_2 \* $NB_TEST_3`
+		TOTAL_NUMBER_OF_TESTS=`expr ${#TUNING_FUSION[@]} \* ${#TUNING_SHARED_MEM[@]} \* ${#TUNING_PRIVATE_MEM[@]} \* ${#TUNING_OPENCL_COMPILER_OPTIONS[@]} + ${#TUNING_FUSION[@]} \* ${#TUNING_SHARED_MEM[@]} \* ${#TUNING_PRIVATE_MEM[@]} \* ${#TUNING_OPENCL_COMPILER_OPTIONS[@]} \* $NB_TEST_1 \* $NB_TEST_2`
 	else
 		TOTAL_NUMBER_OF_TESTS=`expr ${#TUNING_FUSION[@]} \* ${#TUNING_SHARED_MEM[@]} \* ${#TUNING_PRIVATE_MEM[@]} \* ${#TUNING_OPENCL_COMPILER_OPTIONS[@]}`
 	fi
@@ -249,16 +237,17 @@ DIMENSION=$2
 		      echo "" >> ${OUTPUT_TIME_FILE}.${KERNEL}.csv
 		      
 		      if [ $TUNE_WORKGROUP_AND_BLOCK_SIZES = 1 ]; then
+		        block_indice=1
 			# Generate the different combinations for --sizes '{...}'
-			for i5 in ${TUNING_BLOCK_SIZES[$DIM]}; do
+			for i5 in ${TUNING_BLOCK_SIZES[0]}; do
 			  for i3 in ${TUNING_TILE_SIZES[$DIM]}; do
-			    for i4 in ${TUNING_GRID_SIZES[$DIM]}; do
-			      option_counter=`expr $option_counter + 1`
+  		              option_counter=`expr $option_counter + 1`
 			      option_0=${TUNING_FUSION[$i0]}
 			      option_1=${TUNING_SHARED_MEM[$i1]}
 			      option_2=${TUNING_PRIVATE_MEM[$i2]}
 			      option_4=${TUNING_OPENCL_COMPILER_OPTIONS[$i6]}
-			      option_3="--sizes={kernel[i]->tile[$i3];kernel[i]->grid[$i4];kernel[i]->block[$i5]}"
+			      grid_size=`echo ${TUNING_GRID_SIZES[0]} | cut -d \  -f $block_indice`
+			      option_3="--sizes={kernel[i]->tile[$i3];kernel[i]->grid[$grid_size];kernel[i]->block[$i5]}"
 			      options="$option_0 $option_1 $option_2 $option_3 $option_4"
 			      echo
 			      echo "Options [$option_counter/$TOTAL_NUMBER_OF_TESTS]: $options"
@@ -268,9 +257,9 @@ DIMENSION=$2
 		              run $KERNEL;
 
 			      echo "" >> ${OUTPUT_TIME_FILE}.${KERNEL}.csv
-			    done
 			  done
-			done
+			  block_indice=`expr $block_indice + 1`;
+			done			
 		      fi # $TUNE_WORKGROUP_AND_BLOCK_SIZES = 1
 		done
 	      done
