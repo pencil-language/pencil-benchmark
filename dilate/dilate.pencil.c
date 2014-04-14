@@ -42,16 +42,12 @@ static void dilate( const int rows
             {
                 for ( int r = 0; r < se_cols; r++ )
                 {
-                    if (se[e][r]!=0)
-                    {
-                        int candidate_row = q - anchor_row + e;
-                        int candidate_col = w - anchor_col + r;
-                        if ( (candidate_row >= 0) && (candidate_row < rows) &&  (candidate_col >= 0) && (candidate_col < cols) )
-                        {
-                            unsigned char val = cpu_gray[candidate_row][candidate_col];
-                            sup = (sup > val) ? sup : val;
-                        }
-                    }
+                   int candidate_row = q - anchor_row + e;
+                   int candidate_col = w - anchor_col + r;
+
+                   sup = (((candidate_row >= 0) && (candidate_row < rows) && (candidate_col >= 0) && (candidate_col < cols)) && ((se[e][r]!=0)))
+		    	 ? ((sup > cpu_gray[candidate_row][candidate_col]) ? sup : cpu_gray[candidate_row][candidate_col])
+			 : sup;
                 }
             }
             dilate[q][w] = sup;
