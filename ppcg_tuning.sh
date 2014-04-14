@@ -17,7 +17,7 @@ COMPILE_WITH_PPCG=1
 AUTOTUNE=1
 
 LIST_OF_KERNELS="resize dilate cvt_color warpAffine filter2D gaussian"
-DIMENSIONS="     1D      2D       2D      2D           2D       2D   "
+DIMENSIONS="1D 2D 2D 2D 2D 2D"
 #Used to indicate the dimension of the tile size.  These values are obtained by examining the generated code.
 
 NB_TESTS=15
@@ -195,7 +195,7 @@ DIMENSION=$2
 	       fi
 	fi
 
-	NB_TEST_1=`echo ${TUNING_BLOCK_SIZES[$DIM]} | wc -w`
+	NB_TEST_1=`echo ${TUNING_BLOCK_SIZES[0]} | wc -w`
 	NB_TEST_2=`echo ${TUNING_TILE_SIZES[$DIM]}| wc -w`
 
 	if [ $TUNE_WORKGROUP_AND_BLOCK_SIZES = 1 ]; then
