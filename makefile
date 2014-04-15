@@ -53,39 +53,39 @@ MLP_SOURCES=./mlp/serialization.cpp ./mlp/allocator.cpp
 all_opencl: $(BUILD_DIR)/filter_sep_row.clh $(BUILD_DIR)/filter_sep_col.clh $(BUILD_DIR)/cvt_color.clh $(BUILD_DIR)/imgproc_convolve.clh $(BUILD_DIR)/filtering_morph.clh $(BUILD_DIR)/mlp_impl.clh $(BUILD_DIR)/operators.clh $(BUILD_DIR)/imgproc_warpAffine.clh $(BUILD_DIR)/imgproc_resize.clh
 
 $(BUILD_DIR)/filter_sep_row.clh: ./gaussian/filter_sep_row.cl
-	ln -s ../gaussian/filter_sep_row.cl $(BUILD_DIR)/
+	ln -s --force ../gaussian/filter_sep_row.cl $(BUILD_DIR)/
 	cd $(BUILD_DIR); $(XXD_COMPILER) -i filter_sep_row.cl filter_sep_row.clh
 
 $(BUILD_DIR)/filter_sep_col.clh: ./gaussian/filter_sep_col.cl
-	ln -s ../gaussian/filter_sep_col.cl $(BUILD_DIR)/
+	ln -s --force ../gaussian/filter_sep_col.cl $(BUILD_DIR)/
 	cd $(BUILD_DIR); $(XXD_COMPILER) -i filter_sep_col.cl filter_sep_col.clh
 
 $(BUILD_DIR)/cvt_color.clh: ./cvt_color/cvt_color.cl
-	ln -s ../cvt_color/cvt_color.cl $(BUILD_DIR)/
+	ln -s --force ../cvt_color/cvt_color.cl $(BUILD_DIR)/
 	cd $(BUILD_DIR); $(XXD_COMPILER) -i cvt_color.cl cvt_color.clh
 
 $(BUILD_DIR)/imgproc_convolve.clh: ./filter2D/imgproc_convolve.cl
-	ln -s ../filter2D/imgproc_convolve.cl $(BUILD_DIR)/
+	ln -s --force ../filter2D/imgproc_convolve.cl $(BUILD_DIR)/
 	cd $(BUILD_DIR); $(XXD_COMPILER) -i imgproc_convolve.cl imgproc_convolve.clh
 
 $(BUILD_DIR)/filtering_morph.clh: ./dilate/filtering_morph.cl
-	ln -s ../dilate/filtering_morph.cl $(BUILD_DIR)/
+	ln -s --force ../dilate/filtering_morph.cl $(BUILD_DIR)/
 	cd $(BUILD_DIR); $(XXD_COMPILER) -i filtering_morph.cl filtering_morph.clh
 
 $(BUILD_DIR)/mlp_impl.clh: ./mlp/mlp_impl.cl
-	ln -s ../mlp/mlp_impl.cl $(BUILD_DIR)/
+	ln -s --force ../mlp/mlp_impl.cl $(BUILD_DIR)/
 	cd $(BUILD_DIR); $(XXD_COMPILER) -i mlp_impl.cl mlp_impl.clh
 
 $(BUILD_DIR)/operators.clh: ./mlp/operators.cl
-	ln -s ../mlp/operators.cl $(BUILD_DIR)/
+	ln -s --force ../mlp/operators.cl $(BUILD_DIR)/
 	cd $(BUILD_DIR); $(XXD_COMPILER) -i operators.cl operators.clh
 
 $(BUILD_DIR)/imgproc_warpAffine.clh: ./warpAffine/imgproc_warpAffine.cl
-	ln -s ../warpAffine/imgproc_warpAffine.cl $(BUILD_DIR)/
+	ln -s --force ../warpAffine/imgproc_warpAffine.cl $(BUILD_DIR)/
 	cd $(BUILD_DIR); $(XXD_COMPILER) -i imgproc_warpAffine.cl imgproc_warpAffine.clh
 
 $(BUILD_DIR)/imgproc_resize.clh: ./resize/imgproc_resize.cl
-	ln -s ../resize/imgproc_resize.cl $(BUILD_DIR)/
+	ln -s --force ../resize/imgproc_resize.cl $(BUILD_DIR)/
 	cd $(BUILD_DIR); $(XXD_COMPILER) -i imgproc_resize.cl imgproc_resize.clh
 
 ## PENCIL GCC LIBRARY
