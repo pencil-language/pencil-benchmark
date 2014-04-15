@@ -29,26 +29,11 @@ namespace
         normalizeAnchor(anchor.x, ksize.width);
         normalizeAnchor(anchor.y, ksize.height);
     }
-
-    inline void normalizeROI( cv::Rect &roi, const cv::Size &ksize, const cv::Point &anchor, const cv::Size &src_size)
-    {
-        if (roi == cv::Rect(0, 0, -1, -1))
-        {
-            roi = cv::Rect(0, 0, src_size.width, src_size.height);
-        }
-
-        CV_Assert(ksize.height > 0 && ksize.width > 0 && ((ksize.height & 1) == 1) && ((ksize.width & 1) == 1));
-        CV_Assert((anchor.x == -1 && anchor.y == -1) || (anchor.x == ksize.width >> 1 && anchor.y == ksize.height >> 1));
-        CV_Assert(roi.x >= 0 && roi.y >= 0 && roi.width <= src_size.width && roi.height <= src_size.height);
-    }
-
 } // unnamed namespace
 
 namespace carp {
-    void gaussian( carp::opencl::device & device, const cv::ocl::oclMat & src, cv::ocl::oclMat & dst, const cv::Size & ksize, const double & gaussX, const double & gaussY, int bordertype ) {
+    void gaussian( carp::opencl::device & device, const cv::ocl::oclMat & src, cv::ocl::oclMat & dst, const cv::Size & ksize, const cv::ocl::oclMat & gaussX, const cv::ocl::oclMat & gaussY, const cv::Point& anchor ) {
         dst.create(src.size(), src.type());
-        cv::Point anchor(-1, -1);
-        normalizeAnchor(anchor, ksize);
         cv::Size src_size = src.size();
         int cn = src.oclchannels();
 
@@ -57,40 +42,18 @@ namespace carp {
         cv::ocl::oclMat dstROI;
         cv::ocl::oclMat dstBufROI;
         dstBuf.create(src_size.height + ksize.height - 1, src_size.width, CV_MAKETYPE(CV_32F, cn));
-        cv::Rect roi = cv::Rect(0, 0, -1, -1);
+        cv::Rect roi = cv::Rect(0, 0, src_size.width, src_size.height);
 
-        normalizeROI(roi, ksize, anchor, src_size);
+        CV_Assert(ksize.height > 0 && ksize.width > 0 && ((ksize.height & 1) == 1) && ((ksize.width & 1) == 1));
+        CV_Assert((anchor.x == -1 && anchor.y == -1) || (anchor.x == ksize.width >> 1 && anchor.y == ksize.height >> 1));
+        CV_Assert(roi.x >= 0 && roi.y >= 0 && roi.width <= src_size.width && roi.height <= src_size.height);
 
         srcROI = src(roi);
         dstROI = dst(roi);
 
-        int depth = dst.depth();
         CV_Assert(ksize.width > 0 && ksize.width % 2 == 1 && ksize.height > 0 && ksize.height % 2 == 1);
 
-        cv::Mat kx = cv::getGaussianKernel(ksize.width, gaussX, std::max(depth, CV_32F));
-        cv::Mat ky;
-
-        if (ksize.height == ksize.width && std::abs(gaussX - gaussY) < DBL_EPSILON)
-        {
-            ky = kx;
-        }
-        else
-        {
-            ky = cv::getGaussianKernel(ksize.height, gaussY, std::max(depth, CV_32F));
-        }
-
-        cv::ocl::oclMat oclKX(kx.reshape(1,1));
-        cv::ocl::oclMat oclKY(ky.reshape(1,1));
-
-        int channels = srcROI.oclchannels();
-
         std::vector<size_t> localThreads = {16, 16, 1};
-
-        std::string compile_option = " -D RADIUSX=" + std::to_string(anchor.x)
-				   + " -D LSIZE0=" + std::to_string(localThreads[0])
-				   + " -D LSIZE1=" + std::to_string(localThreads[1])
-				   + " -D CN=" + std::to_string(channels)
-				   + " -D " + carp::borders[bordertype];
 
         std::vector<size_t> globalThreads(3);
         globalThreads[1] = (dstBuf.rows + localThreads[1] - 1) / localThreads[1] * localThreads[1];
@@ -109,26 +72,14 @@ namespace carp {
         dst_pix_per_row = dstBuf.step / dstBuf.elemSize();
         //dst_offset_in_pixel = dstBuf.offset / dstBuf.elemSize();
         int ridusy = (dstBuf.rows - srcROI.rows) >> 1;
-        device.source_compile( filter_sep_row_cl, filter_sep_row_cl_len, {"row_filter_C1_D5"}, compile_option );
 
         device["row_filter_C1_D5"]( reinterpret_cast<cl_mem>(srcROI.data), reinterpret_cast<cl_mem>(dstBuf.data), dstBuf.cols, dstBuf.rows,
-            srcROI.wholecols, srcROI.wholerows, src_pix_per_row, src_offset_x, src_offset_y, dst_pix_per_row, ridusy, reinterpret_cast<cl_mem>(oclKX.data)
+            srcROI.wholecols, srcROI.wholerows, src_pix_per_row, src_offset_x, src_offset_y, dst_pix_per_row, ridusy, reinterpret_cast<cl_mem>(gaussX.data)
             ).groupsize( localThreads, globalThreads );
 
-        localThreads = {16, 16, 1};
-
-        globalThreads.resize(3);
         globalThreads[1] = (dstROI.rows + localThreads[1] - 1) / localThreads[1] * localThreads[1];
         globalThreads[2] = (1 + localThreads[2] - 1) / localThreads[2] * localThreads[2];
         globalThreads[0] = (dstROI.cols + localThreads[0] - 1) / localThreads[0] * localThreads[0];
-        compile_option = " -D RADIUSY=" + std::to_string(anchor.y)
-            + " -D LSIZE0=" + std::to_string(localThreads[0])
-            + " -D LSIZE1=" + std::to_string(localThreads[1])
-            + " -D CN=" + std::to_string(channels)
-            + " -D " + carp::borders[bordertype]
-            + " -D GENTYPE_SRC=" + "float"
-            + " -D GENTYPE_DST=" + "float"
-            + " -D convert_to_DST=" + "";
 
         //sanity checks
         CV_Assert(dstBuf.cols == dstROI.cols);
@@ -141,12 +92,9 @@ namespace carp {
         dst_pix_per_row = dstROI.step / dstROI.elemSize();
         dst_offset_in_pixel = dstROI.offset / dstROI.elemSize();
 
-        device.source_compile( filter_sep_col_cl, filter_sep_col_cl_len, { "col_filter" }, compile_option );
         device["col_filter"]( reinterpret_cast<cl_mem>(dstBuf.data), reinterpret_cast<cl_mem>(dstROI.data), dstROI.cols, dstROI.rows,
-            dstBuf.wholecols, dstBuf.wholerows, src_pix_per_row, dst_pix_per_row, dst_offset_in_pixel, reinterpret_cast<cl_mem>(oclKY.data)
+            dstBuf.wholecols, dstBuf.wholerows, src_pix_per_row, dst_pix_per_row, dst_offset_in_pixel, reinterpret_cast<cl_mem>(gaussY.data)
             ).groupsize(localThreads, globalThreads);
-
-        device.erase("col_filter");
     } // carp::gaussian
 
 } // namespace carp
@@ -161,7 +109,6 @@ void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<i
 
         double gaussX = 7.;
         double gaussY = 9.;
-        int bordertype = cv::BORDER_REPLICATE;
 
         for ( auto & item : pool ) {
             cv::Mat cpu_gray;
@@ -174,23 +121,42 @@ void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<i
 
             {
                 const auto cpu_start = std::chrono::high_resolution_clock::now();
-                cv::GaussianBlur( cpu_gray, cpu_result, ksize, gaussX, gaussY, bordertype );
+                cv::GaussianBlur( cpu_gray, cpu_result, ksize, gaussX, gaussY, cv::BORDER_REPLICATE );
                 const auto cpu_end = std::chrono::high_resolution_clock::now();
                 elapsed_time_cpu = cpu_end - cpu_start;
                 //Free up resources
             }
             {
                 carp::opencl::device device(cv::ocl::Context::getContext());
+
+                cv::Point anchor(-1, -1);
+                normalizeAnchor(anchor, ksize);
+                cv::Mat kx = cv::getGaussianKernel(ksize.width , gaussX, CV_32F).reshape(1,1);
+                cv::Mat ky = cv::getGaussianKernel(ksize.height, gaussY, CV_32F).reshape(1,1);
+
+                const auto gpu_compile_start = std::chrono::high_resolution_clock::now();
+                std::string compile_option = " -D RADIUSX=" + std::to_string(anchor.x) + " -D LSIZE0=16 -D LSIZE1=16 -D CN=1 -D BORDER_REPLICATE";
+                device.source_compile( filter_sep_row_cl, filter_sep_row_cl_len, {"row_filter_C1_D5"}, compile_option );
+                compile_option = " -D RADIUSY=" + std::to_string(anchor.y) + " -D LSIZE0=16 -D LSIZE1=16 -D CN=1 -D BORDER_REPLICATE -D GENTYPE_SRC=float -D GENTYPE_DST=float -D convert_to_DST= ";
+                device.source_compile( filter_sep_col_cl, filter_sep_col_cl_len, { "col_filter" }, compile_option );
                 const auto gpu_copy_start = std::chrono::high_resolution_clock::now();
                 cv::ocl::oclMat dst;
                 cv::ocl::oclMat src(cpu_gray);
+                cv::ocl::oclMat kx_cl(kx);
+                cv::ocl::oclMat ky_cl(ky);
+
                 const auto gpu_start = std::chrono::high_resolution_clock::now();
-                carp::gaussian(device, src, dst, ksize, gaussX, gaussY, bordertype );
+                carp::gaussian( device, src, dst, ksize, kx_cl, ky_cl, anchor );
                 const auto gpu_end = std::chrono::high_resolution_clock::now();
                 gpu_result = dst;
                 const auto gpu_copy_end = std::chrono::high_resolution_clock::now();
+                device.erase("col_filter");
+                device.erase("row_filter_C1_D5");
+                const auto gpu_compile_end = std::chrono::high_resolution_clock::now();
+
                 elapsed_time_gpu_p_copy = gpu_copy_end - gpu_copy_start;
                 elapsed_time_gpu_nocopy = gpu_end      - gpu_start;
+                auto elapsed_time_gpu_compile = gpu_compile_end - gpu_compile_start;
                 //Free up resources
             }
             {
