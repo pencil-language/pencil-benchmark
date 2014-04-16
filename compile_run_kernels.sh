@@ -110,13 +110,9 @@ rm -rf $LOG_FILE
 
 id=0;
 for ker in ${LIST_OF_KERNELS}; do
-
-	if [ $COMPILE_WITH_PPCG_AND_USE_AUTOTUNING_OPTIONS = 1 ]; then
-		options="$PPCG_EXTRA_OPTIONS ${PPCG_OPTIONS[$id]}"
-	        compile $ker "$options";
-		id=`expr $id + 1`
-	fi
-
+	options="$PPCG_EXTRA_OPTIONS ${PPCG_OPTIONS[$id]}"
+        compile $ker "$options";
+	id=`expr $id + 1`
         run $ker;
 done
 
