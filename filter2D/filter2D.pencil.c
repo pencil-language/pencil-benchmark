@@ -13,17 +13,14 @@ static void filter2D( const int rows
 {
 #pragma scop
 #if __PENCIL__
-    __pencil_assume(rows        >  0);
-    __pencil_assume(cols        >  0);
+    __pencil_assume(rows        >  1);
+    __pencil_assume(cols        >  1);
     __pencil_assume(step        >= cols);
-    __pencil_assume(kernel_rows >  0);
-    __pencil_assume(kernel_cols >  0);
+    __pencil_assume(kernel_rows >  1);
+    __pencil_assume(kernel_cols >  1);
     __pencil_assume(kernel_step >= kernel_cols);
 #endif
     {
-        const int center_row = kernel_rows / 2;
-        const int center_col = kernel_cols / 2;
-
         #pragma pencil independent
         for ( int q = 0; q < rows; q++ )
         {
@@ -36,13 +33,11 @@ static void filter2D( const int rows
                 {
                     for ( int r = 0; r < kernel_cols; r++ )
                     {
-                        int row = q + e - center_row;
-                        int col = w + r - center_col;
-                        row = (row < 0   ) ? 0   : row;
-                        row = (row < rows) ? row : rows - 1;
-                        col = (col < 0   ) ? 0   : col;
-                        col = (col < cols) ? col : cols - 1;
-                        prod += src[row][col] * kernel_[e][r];
+                        int row = q + e - kernel_rows / 2;
+                        int col = w + r - kernel_cols / 2;
+                        row = (row < rows) ? ((row < 0) ? 0 : row) : rows - 1;
+			col = (col < cols) ? ((col < 0) ? 0 : col) : cols - 1;
+			prod += src[row][col] * kernel_[e][r];
                     }
                 }
                 conv[q][w] = prod;
