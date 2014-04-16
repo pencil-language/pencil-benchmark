@@ -35,8 +35,9 @@ WAIT_TIME=300
 # General options
 #TUNING_FUSION[0]=""
 
-TUNING_FUSION[0]="--isl-schedule-fuse=max --no-isl-schedule-separate-components"
-TUNING_FUSION[1]="--isl-schedule-fuse=min"
+#TUNING_FUSION[0]="--isl-schedule-fuse=max --no-isl-schedule-separate-components"
+#TUNING_FUSION[1]="--isl-schedule-fuse=min"
+TUNING_FUSION[0]="--isl-schedule-fuse=min"
 
 # GPU options
 TUNING_SHARED_MEM[0]=""
@@ -46,11 +47,11 @@ TUNING_SHARED_MEM[1]="--no-shared-memory"
 TUNING_PRIVATE_MEM[0]="--no-private-memory"
 
 # Blocks > 16 are interesting. On AMD HD 5670, grid size is limited to 256, on NVIDIA GTX 470, grid size is limited to 1024
-TUNING_GRID_SIZES[0]="195471 97736 48868 24434 12217 6109  232,106 464,53  116,212 928,27 58,424 116,53  58,106  232,27"
-TUNING_BLOCK_SIZES[0]="32     64    128   256   512  1024   16,16    8,32   32,8     4,64 64,4    32,32  64,16    16,64"
+TUNING_GRID_SIZES[0]="256 256 1024 16,16 16,16 195471 97736 48868  24434 12217 6109  232,106 464,53  116,212 928,27 58,424 116,53  58,106  232,27"
+TUNING_BLOCK_SIZES[0]="16  32  32   32   16,16   32     64    128    256   512  1024  16,16    8,32   32,8     4,64 64,4    32,32  64,16    16,64"
 
-TUNING_TILE_SIZES[0]="16 32 64 128 256"
-TUNING_TILE_SIZES[1]="16,16 32,32 32,8 8,32 32,16 16,32 64,64 128,128 256,256"
+TUNING_TILE_SIZES[0]="16 32 64 128 256 512 1024"
+TUNING_TILE_SIZES[1]="16,16 32,32 32,8 8,32 32,16 16,32 64,64 128,128 256,256 512,512 1024,1024 2048,2048"
 
 #OpenCL options
 # The following option may be contradictory with the same option set in the PPCG_OMP_BASIC_OPTIONS.
