@@ -4,6 +4,11 @@
 
 #include "dilate.pencil.h"
 
+unsigned char max(unsigned char A, unsigned char B)
+{
+	return (A>B)?A:B;
+}
+
 static void dilate( const int rows
                   , const int cols
                   , const int step
@@ -45,9 +50,8 @@ static void dilate( const int rows
                    int candidate_row = q - anchor_row + e;
                    int candidate_col = w - anchor_col + r;
 
-                   sup = (((candidate_row >= 0) && (candidate_row < rows) && (candidate_col >= 0) && (candidate_col < cols)) && ((se[e][r]!=0)))
-		    	 ? ((sup > cpu_gray[candidate_row][candidate_col]) ? sup : cpu_gray[candidate_row][candidate_col])
-			 : sup;
+		   int test = (((candidate_row >= 0) && (candidate_row < rows) && (candidate_col >= 0) && (candidate_col < cols)) && ((se[e][r]!=0)));
+		   sup = test ? max(sup, cpu_gray[candidate_row][candidate_col]) : sup;
                 }
             }
             dilate[q][w] = sup;
