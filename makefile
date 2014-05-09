@@ -18,7 +18,7 @@ OPENCL_INCLUDE=$(OPENCL_PREFIX)/include/
 OPENCL_LIB_DIR=$(OPENCL_PREFIX)/lib/
 OPENCL_LIB=-lOpenCL
 
-PPCG_OPTIONS=--no-shared-memory -D__PENCIL__ 
+PPCG_OPTIONS=--no-shared-memory -D__PENCIL__ --target=opencl
 
 # Optimization Flags
 
@@ -77,33 +77,33 @@ build/imgproc_resize.clh: ./resize/imgproc_resize.cl
 
 ## PENCIL GCC LIBRARY
 build/libcarp_pencil.so: all_gcc_pencil_o
-	$(CXX) -shared -o build/libcarp_pencil.so build/ocl_utilities.o  build/gaussian.pencil.o build/cvt_color.pencil.o build/filter2D.pencil.o build/dilate.pencil.o build/warpAffine.pencil.o build/resize.pencil.o build/mlp_impl.pencil.o build/hog.pencil.o $(LDFLAGS)
+	$(CXX) -shared -o build/libcarp_pencil.so build/ocl_utilities.o  build/gaussian.pencil_as_c.o build/cvt_color.pencil_as_c.o build/filter2D.pencil_as_c.o build/dilate.pencil_as_c.o build/warpAffine.pencil_as_c.o build/resize.pencil_as_c.o build/mlp_impl.pencil_as_c.o build/hog.pencil_as_c.o $(LDFLAGS)
 
-all_gcc_pencil_o: build/ocl_utilities.o build/gaussian.pencil.o build/cvt_color.pencil.o build/filter2D.pencil.o build/dilate.pencil.o build/warpAffine.pencil.o build/resize.pencil.o build/mlp_impl.pencil.o build/hog.pencil.o
+all_gcc_pencil_o: build/ocl_utilities.o build/gaussian.pencil_as_c.o build/cvt_color.pencil_as_c.o build/filter2D.pencil_as_c.o build/dilate.pencil_as_c.o build/warpAffine.pencil_as_c.o build/resize.pencil_as_c.o build/mlp_impl.pencil_as_c.o build/hog.pencil_as_c.o
 
-build/gaussian.pencil.o: ./gaussian/gaussian.pencil.c
-	$(CXX) -x c -c $(CFLAGS) ./gaussian/gaussian.pencil.c -o build/gaussian.pencil.o
+build/gaussian.pencil_as_c.o: ./gaussian/gaussian.pencil.c
+	$(CXX) -x c -c $(CFLAGS) ./gaussian/gaussian.pencil.c -o build/gaussian.pencil_as_c.o
 
-build/cvt_color.pencil.o: ./cvt_color/cvt_color.pencil.c
-	$(CXX) -x c -c $(CFLAGS) ./cvt_color/cvt_color.pencil.c -o build/cvt_color.pencil.o
+build/cvt_color.pencil_as_c.o: ./cvt_color/cvt_color.pencil.c
+	$(CXX) -x c -c $(CFLAGS) ./cvt_color/cvt_color.pencil.c -o build/cvt_color.pencil_as_c.o
 
-build/filter2D.pencil.o: ./filter2D/filter2D.pencil.c
-	$(CXX) -x c -c $(CFLAGS) ./filter2D/filter2D.pencil.c -o build/filter2D.pencil.o
+build/filter2D.pencil_as_c.o: ./filter2D/filter2D.pencil.c
+	$(CXX) -x c -c $(CFLAGS) ./filter2D/filter2D.pencil.c -o build/filter2D.pencil_as_c.o
 
-build/dilate.pencil.o: ./dilate/dilate.pencil.c
-	$(CXX) -x c -c $(CFLAGS) ./dilate/dilate.pencil.c -o build/dilate.pencil.o
+build/dilate.pencil_as_c.o: ./dilate/dilate.pencil.c
+	$(CXX) -x c -c $(CFLAGS) ./dilate/dilate.pencil.c -o build/dilate.pencil_as_c.o
 
-build/warpAffine.pencil.o: ./warpAffine/warpAffine.pencil.c
-	$(CXX) -x c -c $(CFLAGS) ./warpAffine/warpAffine.pencil.c -o build/warpAffine.pencil.o
+build/warpAffine.pencil_as_c.o: ./warpAffine/warpAffine.pencil.c
+	$(CXX) -x c -c $(CFLAGS) ./warpAffine/warpAffine.pencil.c -o build/warpAffine.pencil_as_c.o
 
-build/resize.pencil.o: ./resize/resize.pencil.c
-	$(CXX) -x c -c $(CFLAGS) ./resize/resize.pencil.c -o build/resize.pencil.o
+build/resize.pencil_as_c.o: ./resize/resize.pencil.c
+	$(CXX) -x c -c $(CFLAGS) ./resize/resize.pencil.c -o build/resize.pencil_as_c.o
 
-build/mlp_impl.pencil.o: ./mlp/mlp_impl.pencil.c
-	$(CXX) -x c -c $(CFLAGS) ./mlp/mlp_impl.pencil.c -o build/mlp_impl.pencil.o
+build/mlp_impl.pencil_as_c.o: ./mlp/mlp_impl.pencil.c
+	$(CXX) -x c -c $(CFLAGS) ./mlp/mlp_impl.pencil.c -o build/mlp_impl.pencil_as_c.o
 
-build/hog.pencil.o: ./hog/hog.pencil.c
-	$(CXX) -x c -c $(CFLAGS) ./hog/hog.pencil.c -o build/hog.pencil.o
+build/hog.pencil_as_c.o: ./hog/hog.pencil.c
+	$(CXX) -x c -c $(CFLAGS) ./hog/hog.pencil.c -o build/hog.pencil_as_c.o
 
 build/ocl_utilities.o: ./base/ocl_utilities.c
 	$(CXX) -x c -c $(CFLAGS) ./base/ocl_utilities.c -o build/ocl_utilities.o
@@ -142,62 +142,62 @@ build/test_hog: all_opencl build/libcarp_pencil.so ./hog/test_hog.cpp
 	$(CXX) $(CXXFLAGS) ./hog/test_hog.cpp -o build/test_hog $(LDFLAGS) -lcarp_pencil
 
 ## PPCG Compiled Source Files
-all_pencil_source: build/gaussian.pencil_kernel.cl build/cvt_color.pencil_kernel.cl build/filter2D.pencil_kernel.cl build/dilate.pencil_kernel.cl build/warpAffine/warpAffine.pencil_kernel.cl build/resize/resize.pencil_kernel.cl build/mlp/mlp_impl.pencil_kernel.cl  build/hog/hog.pencil_kernel.cl
+all_pencil_source: build/gaussian.pencil_ppcg.c build/cvt_color.pencil_ppcg.c build/filter2D.pencil_ppcg.c build/dilate.pencil_ppcg.c build/warpAffine.pencil_ppcg.c build/resize.pencil_ppcg.c build/mlp_impl.pencil_ppcg.c  build/hog.pencil_ppcg.c
 
-build/gaussian.pencil_kernel.cl: ./gaussian/gaussian.pencil.c
-	cd build; $(PPCG_COMPILER) $(PPCG_OPTIONS) --target=opencl ../gaussian/gaussian.pencil.c
+build/gaussian.pencil_ppcg.c: ./gaussian/gaussian.pencil.c
+	$(PPCG_COMPILER) $(PPCG_OPTIONS) -o build/gaussian.pencil_ppcg.c gaussian/gaussian.pencil.c
 
-build/cvt_color.pencil_kernel.cl: ./cvt_color/cvt_color.pencil.c
-	cd build; $(PPCG_COMPILER) $(PPCG_OPTIONS) --target=opencl ../cvt_color/cvt_color.pencil.c
+build/cvt_color.pencil_ppcg.c: ./cvt_color/cvt_color.pencil.c
+	$(PPCG_COMPILER) $(PPCG_OPTIONS) -o build/cvt_color.pencil_ppcg.c cvt_color/cvt_color.pencil.c
 
-build/filter2D.pencil_kernel.cl: ./filter2D/filter2D.pencil.c
-	cd build; $(PPCG_COMPILER) $(PPCG_OPTIONS) --target=opencl ../filter2D/filter2D.pencil.c
+build/filter2D.pencil_ppcg.c: ./filter2D/filter2D.pencil.c
+	$(PPCG_COMPILER) $(PPCG_OPTIONS) -o build/filter2D.pencil_ppcg.c filter2D/filter2D.pencil.c
 
-build/dilate.pencil_kernel.cl: ./dilate/dilate.pencil.c
-	cd build; $(PPCG_COMPILER) $(PPCG_OPTIONS) --target=opencl ../dilate/dilate.pencil.c
+build/dilate.pencil_ppcg.c: ./dilate/dilate.pencil.c
+	$(PPCG_COMPILER) $(PPCG_OPTIONS) -o build/dilate.pencil_ppcg.c dilate/dilate.pencil.c
 
-build/warpAffine/warpAffine.pencil_kernel.cl: ./warpAffine/warpAffine.pencil.c
-	cd build; $(PPCG_COMPILER) $(PPCG_OPTIONS) --target=opencl ../warpAffine/warpAffine.pencil.c
+build/warpAffine.pencil_ppcg.c: ./warpAffine/warpAffine.pencil.c
+	$(PPCG_COMPILER) $(PPCG_OPTIONS) -o build/warpAffine.pencil_ppcg.c warpAffine/warpAffine.pencil.c
 
-build/resize/resize.pencil_kernel.cl: ./resize/resize.pencil.c
-	cd build; $(PPCG_COMPILER) $(PPCG_OPTIONS) --target=opencl ../resize/resize.pencil.c
+build/resize.pencil_ppcg.c: ./resize/resize.pencil.c
+	$(PPCG_COMPILER) $(PPCG_OPTIONS) -o build/resize.pencil_ppcg.c resize/resize.pencil.c
 
-build/mlp/mlp_impl.pencil_kernel.cl: ./mlp/mlp_impl.pencil.c
-	cd build; $(PPCG_COMPILER) $(PPCG_OPTIONS)--target=opencl ../mlp/mlp_impl.pencil.c
+build/mlp_impl.pencil_ppcg.c: ./mlp/mlp_impl.pencil.c
+	$(PPCG_COMPILER) $(PPCG_OPTIONS) -o build/mlp_impl.pencil_ppcg.c mlp/mlp_impl.pencil.c
 
-build/hog/hog.pencil_kernel.cl: ./hog/hog.pencil.c
-	cd build; $(PPCG_COMPILER) $(PPCG_OPTIONS)--target=opencl ../hog/hog.pencil.c
+build/hog.pencil_ppcg.c: ./hog/hog.pencil.c
+	$(PPCG_COMPILER) $(PPCG_OPTIONS) -o build/hog.pencil_ppcg.c hog/hog.pencil.c
 
 PPCG_INCLUDES=-I./gaussian -I./cvt_color -I./filter2D -I./dilate -I./warpAffine -I./resize -I./mlp -I./hog
 
-build/warpAffine.pencil_host.o: all_pencil_source
-	$(CXX) -x c -c $(CFLAGS) $(PPCG_INCLUDES) build/warpAffine.pencil_host.c -o build/warpAffine.pencil_host.o
+build/warpAffine.pencil_ppcg.o: all_pencil_source
+	$(CXX) -x c -c $(CFLAGS) $(PPCG_INCLUDES) build/warpAffine.pencil_ppcg.c -o build/warpAffine.pencil_ppcg.o
 
-build/cvt_color.pencil_host.o: all_pencil_source
-	$(CXX) -x c -c $(CFLAGS) $(PPCG_INCLUDES) build/cvt_color.pencil_host.c -o build/cvt_color.pencil_host.o
+build/cvt_color.pencil_ppcg.o: all_pencil_source
+	$(CXX) -x c -c $(CFLAGS) $(PPCG_INCLUDES) build/cvt_color.pencil_ppcg.c -o build/cvt_color.pencil_ppcg.o
 
-build/dilate.pencil_host.o: all_pencil_source
-	$(CXX) -x c -c $(CFLAGS) $(PPCG_INCLUDES) build/dilate.pencil_host.c -o build/dilate.pencil_host.o
+build/dilate.pencil_ppcg.o: all_pencil_source
+	$(CXX) -x c -c $(CFLAGS) $(PPCG_INCLUDES) build/dilate.pencil_ppcg.c -o build/dilate.pencil_ppcg.o
 
-build/filter2D.pencil_host.o: all_pencil_source
-	$(CXX) -x c -c $(CFLAGS) $(PPCG_INCLUDES) build/filter2D.pencil_host.c -o build/filter2D.pencil_host.o
+build/filter2D.pencil_ppcg.o: all_pencil_source
+	$(CXX) -x c -c $(CFLAGS) $(PPCG_INCLUDES) build/filter2D.pencil_ppcg.c -o build/filter2D.pencil_ppcg.o
 
-build/gaussian.pencil_host.o: all_pencil_source
-	$(CXX) -x c -c $(CFLAGS) $(PPCG_INCLUDES) build/gaussian.pencil_host.c -o build/gaussian.pencil_host.o
+build/gaussian.pencil_ppcg.o: all_pencil_source
+	$(CXX) -x c -c $(CFLAGS) $(PPCG_INCLUDES) build/gaussian.pencil_ppcg.c -o build/gaussian.pencil_ppcg.o
 
-build/resize.pencil_host.o: all_pencil_source
-	$(CXX) -x c -c $(CFLAGS) $(PPCG_INCLUDES) build/resize.pencil_host.c -o build/resize.pencil_host.o
+build/resize.pencil_ppcg.o: all_pencil_source
+	$(CXX) -x c -c $(CFLAGS) $(PPCG_INCLUDES) build/resize.pencil_ppcg.c -o build/resize.pencil_ppcg.o
 
-build/mlp_impl.pencil_host.o: all_pencil_source
-	$(CXX) -x c -c $(CFLAGS) $(PPCG_INCLUDES) build/mlp_impl.pencil_host.c -o build/mlp_impl.pencil_host.o
+build/mlp_impl.pencil_ppcg.o: all_pencil_source
+	$(CXX) -x c -c $(CFLAGS) $(PPCG_INCLUDES) build/mlp_impl.pencil_ppcg.c -o build/mlp_impl.pencil_ppcg.o
 
-build/hog.pencil_host.o: all_pencil_source
-	$(CXX) -x c -c $(CFLAGS) $(PPCG_INCLUDES) build/hog.pencil_host.c -o build/hog.pencil_host.o
+build/hog.pencil_ppcg.o: all_pencil_source
+	$(CXX) -x c -c $(CFLAGS) $(PPCG_INCLUDES) build/hog.pencil_ppcg.c -o build/hog.pencil_ppcg.o
 
-all_pencil_o: build/ocl_utilities.o build/warpAffine.pencil_host.o build/cvt_color.pencil_host.o build/dilate.pencil_host.o build/filter2D.pencil_host.o build/gaussian.pencil_host.o build/resize.pencil_host.o build/mlp_impl.pencil_host.o build/hog.pencil_host.o
+all_pencil_o: build/ocl_utilities.o build/warpAffine.pencil_ppcg.o build/cvt_color.pencil_ppcg.o build/dilate.pencil_ppcg.o build/filter2D.pencil_ppcg.o build/gaussian.pencil_ppcg.o build/resize.pencil_ppcg.o build/mlp_impl.pencil_ppcg.o build/hog.pencil_ppcg.o
 
 build/libcarp_ppcg.so: all_pencil_o
-	$(CXX) -shared -o  build/libcarp_ppcg.so build/ocl_utilities.o build/warpAffine.pencil_host.o build/cvt_color.pencil_host.o build/dilate.pencil_host.o build/filter2D.pencil_host.o build/gaussian.pencil_host.o build/resize.pencil_host.o build/mlp_impl.pencil_host.o build/hog.pencil_host.o $(LDFLAGS)
+	$(CXX) -shared -o  build/libcarp_ppcg.so build/ocl_utilities.o build/warpAffine.pencil_ppcg.o build/cvt_color.pencil_ppcg.o build/dilate.pencil_ppcg.o build/filter2D.pencil_ppcg.o build/gaussian.pencil_ppcg.o build/resize.pencil_ppcg.o build/mlp_impl.pencil_ppcg.o build/hog.pencil_ppcg.o $(LDFLAGS)
 
 ## PPCG Tests
 all_ppcg_test: build/ppcg_test_gaussian build/ppcg_test_cvt_color build/ppcg_test_filter2D build/ppcg_test_dilate build/ppcg_test_mlp build/ppcg_test_opencl_mlp build/ppcg_test_gel_mlp build/ppcg_test_warpAffine build/ppcg_test_resize build/ppcg_test_hog
