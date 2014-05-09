@@ -14,8 +14,8 @@ TBB_LIB_DIR=/usr/lib/
 TBB_LIBS=-ltbb -ltbbmalloc
 
 OPENCL_PREFIX=/usr/
-OPENCL_INCLUDE=$(OPENCL_PREFIX)/include/
-OPENCL_LIB_DIR=$(OPENCL_PREFIX)/lib/
+OPENCL_INCLUDE=$(OPENCL_PREFIX)include/
+OPENCL_LIB_DIR=$(OPENCL_PREFIX)lib/
 OPENCL_LIB=-lOpenCL
 
 PPCG_OPTIONS=--no-shared-memory -D__PENCIL__ --target=opencl
@@ -82,12 +82,6 @@ build/imgproc_resize.clh: resize/imgproc_resize.cl
 build/imgproc_warpAffine.clh: warpAffine/imgproc_warpAffine.cl
 	(cd warpAffine && $(XXD_COMPILER) -i imgproc_warpAffine.cl ../build/imgproc_warpAffine.clh)
 
-## PENCIL GCC LIBRARY
-build/libcarp_pencil.so: all_gcc_pencil_o
-	$(CXX) -shared -o build/libcarp_pencil.so build/ocl_utilities.o  build/gaussian.pencil_as_c.o build/cvt_color.pencil_as_c.o build/filter2D.pencil_as_c.o build/dilate.pencil_as_c.o build/warpAffine.pencil_as_c.o build/resize.pencil_as_c.o build/mlp_impl.pencil_as_c.o build/hog.pencil_as_c.o $(LDFLAGS)
-
-all_gcc_pencil_o: build/ocl_utilities.o build/gaussian.pencil_as_c.o build/cvt_color.pencil_as_c.o build/filter2D.pencil_as_c.o build/dilate.pencil_as_c.o build/warpAffine.pencil_as_c.o build/resize.pencil_as_c.o build/mlp_impl.pencil_as_c.o build/hog.pencil_as_c.o
-
 
 
 ## PENCIL-as-c compile
@@ -121,35 +115,35 @@ build/warpAffine.pencil_as_c.o: warpAffine/warpAffine.pencil.c
 
 
 ## PENCIL-as-c tests
-build/test_cvt_color: all_opencl build/libcarp_pencil.so cvt_color/test_cvt_color.cpp
-	$(CXX) $(CXXFLAGS) cvt_color/test_cvt_color.cpp -o build/test_cvt_color $(LDFLAGS) -lcarp_pencil 
+build/test_cvt_color: all_opencl cvt_color/test_cvt_color.cpp build/cvt_color.pencil_as_c.o build/ocl_utilities.o
+	$(CXX) $(CXXFLAGS) -o build/test_cvt_color cvt_color/test_cvt_color.cpp build/cvt_color.pencil_as_c.o build/ocl_utilities.o $(LDFLAGS)
 
-build/test_dilate: all_opencl build/libcarp_pencil.so dilate/test_dilate.cpp
-	$(CXX) $(CXXFLAGS) dilate/test_dilate.cpp -o build/test_dilate $(LDFLAGS) -lcarp_pencil 
+build/test_dilate: all_opencl dilate/test_dilate.cpp build/dilate.pencil_as_c.o build/ocl_utilities.o
+	$(CXX) $(CXXFLAGS) -o build/test_dilate dilate/test_dilate.cpp build/dilate.pencil_as_c.o build/ocl_utilities.o $(LDFLAGS)
 
-build/test_filter2D: all_opencl build/libcarp_pencil.so filter2D/test_filter2D.cpp
-	$(CXX) $(CXXFLAGS) filter2D/test_filter2D.cpp -o build/test_filter2D $(LDFLAGS) -lcarp_pencil 
+build/test_filter2D: all_opencl filter2D/test_filter2D.cpp build/filter2D.pencil_as_c.o build/ocl_utilities.o
+	$(CXX) $(CXXFLAGS) -o build/test_filter2D filter2D/test_filter2D.cpp build/filter2D.pencil_as_c.o build/ocl_utilities.o $(LDFLAGS)
 
-build/test_gaussian: all_opencl gaussian/test_gaussian.cpp build/libcarp_pencil.so
-	$(CXX) $(CXXFLAGS) gaussian/test_gaussian.cpp -o build/test_gaussian $(LDFLAGS) -lcarp_pencil 
+build/test_gaussian: all_opencl gaussian/test_gaussian.cpp build/gaussian.pencil_as_c.o build/ocl_utilities.o
+	$(CXX) $(CXXFLAGS) -o build/test_gaussian gaussian/test_gaussian.cpp build/gaussian.pencil_as_c.o build/ocl_utilities.o $(LDFLAGS)
 
-build/test_hog: all_opencl build/libcarp_pencil.so hog/test_hog.cpp 
-	$(CXX) $(CXXFLAGS) hog/test_hog.cpp -o build/test_hog $(LDFLAGS) -lcarp_pencil
+build/test_hog: all_opencl hog/test_hog.cpp build/hog.pencil_as_c.o build/ocl_utilities.o
+	$(CXX) $(CXXFLAGS) -o build/test_hog hog/test_hog.cpp build/hog.pencil_as_c.o build/ocl_utilities.o $(LDFLAGS)
 
-build/test_mlp: all_opencl build/libcarp_pencil.so mlp/test_mlp.cpp $(MLP_SOURCES)
-	$(CXX) $(CXXFLAGS) mlp/test_mlp.cpp $(MLP_SOURCES) -o build/test_mlp $(LDFLAGS) -lcarp_pencil
+build/test_mlp: all_opencl mlp/test_mlp.cpp $(MLP_SOURCES) build/mlp_impl.pencil_as_c.o build/ocl_utilities.o
+	$(CXX) $(CXXFLAGS) -o build/test_mlp mlp/test_mlp.cpp $(MLP_SOURCES) build/mlp_impl.pencil_as_c.o build/ocl_utilities.o $(LDFLAGS)
 
-build/test_opencl_mlp: all_opencl build/libcarp_pencil.so mlp/test_opencl_mlp.cpp $(MLP_SOURCES)
-	$(CXX) $(CXXFLAGS) mlp/test_opencl_mlp.cpp $(MLP_SOURCES) -o build/test_opencl_mlp $(LDFLAGS) -lcarp_pencil
+build/test_opencl_mlp: all_opencl mlp/test_opencl_mlp.cpp $(MLP_SOURCES) build/mlp_impl.pencil_as_c.o build/ocl_utilities.o
+	$(CXX) $(CXXFLAGS) -o build/test_opencl_mlp mlp/test_opencl_mlp.cpp $(MLP_SOURCES) build/mlp_impl.pencil_as_c.o build/ocl_utilities.o $(LDFLAGS)
 
-build/test_gel_mlp: all_opencl build/libcarp_pencil.so mlp/test_gel_mlp.cpp $(MLP_SOURCES)
-	$(CXX) $(CXXFLAGS) mlp/test_gel_mlp.cpp $(MLP_SOURCES) -o build/test_gel_mlp $(LDFLAGS) -lcarp_pencil 
+build/test_gel_mlp: all_opencl mlp/test_gel_mlp.cpp $(MLP_SOURCES) build/mlp_impl.pencil_as_c.o build/ocl_utilities.o
+	$(CXX) $(CXXFLAGS) -o build/test_gel_mlp mlp/test_gel_mlp.cpp $(MLP_SOURCES) build/mlp_impl.pencil_as_c.o build/ocl_utilities.o $(LDFLAGS)
 
-build/test_resize: all_opencl build/libcarp_pencil.so resize/test_resize.cpp 
-	$(CXX) $(CXXFLAGS) resize/test_resize.cpp -o build/test_resize $(LDFLAGS) -lcarp_pencil
+build/test_resize: all_opencl resize/test_resize.cpp build/resize.pencil_as_c.o build/ocl_utilities.o
+	$(CXX) $(CXXFLAGS) -o build/test_resize resize/test_resize.cpp build/resize.pencil_as_c.o build/ocl_utilities.o $(LDFLAGS)
 
-build/test_warpAffine: all_opencl build/libcarp_pencil.so warpAffine/test_warpAffine.cpp 
-	$(CXX) $(CXXFLAGS) warpAffine/test_warpAffine.cpp -o build/test_warpAffine $(LDFLAGS) -lcarp_pencil
+build/test_warpAffine: all_opencl warpAffine/test_warpAffine.cpp build/warpAffine.pencil_as_c.o build/ocl_utilities.o
+	$(CXX) $(CXXFLAGS) -o build/test_warpAffine warpAffine/test_warpAffine.cpp build/warpAffine.pencil_as_c.o build/ocl_utilities.o $(LDFLAGS)
 
 
 
