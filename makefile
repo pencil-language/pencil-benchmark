@@ -49,40 +49,31 @@ MLP_SOURCES=./mlp/serialization.cpp ./mlp/allocator.cpp
 all_opencl: build/filter_sep_row.clh build/filter_sep_col.clh build/cvt_color.clh build/imgproc_convolve.clh build/filtering_morph.clh build/mlp_impl.clh build/operators.clh build/imgproc_warpAffine.clh build/imgproc_resize.clh
 
 build/filter_sep_row.clh: ./gaussian/filter_sep_row.cl
-	ln -s --force ../gaussian/filter_sep_row.cl build/
-	cd build; $(XXD_COMPILER) -i filter_sep_row.cl filter_sep_row.clh
+	(cd gaussian && $(XXD_COMPILER) -i filter_sep_row.cl ../build/filter_sep_row.clh)
 
 build/filter_sep_col.clh: ./gaussian/filter_sep_col.cl
-	ln -s --force ../gaussian/filter_sep_col.cl build/
-	cd build; $(XXD_COMPILER) -i filter_sep_col.cl filter_sep_col.clh
+	(cd gaussian && $(XXD_COMPILER) -i filter_sep_col.cl ../build/filter_sep_col.clh)
 
 build/cvt_color.clh: ./cvt_color/cvt_color.cl
-	ln -s --force ../cvt_color/cvt_color.cl build/
-	cd build; $(XXD_COMPILER) -i cvt_color.cl cvt_color.clh
+	(cd cvt_color && $(XXD_COMPILER) -i cvt_color.cl ../build/cvt_color.clh)
 
 build/imgproc_convolve.clh: ./filter2D/imgproc_convolve.cl
-	ln -s --force ../filter2D/imgproc_convolve.cl build/
-	cd build; $(XXD_COMPILER) -i imgproc_convolve.cl imgproc_convolve.clh
+	(cd filter2D && $(XXD_COMPILER) -i imgproc_convolve.cl ../build/imgproc_convolve.clh)
 
 build/filtering_morph.clh: ./dilate/filtering_morph.cl
-	ln -s --force ../dilate/filtering_morph.cl build/
-	cd build; $(XXD_COMPILER) -i filtering_morph.cl filtering_morph.clh
+	(cd dilate && $(XXD_COMPILER) -i filtering_morph.cl ../build/filtering_morph.clh)
 
 build/mlp_impl.clh: ./mlp/mlp_impl.cl
-	ln -s --force ../mlp/mlp_impl.cl build/
-	cd build; $(XXD_COMPILER) -i mlp_impl.cl mlp_impl.clh
+	(cd mlp && $(XXD_COMPILER) -i mlp_impl.cl ../build/mlp_impl.clh)
 
 build/operators.clh: ./mlp/operators.cl
-	ln -s --force ../mlp/operators.cl build/
-	cd build; $(XXD_COMPILER) -i operators.cl operators.clh
+	(cd mlp && $(XXD_COMPILER) -i operators.cl ../build/operators.clh)
 
 build/imgproc_warpAffine.clh: ./warpAffine/imgproc_warpAffine.cl
-	ln -s --force ../warpAffine/imgproc_warpAffine.cl build/
-	cd build; $(XXD_COMPILER) -i imgproc_warpAffine.cl imgproc_warpAffine.clh
+	(cd warpAffine && $(XXD_COMPILER) -i imgproc_warpAffine.cl ../build/imgproc_warpAffine.clh)
 
 build/imgproc_resize.clh: ./resize/imgproc_resize.cl
-	ln -s --force ../resize/imgproc_resize.cl build/
-	cd build; $(XXD_COMPILER) -i imgproc_resize.cl imgproc_resize.clh
+	(cd resize && $(XXD_COMPILER) -i imgproc_resize.cl ../build/imgproc_resize.clh)
 
 ## PENCIL GCC LIBRARY
 build/libcarp_pencil.so: all_gcc_pencil_o
