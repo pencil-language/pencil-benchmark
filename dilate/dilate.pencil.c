@@ -31,6 +31,8 @@ static void dilate( const int rows
     __pencil_assume(dilate_step >= cols);
     __pencil_assume(se_rows     >  0);
     __pencil_assume(se_cols     >  0);
+    __pencil_assume(se_rows     <  16);
+    __pencil_assume(se_cols     <  16);
     __pencil_assume(se_step     >= se_cols);
     __pencil_assume(anchor_row  >= 0);
     __pencil_assume(anchor_col  >= 0);
