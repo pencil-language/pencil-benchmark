@@ -16,8 +16,10 @@ static void filter2D( const int rows
     __pencil_assume(rows        >  1);
     __pencil_assume(cols        >  1);
     __pencil_assume(step        >= cols);
-    __pencil_assume(kernel_rows ==  3);
-    __pencil_assume(kernel_cols ==  3);
+    __pencil_assume(kernel_rows <=  8);
+    __pencil_assume(kernel_cols <=  8);
+    __pencil_assume(kernel_rows >=  3);
+    __pencil_assume(kernel_cols >=  3);
     __pencil_assume(kernel_step >= kernel_cols);
 #endif
     {
