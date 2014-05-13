@@ -26,6 +26,8 @@ static void gaussian( const int rows
     __pencil_assume(kernelY_rows >  0);
     __pencil_assume(kernelY_cols >  0);
     __pencil_assume(kernelY_step >= kernelY_cols);
+    __pencil_assume((kernelX_rows <= 2 && kernelX_cols <= 128));
+    __pencil_assume((kernelY_rows <= 128 && kernelY_cols <= 2));
 #endif
     {
         float temp[rows][step];
