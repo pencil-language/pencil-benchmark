@@ -81,7 +81,6 @@ static void hog( const int rows
 #endif
 
 // TODO 1: #pragma pencil independent ?
-#pragma pencil independent
     for (int pointy = minyi; pointy <= maxyi; ++pointy) {
 #if SPARTIAL_WEIGHTS
         const double relative_pos_y = (pointy - miny) / cell_size - 0.5;
