@@ -78,6 +78,7 @@ static void hog( const int rows
 #endif
 
 #pragma scop
+// TODO 1: #pragma pencil independent ?
     for (int pointy = minyi; pointy <= maxyi; ++pointy) {
 #if SPARTIAL_WEIGHTS
         const double relative_pos_y = (pointy - miny) / cell_size - 0.5;
@@ -89,6 +90,7 @@ static void hog( const int rows
         const double dy = pointy - location_y;
         const double dySq = dy*dy;
 #endif
+// TODO 1: #pragma pencil independent ?
         for (int pointx = minxi; pointx <= maxxi; ++pointx) {
 #if SPARTIAL_WEIGHTS
             const double relative_pos_x = (pointx - minx) / cell_size - 0.5;
@@ -166,6 +168,7 @@ static void hog_multi( const int rows
                      , const double block_size
                      , double hist[static const restrict num_locations][NUMBER_OF_CELLS][NUMBER_OF_CELLS][NUMBER_OF_BINS]    //out
                      ) {
+// TODO 1: #pragma pencil independent ?
     for (int i = 0; i < num_locations; ++i) {
         hog(rows, cols, step, image, location_x[i], location_y[i], block_size, hist);
     }
