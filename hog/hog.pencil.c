@@ -13,17 +13,8 @@ static const double BINSIZE_IN_DEGREES = 180.0 / NUMBER_OF_BINS;
 #define M_PI           3.14159265358979323846
 #endif
 
-inline int min(int a, int b) {
-    return a <= b ? a : b;
-}
-
-inline double mind(double a, double b) {
-    return a <= b ? a : b;
-}
-
-inline int max(int a, int b) {
-    return a > b ? a : b;
-}
+#define min(x,y)    ((x) < (y) ? (x) : (y))
+#define max(x,y)    ((x) > (y) ? (x) : (y))
 
 inline void normalize(double hist[NUMBER_OF_CELLS][NUMBER_OF_CELLS][NUMBER_OF_BINS]) {
     static const double l2_hys_threshold = 0.15;
@@ -39,7 +30,7 @@ inline void normalize(double hist[NUMBER_OF_CELLS][NUMBER_OF_CELLS][NUMBER_OF_BI
     for (int i = 0; i < NUMBER_OF_CELLS; ++i)
         for (int j = 0; j < NUMBER_OF_CELLS; ++j)
             for (int k = 0; k < NUMBER_OF_BINS; ++k) {
-                hist[i][j][k] = mind(hist[i][j][k] * scale, l2_hys_threshold);
+                hist[i][j][k] = min(hist[i][j][k] * scale, l2_hys_threshold);
                 sum += hist[i][j][k] * hist[i][j][k];
             }
     for (int i = 0; i < NUMBER_OF_CELLS; ++i)
