@@ -69,11 +69,23 @@ static void hog( const int rows
 #endif
 
 #pragma scop
+
+    int cellyi;
+    int cellxi;
+
+#if __PENCIL__
+    __pencil_assume(cellxi < NUMBER_OF_CELLS);
+    __pencil_assume(cellyi < NUMBER_OF_CELLS);
+    __pencil_assume(cellxi >= 0);
+    __pencil_assume(cellyi >= 0);
+#endif
+
 // TODO 1: #pragma pencil independent ?
+#pragma pencil independent
     for (int pointy = minyi; pointy <= maxyi; ++pointy) {
 #if SPARTIAL_WEIGHTS
         const double relative_pos_y = (pointy - miny) / cell_size - 0.5;
-        const int cellyi = floor(relative_pos_y);
+        cellyi = floor(relative_pos_y);
         const double yscale1 = relative_pos_y - cellyi;
         const double yscale0 = 1.0 - yscale1;
 #endif
@@ -85,10 +97,11 @@ static void hog( const int rows
         for (int pointx = minxi; pointx <= maxxi; ++pointx) {
 #if SPARTIAL_WEIGHTS
             const double relative_pos_x = (pointx - minx) / cell_size - 0.5;
-            const int cellxi = floor(relative_pos_x);
+            cellxi = floor(relative_pos_x);
             const double xscale1 = relative_pos_x - cellxi;
             const double xscale0 = 1.0 - xscale1;
 #endif
+
 #if GAUSSIAN_WEIGHTS
             const double dx = pointx - location_x;
             const double dxSq = dx*dx;
@@ -136,10 +149,6 @@ static void hog( const int rows
 #else
             int cellxi = floor((pointx - minx) / cell_size);
             int cellyi = floor((pointy - miny) / cell_size);
-            assert(cellxi < NUMBER_OF_CELLS);
-            assert(cellyi < NUMBER_OF_CELLS);
-            assert(cellxi >= 0);
-            assert(cellyi >= 0);
             hist[cellxi][cellyi][bin0] += bin_weight0;
             hist[cellxi][cellyi][bin1] += bin_weight1;
 #endif
