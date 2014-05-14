@@ -88,6 +88,8 @@ static void hog( const int rows
         const double dy = pointy - location_y;
         const double dySq = dy*dy;
 #endif
+
+#pragma scop
         for (int pointx = minxi; pointx <= maxxi; ++pointx) {
 #if SPARTIAL_WEIGHTS
             const double relative_pos_x = (pointx - minx) / cell_size - 0.5;
@@ -151,6 +153,7 @@ static void hog( const int rows
 #endif
         }
     }
+#pragma endscop
     normalize(hist);
 }
 
