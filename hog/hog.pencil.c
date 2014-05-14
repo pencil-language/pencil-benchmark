@@ -147,8 +147,8 @@ static void hog( const int rows
             hist[0][0][bin0] += bin_weight0;
             hist[0][0][bin1] += bin_weight1;
 #else
-            int cellxi = floor((pointx - minx) / cell_size);
-            int cellyi = floor((pointy - miny) / cell_size);
+            cellxi = floor((pointx - minx) / cell_size);
+            cellyi = floor((pointy - miny) / cell_size);
             hist[cellxi][cellyi][bin0] += bin_weight0;
             hist[cellxi][cellyi][bin1] += bin_weight1;
 #endif
