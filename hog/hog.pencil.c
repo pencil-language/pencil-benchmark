@@ -4,9 +4,9 @@
 #include <string.h> //memset
 
 #if SIGNED_HOG
-static const double BINSIZE_IN_DEGREES = 360.0 / NUMBER_OF_BINS;
+static const float BINSIZE_IN_DEGREES = 360.0f / NUMBER_OF_BINS;
 #else
-static const double BINSIZE_IN_DEGREES = 180.0 / NUMBER_OF_BINS;
+static const float BINSIZE_IN_DEGREES = 180.0f / NUMBER_OF_BINS;
 #endif
 
 #ifndef M_PI
@@ -16,17 +16,17 @@ static const double BINSIZE_IN_DEGREES = 180.0 / NUMBER_OF_BINS;
 #define min(x,y)    ((x) < (y) ? (x) : (y))
 #define max(x,y)    ((x) > (y) ? (x) : (y))
 
-inline void normalize(double hist[NUMBER_OF_CELLS][NUMBER_OF_CELLS][NUMBER_OF_BINS]) {
-    static const double l2_hys_threshold = 0.15;
-    double sum = 0.0;
+static void normalize(float hist[NUMBER_OF_CELLS][NUMBER_OF_CELLS][NUMBER_OF_BINS]) {
+    static const float l2_hys_threshold = 0.15f;
+    float sum = 0.0f;
     for (int i = 0; i < NUMBER_OF_CELLS; ++i)
         for (int j = 0; j < NUMBER_OF_CELLS; ++j)
             for (int k = 0; k < NUMBER_OF_BINS; ++k)
                 sum += hist[i][j][k] * hist[i][j][k];
-    if (sum == 0.0)
+    if (sum == 0.0f)
         return;
-    double scale = 1.0/sqrt(sum);
-    sum = 0.0;
+    float scale = 1.0f/sqrt(sum);
+    sum = 0.0f;
     for (int i = 0; i < NUMBER_OF_CELLS; ++i)
         for (int j = 0; j < NUMBER_OF_CELLS; ++j)
             for (int k = 0; k < NUMBER_OF_BINS; ++k) {
@@ -43,17 +43,17 @@ static void hog( const int rows
                , const int cols
                , const int step
                , const uint8_t image[static const restrict rows][step]
-               , const double location_x
-               , const double location_y
-               , const double block_size
-               , double hist[NUMBER_OF_CELLS][NUMBER_OF_CELLS][NUMBER_OF_BINS]    //out
+               , const float location_x
+               , const float location_y
+               , const float block_size
+               , float hist[NUMBER_OF_CELLS][NUMBER_OF_CELLS][NUMBER_OF_BINS]    //out
                )
 {
-    const double cell_size = block_size / NUMBER_OF_CELLS;
-    const double minx = location_x - block_size / 2.0;
-    const double miny = location_y - block_size / 2.0;
-    const double maxx = location_x + block_size / 2.0;
-    const double maxy = location_y + block_size / 2.0;
+    const float cell_size = block_size / NUMBER_OF_CELLS;
+    const float minx = location_x - block_size / 2.0f;
+    const float miny = location_y - block_size / 2.0f;
+    const float maxx = location_x + block_size / 2.0f;
+    const float maxy = location_y + block_size / 2.0f;
 
     const int minxi = max(ceil(minx), 1);
     const int minyi = max(ceil(miny), 1);
@@ -63,9 +63,9 @@ static void hog( const int rows
     memset(hist, 0, HISTOGRAM_BINS);
 
 #if GAUSSIAN_WEIGHTS
-    const float sigma = block_size / 2.0;
+    const float sigma = block_size / 2.0f;
     const float sigmaSq = sigma*sigma;
-    const float m1p2sigmaSq = -1.0 / (2.0 * sigmaSq);
+    const float m1p2sigmaSq = -1.0f / (2.0f * sigmaSq);
 #endif
 
 #pragma scop
@@ -83,45 +83,45 @@ static void hog( const int rows
 #pragma pencil independent reduction(+:hist)
     for (int pointy = minyi; pointy <= maxyi; ++pointy) {
 #if SPARTIAL_WEIGHTS
-        double relative_pos_y = (pointy - miny) / cell_size - 0.5;
+        float relative_pos_y = (pointy - miny) / cell_size - 0.5f;
         cellyi = floor(relative_pos_y);
-        double yscale1 = relative_pos_y - cellyi;
-        double yscale0 = 1.0 - yscale1;
+        float yscale1 = relative_pos_y - cellyi;
+        float yscale0 = 1.0f - yscale1;
 #endif
 #if GAUSSIAN_WEIGHTS
-        double dy = pointy - location_y;
-        double dySq = dy*dy;
+        float dy = pointy - location_y;
+        float dySq = dy*dy;
 #endif
 #pragma pencil independent reduction(+:hist)
         for (int pointx = minxi; pointx <= maxxi; ++pointx) {
 #if SPARTIAL_WEIGHTS
-            double relative_pos_x = (pointx - minx) / cell_size - 0.5;
+            float relative_pos_x = (pointx - minx) / cell_size - 0.5f;
             cellxi = floor(relative_pos_x);
-            double xscale1 = relative_pos_x - cellxi;
-            double xscale0 = 1.0 - xscale1;
+            float xscale1 = relative_pos_x - cellxi;
+            float xscale0 = 1.0f - xscale1;
 #endif
 
 #if GAUSSIAN_WEIGHTS
-            double dx = pointx - location_x;
-            double dxSq = dx*dx;
+            float dx = pointx - location_x;
+            float dxSq = dx*dx;
 #endif
-            double mdx = image[pointy][pointx+1] - image[pointy][pointx-1];
-            double mdy = image[pointy+1][pointx] - image[pointy-1][pointx];
+            float mdx = image[pointy][pointx+1] - image[pointy][pointx-1];
+            float mdy = image[pointy+1][pointx] - image[pointy-1][pointx];
 
-            double magnitude = hypot(mdx, mdy);   //or = sqrt(mdx*mdx + mdy*mdy);
+            float magnitude = hypot(mdx, mdy);   //or = sqrt(mdx*mdx + mdy*mdy);
 #if SIGNED_HOG
-            double orientation = atan2(mdy, mdx) / M_PI * 180.0;
+            float orientation = atan2(mdy, mdx) / M_PI * 180.0f;
 #else
-            double orientation = tan2(mdy / mdx + DBL_EPSILON) / M_PI * 180.0 + 90.0;
+            float orientation = tan2(mdy / mdx + DBL_EPSILON) / M_PI * 180.0f + 90.0f;
 #endif
 #if GAUSSIAN_WEIGHTS
             magnitude *= exp((dxSq+dySq) * m1p2sigmaSq);
 #endif
-            double relative_orientation = (orientation - BINSIZE_IN_DEGREES/2.0) / BINSIZE_IN_DEGREES;
+            float relative_orientation = (orientation - BINSIZE_IN_DEGREES/2.0) / BINSIZE_IN_DEGREES;
             int bin1 = ceil(relative_orientation);
             int bin0 = bin1 - 1;
-            double bin_weight0 = magnitude * (bin1 - relative_orientation);
-            double bin_weight1 = magnitude * (relative_orientation - bin0);
+            float bin_weight0 = magnitude * (bin1 - relative_orientation);
+            float bin_weight1 = magnitude * (relative_orientation - bin0);
             bin0 = (bin0 + NUMBER_OF_BINS) % NUMBER_OF_BINS;
             bin1 = (bin1 + NUMBER_OF_BINS) % NUMBER_OF_BINS;
 
@@ -162,10 +162,10 @@ static void hog_multi( const int rows
                      , const int step
                      , const uint8_t image[static const restrict rows][step]
                      , const int num_locations
-                     , const double location_x[static const restrict num_locations]
-                     , const double location_y[static const restrict num_locations]
-                     , const double block_size
-                     , double hist[static const restrict num_locations][NUMBER_OF_CELLS][NUMBER_OF_CELLS][NUMBER_OF_BINS]    //out
+                     , const float location_x[static const restrict num_locations]
+                     , const float location_y[static const restrict num_locations]
+                     , const float block_size
+                     , float hist[static const restrict num_locations][NUMBER_OF_CELLS][NUMBER_OF_CELLS][NUMBER_OF_BINS]    //out
                      ) {
 #pragma pencil independent
     for (int i = 0; i < num_locations; ++i) {
@@ -178,10 +178,10 @@ void pencil_hog( const int rows
                , const int step
                , const uint8_t image[]
                , const int num_locations
-               , const double location_x[]
-               , const double location_y[]
-               , const double block_size
-               , double hist[]    //out
+               , const float location_x[]
+               , const float location_y[]
+               , const float block_size
+               , float hist[]    //out
                ) {
     hog_multi(rows,cols,step,image,num_locations,location_x,location_y,block_size,hist);
 }
