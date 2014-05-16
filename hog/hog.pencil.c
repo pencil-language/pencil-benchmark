@@ -46,7 +46,7 @@ static void hog( const int rows
                , const float location_x
                , const float location_y
                , const float block_size
-               , float hist[NUMBER_OF_CELLS][NUMBER_OF_CELLS][NUMBER_OF_BINS]    //out
+               , float hist[static const restrict NUMBER_OF_CELLS][NUMBER_OF_CELLS][NUMBER_OF_BINS]    //out
                )
 {
     const float cell_size = block_size / NUMBER_OF_CELLS;
