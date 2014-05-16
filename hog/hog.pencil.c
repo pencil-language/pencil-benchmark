@@ -80,48 +80,48 @@ static void hog( const int rows
     __pencil_assume(cellyi >= 0);
 #endif
 
-// TODO 1: #pragma pencil independent ?
+#pragma pencil independent reduction(+:hist)
     for (int pointy = minyi; pointy <= maxyi; ++pointy) {
 #if SPARTIAL_WEIGHTS
-        const double relative_pos_y = (pointy - miny) / cell_size - 0.5;
+        double relative_pos_y = (pointy - miny) / cell_size - 0.5;
         cellyi = floor(relative_pos_y);
-        const double yscale1 = relative_pos_y - cellyi;
-        const double yscale0 = 1.0 - yscale1;
+        double yscale1 = relative_pos_y - cellyi;
+        double yscale0 = 1.0 - yscale1;
 #endif
 #if GAUSSIAN_WEIGHTS
-        const double dy = pointy - location_y;
-        const double dySq = dy*dy;
+        double dy = pointy - location_y;
+        double dySq = dy*dy;
 #endif
-// TODO 1: #pragma pencil independent ?
+#pragma pencil independent reduction(+:hist)
         for (int pointx = minxi; pointx <= maxxi; ++pointx) {
 #if SPARTIAL_WEIGHTS
-            const double relative_pos_x = (pointx - minx) / cell_size - 0.5;
+            double relative_pos_x = (pointx - minx) / cell_size - 0.5;
             cellxi = floor(relative_pos_x);
-            const double xscale1 = relative_pos_x - cellxi;
-            const double xscale0 = 1.0 - xscale1;
+            double xscale1 = relative_pos_x - cellxi;
+            double xscale0 = 1.0 - xscale1;
 #endif
 
 #if GAUSSIAN_WEIGHTS
-            const double dx = pointx - location_x;
-            const double dxSq = dx*dx;
+            double dx = pointx - location_x;
+            double dxSq = dx*dx;
 #endif
-            const double mdx = image[pointy][pointx+1] - image[pointy][pointx-1];
-            const double mdy = image[pointy+1][pointx] - image[pointy-1][pointx];
+            double mdx = image[pointy][pointx+1] - image[pointy][pointx-1];
+            double mdy = image[pointy+1][pointx] - image[pointy-1][pointx];
 
             double magnitude = hypot(mdx, mdy);   //or = sqrt(mdx*mdx + mdy*mdy);
 #if SIGNED_HOG
-            const double orientation = atan2(mdy, mdx) / M_PI * 180.0;
+            double orientation = atan2(mdy, mdx) / M_PI * 180.0;
 #else
-            const double orientation = tan2(mdy / mdx + DBL_EPSILON) / M_PI * 180.0 + 90.0;
+            double orientation = tan2(mdy / mdx + DBL_EPSILON) / M_PI * 180.0 + 90.0;
 #endif
 #if GAUSSIAN_WEIGHTS
             magnitude *= exp((dxSq+dySq) * m1p2sigmaSq);
 #endif
-            const double relative_orientation = (orientation - BINSIZE_IN_DEGREES/2.0) / BINSIZE_IN_DEGREES;
+            double relative_orientation = (orientation - BINSIZE_IN_DEGREES/2.0) / BINSIZE_IN_DEGREES;
             int bin1 = ceil(relative_orientation);
             int bin0 = bin1 - 1;
-            const double bin_weight0 = magnitude * (bin1 - relative_orientation);
-            const double bin_weight1 = magnitude * (relative_orientation - bin0);
+            double bin_weight0 = magnitude * (bin1 - relative_orientation);
+            double bin_weight1 = magnitude * (relative_orientation - bin0);
             bin0 = (bin0 + NUMBER_OF_BINS) % NUMBER_OF_BINS;
             bin1 = (bin1 + NUMBER_OF_BINS) % NUMBER_OF_BINS;
 
@@ -167,7 +167,7 @@ static void hog_multi( const int rows
                      , const double block_size
                      , double hist[static const restrict num_locations][NUMBER_OF_CELLS][NUMBER_OF_CELLS][NUMBER_OF_BINS]    //out
                      ) {
-// TODO 1: #pragma pencil independent ?
+#pragma pencil independent
     for (int i = 0; i < num_locations; ++i) {
         hog(rows, cols, step, image, location_x[i], location_y[i], block_size, hist);
     }
