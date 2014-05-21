@@ -65,10 +65,7 @@ static void hog_multi( const int rows
 	    const int maxxi = min(ceil(maxx), cols - 2);
 	    const int maxyi = min(ceil(maxy), rows - 2);
 
-	    //	    memset(hist[i], 0, HISTOGRAM_BINS);
-	    for (int k = 0; k < HISTOGRAM_BINS; k++)
-		    hist[i][0][0][k] = 0;
-
+	    memset(hist[i], 0, HISTOGRAM_BINS);
 
 #if GAUSSIAN_WEIGHTS
 	    const float sigma = block_size / 2.0f;
