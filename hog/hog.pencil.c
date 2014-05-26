@@ -16,29 +16,6 @@ static const float BINSIZE_IN_DEGREES = 180.0f / NUMBER_OF_BINS;
 #define min(x,y)    ((x) < (y) ? (x) : (y))
 #define max(x,y)    ((x) > (y) ? (x) : (y))
 
-static void normalize(float hist[NUMBER_OF_CELLS][NUMBER_OF_CELLS][NUMBER_OF_BINS]) {
-    static const float l2_hys_threshold = 0.15f;
-    float sum = 0.0f;
-    for (int i = 0; i < NUMBER_OF_CELLS; ++i)
-        for (int j = 0; j < NUMBER_OF_CELLS; ++j)
-            for (int k = 0; k < NUMBER_OF_BINS; ++k)
-                sum += hist[i][j][k] * hist[i][j][k];
-    if (sum == 0.0f)
-        return;
-    float scale = 1.0f/sqrt(sum);
-    sum = 0.0f;
-    for (int i = 0; i < NUMBER_OF_CELLS; ++i)
-        for (int j = 0; j < NUMBER_OF_CELLS; ++j)
-            for (int k = 0; k < NUMBER_OF_BINS; ++k) {
-                hist[i][j][k] = min(hist[i][j][k] * scale, l2_hys_threshold);
-                sum += hist[i][j][k] * hist[i][j][k];
-            }
-    for (int i = 0; i < NUMBER_OF_CELLS; ++i)
-        for (int j = 0; j < NUMBER_OF_CELLS; ++j)
-            for (int k = 0; k < NUMBER_OF_BINS; ++k)
-                hist[i][j][k] = hist[i][j][k] * scale;
-}
-
 static void hog_multi( const int rows
                      , const int cols
                      , const int step
@@ -61,8 +38,8 @@ static void hog_multi( const int rows
 
 	    const int minxi = max(ceil(minx), 1);
 	    const int minyi = max(ceil(miny), 1);
-	    const int maxxi = min(ceil(maxx), cols - 2);
-	    const int maxyi = min(ceil(maxy), rows - 2);
+	    const int maxxi = min(floor(maxx), cols - 2);
+	    const int maxyi = min(floor(maxy), rows - 2);
 
 	    memset(hist[i], 0, HISTOGRAM_BINS);
 
@@ -117,7 +94,6 @@ static void hog_multi( const int rows
                 float bin_weight1 = magnitude * (relative_orientation - bin0);
                 bin0 = (bin0 + NUMBER_OF_BINS) % NUMBER_OF_BINS;
                 bin1 = (bin1 + NUMBER_OF_BINS) % NUMBER_OF_BINS;
-
 #if SPARTIAL_WEIGHTS
 #if __PENCIL__
                 __pencil_assume(cellxi < NUMBER_OF_CELLS);
@@ -157,11 +133,9 @@ static void hog_multi( const int rows
                 hist[i][cellxi][cellyi][bin1] += bin_weight1;
 #endif
             }
-	    }
-	    normalize(hist[i]);
+        }
     }
 #pragma endscop
-
 }
 
 void pencil_hog( const int rows

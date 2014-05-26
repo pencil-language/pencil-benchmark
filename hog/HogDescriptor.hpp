@@ -36,20 +36,9 @@ int nel::HOGDescriptor<numberOfCells, numberOfBins, gauss, spinterp, _signed>::g
 template<int numberOfCells, int numberOfBins, bool gauss, bool spinterp, bool _signed>
 float nel::HOGDescriptor<numberOfCells, numberOfBins, gauss, spinterp, _signed>::get_orientation(float mdy, float mdx) {
     if (_signed) {
-        return normalized_atan2(mdy, mdx)*90.0f;
+        return std::atan2(mdy, mdx) / M_PI * 180.0f;
     } else {
-        return normalized_atan(mdy / (mdx + FLT_EPSILON))*90.0f + 90.0f;
-    }
-}
-
-template<int numberOfCells, int numberOfBins, bool gauss, bool spinterp, bool _signed>
-void nel::HOGDescriptor<numberOfCells, numberOfBins, gauss, spinterp, _signed>::normalize(const cv::Mat_<float> &hist, cv::Mat_<float> &normalizedHist) {
-    static const float l2hys_thrs = 0.15f;
-    float scale = static_cast<float>(cv::norm(hist, cv::NORM_L2));
-    if (scale < std::numeric_limits<float>::epsilon()) {
-        normalizedHist = 0.0f;
-    } else {
-        cv::normalize(cv::min(hist / scale, l2hys_thrs), normalizedHist);
+        return std::tan(mdy / mdx + DBL_EPSILON) / M_PI * 180.0f + 90.0f;
     }
 }
 
@@ -61,7 +50,7 @@ cv::Mat_<float> nel::HOGDescriptor<numberOfCells, numberOfBins, gauss, spinterp,
                                                                                                   ) {
     assert(locationsx.size() == locationsy.size());
     cv::Mat_<float> descriptors(locationsx.size(), getNumberOfBins(), 0.0f);
-
+    
     tbb::parallel_for(tbb::blocked_range<size_t>(0, locationsx.size(), 5), [&](const tbb::blocked_range<size_t> range) {
     for (size_t n = range.begin(); n != range.end(); ++n) {
         const float centerx = locationsx[n];
@@ -115,9 +104,9 @@ cv::Mat_<float> nel::HOGDescriptor<numberOfCells, numberOfBins, gauss, spinterp,
                 float mdx = static_cast<float>(image(pointy, pointx + 1) - image(pointy, pointx - 1));
                 float mdy = static_cast<float>(image(pointy + 1, pointx) - image(pointy - 1, pointx));
 
-                float magnitude = std::sqrt(mdx*mdx + mdy*mdy);
+                float magnitude = std::hypot(mdx, mdy);
                 float orientation = nel::HOGDescriptor<numberOfCells, numberOfBins, gauss, spinterp, _signed>::get_orientation(mdy, mdx);   //GCC 4.6 bug??
-
+                
                 if (gauss) {
                     float dx = pointx - centerx;
                     float dx2 = dx*dx;
@@ -177,7 +166,7 @@ cv::Mat_<float> nel::HOGDescriptor<numberOfCells, numberOfBins, gauss, spinterp,
             }
         }
         auto row = descriptors.row(n);
-        nel::HOGDescriptor<numberOfCells, numberOfBins, gauss, spinterp, _signed>::normalize(cv::Mat(hist, false).reshape(0,1), row); //GCC 4.6 bug??
+        cv::Mat(hist,false).reshape(0,1).copyTo(row);
     }});
     return descriptors;
 }

@@ -14,18 +14,19 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
 {
     carp::Timing timing("HOG");
 
-    std::mt19937 rng;   //uses default seed
-
     for ( auto & size : sizes ) {
         for ( auto & item : pool ) {
+            std::mt19937 rng(0);   //uses same seed, reseed for all iteration
+            
             cv::Mat cpu_gray;
             cv::cvtColor( item.cpuimg(), cpu_gray, CV_RGB2GRAY );
 
             std::vector<float> locations_x, locations_y;
-            std::uniform_real_distribution<float> gen(0, cpu_gray.cols-1);
-            std::generate_n(std::back_inserter(locations_x), num_positions, [&](){ return gen(rng); });
-            std::generate_n(std::back_inserter(locations_y), num_positions, [&](){ return gen(rng); });
-
+            std::uniform_real_distribution<float> genx(size/2+1, cpu_gray.rows-1-size/2-1);
+            std::uniform_real_distribution<float> geny(size/2+1, cpu_gray.cols-1-size/2-1);
+            std::generate_n(std::back_inserter(locations_x), num_positions, [&](){ return genx(rng); });
+            std::generate_n(std::back_inserter(locations_y), num_positions, [&](){ return geny(rng); });
+            
             std::vector<float> cpu_result(num_positions * HISTOGRAM_BINS), gpu_result(num_positions * HISTOGRAM_BINS), pen_result(num_positions * HISTOGRAM_BINS);
             std::chrono::duration<double> elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil;
 
@@ -33,7 +34,12 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
                 //CPU implement
                 const auto cpu_start = std::chrono::high_resolution_clock::now();
 
-                auto result = nel::HOGDescriptor<1,1,false,false,true>::compute(cpu_gray, locations_x, locations_y, size);
+                auto result = nel::HOGDescriptor< NUMBER_OF_CELLS
+                                                , NUMBER_OF_BINS
+                                                , GAUSSIAN_WEIGHTS
+                                                , SPARTIAL_WEIGHTS
+                                                , SIGNED_HOG
+                                                >::compute(cpu_gray, locations_x, locations_y, size);
 
                 const auto cpu_end = std::chrono::high_resolution_clock::now();
 
@@ -71,14 +77,16 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
                 //Free up resources
             }
             // Verifying the results
-            if ( //(cv::norm( cpu_result, gpu_result ) > 0.01) ||
-                 (cv::norm( cpu_result, pen_result) > 0.01) )
+            if ( //cv::norm( cpu_result, gpu_result, cv::NORM_INF) > cv::norm( gpu_result, cv::NORM_INF)*1e-6 ) ||
+                 (cv::norm( cpu_result, pen_result, cv::NORM_INF) > cv::norm( cpu_result, cv::NORM_INF)*1e-6 )
+               )
             {
-                std::cout << "CPU norm:" << cv::norm(cpu_result) << std::endl;
-                std::cout << "GPU norm:" << cv::norm(gpu_result) << std::endl;
-                std::cout << "PEN norm:" << cv::norm(pen_result) << std::endl;
-                std::cout << "GPU-CPU norm:" << cv::norm(gpu_result, cpu_result) << std::endl;
-                std::cout << "PEN-CPU norm:" << cv::norm(pen_result, cpu_result) << std::endl;
+                std::cout << "CPU norm:" << cv::norm(cpu_result, cv::NORM_INF) << std::endl;
+//                std::cout << "GPU norm:" << cv::norm(gpu_result, cv::NORM_INF) << std::endl;
+                std::cout << "PEN norm:" << cv::norm(pen_result, cv::NORM_INF) << std::endl;
+//                std::cout << "GPU-CPU norm:" << cv::norm(gpu_result, cpu_result, cv::NORM_INF) << std::endl;
+                std::cout << "PEN-CPU norm:" << cv::norm(pen_result, cpu_result, cv::NORM_INF) << std::endl;
+
 #if 0
                 cv::Mat gpu_result8;
                 cv::Mat cpu_result8;
@@ -107,14 +115,18 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
 
 int main(int argc, char* argv[])
 {
-    std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
+    try {
+        std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
 
-    auto pool = carp::get_pool("pool");
+        auto pool = carp::get_pool("pool");
 #ifdef RUN_ONLY_ONE_EXPERIMENT
-    time_hog( pool, {64}, 50 );
+        time_hog( pool, {64}, 50 );
 #else
-    time_hog( pool, {16, 32, 64, 128, 192}, 50 );
+        time_hog( pool, {16, 32, 64, 128, 192}, 50 );
 #endif
 
-    return EXIT_SUCCESS;
+        return EXIT_SUCCESS;
+    }catch(...) {
+        return EXIT_FAILURE;
+    }
 } // main
