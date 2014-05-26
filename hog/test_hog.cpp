@@ -33,7 +33,7 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
                 //CPU implement
                 const auto cpu_start = std::chrono::high_resolution_clock::now();
 
-                auto result = nel::HOGDescriptor<1,8,false,false,true>::compute(cpu_gray, locations_x, locations_y, size);
+                auto result = nel::HOGDescriptor<1,1,false,false,true>::compute(cpu_gray, locations_x, locations_y, size);
 
                 const auto cpu_end = std::chrono::high_resolution_clock::now();
 

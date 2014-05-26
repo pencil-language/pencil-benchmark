@@ -6,7 +6,7 @@ extern "C" {
 
 //parameters
 #define NUMBER_OF_CELLS 1
-#define NUMBER_OF_BINS 8
+#define NUMBER_OF_BINS 1
 #define GAUSSIAN_WEIGHTS 0
 #define SPARTIAL_WEIGHTS 0
 #define SIGNED_HOG 1
