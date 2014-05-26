@@ -75,8 +75,10 @@ static void hog_multi( const int rows
                 float dx = pointx - location_x[i];
                 float dxSq = dx*dx;
 #endif
-                float mdx = image[pointy][pointx+1] - image[pointy][pointx-1];
-                float mdy = image[pointy+1][pointx] - image[pointy-1][pointx];
+		int t1 = pointx-1;
+		int t2 = pointy-1;
+                float mdx = image[pointy][pointx+1] - image[pointy][t1];
+                float mdy = image[pointy+1][pointx] - image[t2][pointx];
 
                 float magnitude = hypot(mdx, mdy);   //or = sqrt(mdx*mdx + mdy*mdy);
 #if SIGNED_HOG
