@@ -22,7 +22,7 @@ PPCG_OPTIONS=--no-shared-memory -D__PENCIL__ --target=opencl
 
 # Optimization Flags
 
-EXTRA_FLAGS=-O3 -DNDEBUG -march=native -fomit-frame-pointer -fPIC -ffast-math -Wall -I.
+EXTRA_FLAGS=-g -DNDEBUG -march=native -fomit-frame-pointer -fPIC -ffast-math -Wall -I.
 # EXTRA_FLAGS=-O3 -DNDEBUG -march=native -fomit-frame-pointer -fPIC -ffast-math -Wall -DPRINT_OPENCL_PROFILING_KERNEL_EXEC_TIME
 CFLAGS=$(EXTRA_FLAGS) -std=c99 -Iinclude -Ibuild -I$(OPENCL_INCLUDE)
 CXXFLAGS=$(EXTRA_FLAGS) -std=c++0x -Iinclude -Ibuild -I$(OPENCL_INCLUDE) -I$(OPENCV_INCLUDE_DIR) -I$(TBB_INCLUDE_DIR) -I$(BOOST_INCLUDE_DIR)
@@ -147,28 +147,28 @@ build/test_warpAffine: build/imgproc_warpAffine.clh warpAffine/test_warpAffine.c
 
 ## PPCG compiled source files
 build/cvt_color.pencil_ppcg.c: cvt_color/cvt_color.pencil.c
-	$(PPCG_COMPILER) $(PPCG_OPTIONS) -o build/cvt_color.pencil_ppcg.c cvt_color/cvt_color.pencil.c
+	(cd build && $(PPCG_COMPILER) $(PPCG_OPTIONS) -o cvt_color.pencil_ppcg.c ../cvt_color/cvt_color.pencil.c )
 
 build/dilate.pencil_ppcg.c: dilate/dilate.pencil.c
-	$(PPCG_COMPILER) $(PPCG_OPTIONS) -o build/dilate.pencil_ppcg.c dilate/dilate.pencil.c
+	(cd build && $(PPCG_COMPILER) $(PPCG_OPTIONS) -o dilate.pencil_ppcg.c ../dilate/dilate.pencil.c )
 
 build/filter2D.pencil_ppcg.c: filter2D/filter2D.pencil.c
-	$(PPCG_COMPILER) $(PPCG_OPTIONS) -o build/filter2D.pencil_ppcg.c filter2D/filter2D.pencil.c
+	(cd build && $(PPCG_COMPILER) $(PPCG_OPTIONS) -o filter2D.pencil_ppcg.c ../filter2D/filter2D.pencil.c )
 
 build/gaussian.pencil_ppcg.c: gaussian/gaussian.pencil.c
-	$(PPCG_COMPILER) $(PPCG_OPTIONS) -o build/gaussian.pencil_ppcg.c gaussian/gaussian.pencil.c
+	(cd build && $(PPCG_COMPILER) $(PPCG_OPTIONS) -o gaussian.pencil_ppcg.c ../gaussian/gaussian.pencil.c )
 
 build/hog.pencil_ppcg.c: hog/hog.pencil.c
-	$(PPCG_COMPILER) $(PPCG_OPTIONS) -o build/hog.pencil_ppcg.c hog/hog.pencil.c
+	(cd build && $(PPCG_COMPILER) $(PPCG_OPTIONS) -o hog.pencil_ppcg.c ../hog/hog.pencil.c )
 
 build/mlp_impl.pencil_ppcg.c: mlp/mlp_impl.pencil.c
-	$(PPCG_COMPILER) $(PPCG_OPTIONS) -o build/mlp_impl.pencil_ppcg.c mlp/mlp_impl.pencil.c
+	(cd build && $(PPCG_COMPILER) $(PPCG_OPTIONS) -o mlp_impl.pencil_ppcg.c ../mlp/mlp_impl.pencil.c )
 
 build/resize.pencil_ppcg.c: resize/resize.pencil.c
-	$(PPCG_COMPILER) $(PPCG_OPTIONS) -o build/resize.pencil_ppcg.c resize/resize.pencil.c
+	(cd build && $(PPCG_COMPILER) $(PPCG_OPTIONS) -o resize.pencil_ppcg.c ../resize/resize.pencil.c )
 
 build/warpAffine.pencil_ppcg.c: warpAffine/warpAffine.pencil.c
-	$(PPCG_COMPILER) $(PPCG_OPTIONS) -o build/warpAffine.pencil_ppcg.c warpAffine/warpAffine.pencil.c
+	(cd build && $(PPCG_COMPILER) $(PPCG_OPTIONS) -o warpAffine.pencil_ppcg.c ../warpAffine/warpAffine.pencil.c )
 
 
 
