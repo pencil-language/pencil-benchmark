@@ -30,16 +30,16 @@ static void hog_multi( const int rows
 
 #pragma pencil independent
     for (int i = 0; i < num_locations; ++i) {
-	    const float cell_size = block_size / NUMBER_OF_CELLS;
-	    const float minx = location_x[i] - block_size / 2.0f;
-	    const float miny = location_y[i] - block_size / 2.0f;
-	    const float maxx = location_x[i] + block_size / 2.0f;
-	    const float maxy = location_y[i] + block_size / 2.0f;
+	    float cell_size = block_size / NUMBER_OF_CELLS;
+	    float minx = location_x[i] - block_size / 2.0f;
+	    float miny = location_y[i] - block_size / 2.0f;
+	    float maxx = location_x[i] + block_size / 2.0f;
+	    float maxy = location_y[i] + block_size / 2.0f;
 
-	    const int minxi = max(ceil(minx), 1);
-	    const int minyi = max(ceil(miny), 1);
-	    const int maxxi = min(floor(maxx), cols - 2);
-	    const int maxyi = min(floor(maxy), rows - 2);
+	    int minxi = max(ceil(minx), 1);
+	    int minyi = max(ceil(miny), 1);
+	    int maxxi = min(floor(maxx), cols - 2);
+	    int maxyi = min(floor(maxy), rows - 2);
 
 	    memset(hist[i], 0, HISTOGRAM_BINS);
 
