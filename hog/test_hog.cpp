@@ -77,33 +77,17 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
                 //Free up resources
             }
             // Verifying the results
-            if ( //cv::norm( cpu_result, gpu_result, cv::NORM_INF) > cv::norm( gpu_result, cv::NORM_INF)*1e-6 ) ||
-                 (cv::norm( cpu_result, pen_result, cv::NORM_INF) > cv::norm( cpu_result, cv::NORM_INF)*1e-6 )
+            if ( //cv::norm( cpu_result, gpu_result, cv::NORM_INF) > cv::norm( gpu_result, cv::NORM_INF)*1e-5 ) ||
+                 (cv::norm( cpu_result, pen_result, cv::NORM_INF) > cv::norm( cpu_result, cv::NORM_INF)*1e-5 )
                )
             {
-                std::cout << "CPU norm:" << cv::norm(cpu_result, cv::NORM_INF) << std::endl;
-//                std::cout << "GPU norm:" << cv::norm(gpu_result, cv::NORM_INF) << std::endl;
-                std::cout << "PEN norm:" << cv::norm(pen_result, cv::NORM_INF) << std::endl;
-//                std::cout << "GPU-CPU norm:" << cv::norm(gpu_result, cpu_result, cv::NORM_INF) << std::endl;
-                std::cout << "PEN-CPU norm:" << cv::norm(pen_result, cpu_result, cv::NORM_INF) << std::endl;
+                std::cerr << "ERROR: Results don't match." << std::endl;
+                std::cerr << "CPU norm:" << cv::norm(cpu_result, cv::NORM_INF) << std::endl;
+//                std::cerr << "GPU norm:" << cv::norm(gpu_result, cv::NORM_INF) << std::endl;
+                std::cerr << "PEN norm:" << cv::norm(pen_result, cv::NORM_INF) << std::endl;
+//                std::cerr << "GPU-CPU norm:" << cv::norm(gpu_result, cpu_result, cv::NORM_INF) << std::endl;
+                std::cerr << "PEN-CPU norm:" << cv::norm(pen_result, cpu_result, cv::NORM_INF) << std::endl;
 
-#if 0
-                cv::Mat gpu_result8;
-                cv::Mat cpu_result8;
-                cv::Mat pen_result8;
-                cv::Mat diff8;
-
-                gpu_result.convertTo( gpu_result8, CV_8UC1, 255. );
-                cpu_result.convertTo( cpu_result8, CV_8UC1, 255. );
-                pen_result.convertTo( pen_result8, CV_8UC1, 255. );
-                cv::Mat absdiff = cv::abs(pen_result - cpu_result);
-                absdiff.convertTo( diff8, CV_8UC1, 255. );
-
-                cv::imwrite( "gpu_gaussian.png", gpu_result8 );
-                cv::imwrite( "cpu_gaussian.png", cpu_result8 );
-                cv::imwrite( "pencil_gaussian.png", pen_result8 );
-                cv::imwrite( "diff_gaussian.png", diff8 );
-#endif
                 throw std::runtime_error("The GPU results are not equivalent with the CPU results.");
             }
             timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil );

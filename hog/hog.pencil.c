@@ -44,9 +44,9 @@ static void hog_multi( const int rows
 	          hist[i][j1][j2][j3] = 0;
 
 #if GAUSSIAN_WEIGHTS
-	    const float sigma = blck_size / 2.0f;
-	    const float sigmaSq = sigma*sigma;
-	    const float m1p2sigmaSq = -1.0f / (2.0f * sigmaSq);
+	    float sigma = blck_size / 2.0f;
+	    float sigmaSq = sigma*sigma;
+	    float m1p2sigmaSq = -1.0f / (2.0f * sigmaSq);
 #endif
 
 	    #pragma pencil independent reduction(+:hist[i])

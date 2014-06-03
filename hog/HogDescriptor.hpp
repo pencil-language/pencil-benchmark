@@ -14,8 +14,6 @@
 #error This is a private implementation file for HogDescriptor.h, do not include directly
 #endif
 
-#include "fast_approximate_math.h"
-
 #include <algorithm>
 #include <cfloat>
 #include <cassert>
@@ -64,10 +62,10 @@ cv::Mat_<float> nel::HOGDescriptor<numberOfCells, numberOfBins, gauss, spinterp,
         const float maxx = centerx + halfblocksize;
         const float maxy = centery + halfblocksize;
 
-        const int minxi = std::max(fast_ceil(minx) , 1);
-        const int minyi = std::max(fast_ceil(miny) , 1);
-        const int maxxi = std::min(fast_floor(maxx), image.cols - 2);
-        const int maxyi = std::min(fast_floor(maxy), image.rows - 2);
+        const int minxi = std::max((int)ceil(minx) , 1);
+        const int minyi = std::max((int)ceil(miny) , 1);
+        const int maxxi = std::min((int)floor(maxx), image.cols - 2);
+        const int maxyi = std::min((int)floor(maxy), image.rows - 2);
 
         cv::Matx<float, numberOfCells * numberOfCells, numberOfBins> hist(0.0f);
 
@@ -88,7 +86,7 @@ cv::Mat_<float> nel::HOGDescriptor<numberOfCells, numberOfBins, gauss, spinterp,
                 //Relative position of the pixel compared to the cell centers - y dimension
                 float relative_pos_y = (pointy - miny) / cellsize - 0.5f;
                 //Calculate the integral part and the fractional part of the relative position - y dimension
-                cellyi = fast_floor(relative_pos_y);
+                cellyi = floor(relative_pos_y);
 
                 yscale1 = relative_pos_y - cellyi;
                 yscale0 = 1.0f - yscale1;
@@ -116,7 +114,7 @@ cv::Mat_<float> nel::HOGDescriptor<numberOfCells, numberOfBins, gauss, spinterp,
 
                 // linear/trilinear interpolation of magnitudes
                 float bin = (orientation - binSizeInDegrees / 2.0f) / binSizeInDegrees;
-                int bin1 = fast_ceil(bin);
+                int bin1 = ceil(bin);
                 int bin0 = bin1 - 1;
                 float magscale0 = magnitude * (bin1 - bin);
                 float magscale1 = magnitude * (bin - bin0);
@@ -127,7 +125,7 @@ cv::Mat_<float> nel::HOGDescriptor<numberOfCells, numberOfBins, gauss, spinterp,
                     //Relative position of the pixel compared to the cell centers - x dimension
                     float relative_pos_x = (pointx - minx) / cellsize - 0.5f;
                     //Calculate the integral part and the fractional part of the relative position - x dimension
-                    int cellxi = fast_floor(relative_pos_x);
+                    int cellxi = floor(relative_pos_x);
 
                     float xscale1 = relative_pos_x - cellxi;
                     float xscale0 = 1.0f - xscale1;
@@ -153,8 +151,8 @@ cv::Mat_<float> nel::HOGDescriptor<numberOfCells, numberOfBins, gauss, spinterp,
                         hist(0, binidx0) += magscale0;
                         hist(0, binidx1) += magscale1;
                     } else {
-                        int cellxi = fast_floor((pointx - minx) / cellsize);
-                        int cellyi = fast_floor((pointy - miny) / cellsize);
+                        int cellxi = floor((pointx - minx) / cellsize);
+                        int cellyi = floor((pointy - miny) / cellsize);
                         assert(cellxi < numberOfCells);
                         assert(cellyi < numberOfCells);
                         assert(cellxi >= 0);
