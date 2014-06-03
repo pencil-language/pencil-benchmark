@@ -25,9 +25,9 @@ PPCG_OPTIONS=--no-shared-memory -D__PENCIL__ --target=opencl
 
 # Optimization Flags
 
-EXTRA_FLAGS=-O3 -DNDEBUG -march=native -fomit-frame-pointer -fPIC -ffast-math -Wall -I.
+EXTRA_FLAGS=-O3 -DNDEBUG -march=native -fomit-frame-pointer -fPIC -ffast-math -Wall -Wno-unknown-pragmas -I.
 # EXTRA_FLAGS=-O3 -DNDEBUG -march=native -fomit-frame-pointer -fPIC -ffast-math -Wall -DPRINT_OPENCL_PROFILING_KERNEL_EXEC_TIME
-CFLAGS=$(EXTRA_FLAGS) -std=c99 -Iinclude -Ibuild -I$(OPENCL_INCLUDE)
+CFLAGS=$(EXTRA_FLAGS) -std=c1x -Iinclude -Ibuild -I$(OPENCL_INCLUDE)
 CXXFLAGS=$(EXTRA_FLAGS) -std=c++0x -Iinclude -Ibuild -I$(OPENCL_INCLUDE) -I$(OPENCV_INCLUDE_DIR) -I$(TBB_INCLUDE_DIR) -I$(BOOST_INCLUDE_DIR)
 LDFLAGS=-L$(OPENCL_LIB_DIR) $(OPENCL_LIB) -L$(OPENCV_LIB_DIR) $(OPENCV_LIBS) -L$(TBB_LIB_DIR) $(TBB_LIBS) -Lbuild -L$(BOOST_LIB_DIR) $(BOOST_LIBS) -Wl,-rpath=$$ORIGIN:$(OPENCV_LIB_DIR) -Wl,-z,origin ${EXTRA_OPENCL_LIBRARY}
 
