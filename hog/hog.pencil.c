@@ -1,6 +1,6 @@
 #include "hog.pencil.h"
 
-#include <math.h>   //sqrt, atan, atan2, ceil, floor
+#include "../pencil/math.h"   //sqrt, atan, atan2, ceil, floor
 #include <string.h> //memset
 
 #if SIGNED_HOG
@@ -12,9 +12,6 @@ static const float BINSIZE_IN_DEGREES = 180.0f / NUMBER_OF_BINS;
 #ifndef M_PI
 #define M_PI           3.14159265358979323846
 #endif
-
-#define min(x,y)    ((x) < (y) ? (x) : (y))
-#define max(x,y)    ((x) > (y) ? (x) : (y))
 
 static void hog_multi( const int rows
                      , const int cols
@@ -36,10 +33,10 @@ static void hog_multi( const int rows
 	    float maxx = location_x[i] + blck_size / 2.0f;
 	    float maxy = location_y[i] + blck_size / 2.0f;
 
-	    int minxi = max(ceil(minx), 1);
-	    int minyi = max(ceil(miny), 1);
-	    int maxxi = min(floor(maxx), cols - 2);
-	    int maxyi = min(floor(maxy), rows - 2);
+	    int minxi = max((int)ceil(minx), 1);
+	    int minyi = max((int)ceil(miny), 1);
+	    int maxxi = min((int)floor(maxx), cols - 2);
+	    int maxyi = min((int)floor(maxy), rows - 2);
 
 	    for (int j1 = 0; j1 < NUMBER_OF_CELLS; j1++)
 	      for (int j2 = 0; j2 < NUMBER_OF_CELLS; j2++)

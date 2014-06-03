@@ -2,12 +2,9 @@
 #include <stdint.h>
 #include <assert.h>
 
-#include "dilate.pencil.h"
+#include "../pencil/math.h"
 
-unsigned char max(unsigned char A, unsigned char B)
-{
-	return (A>B)?A:B;
-}
+#include "dilate.pencil.h"
 
 static void dilate( const int rows
                   , const int cols

@@ -1,5 +1,7 @@
 #include "filter2D.pencil.h"
 
+#include "../pencil/math.h"
+
 static void filter2D( const int rows
                     , const int cols
                     , const int step
@@ -35,10 +37,8 @@ static void filter2D( const int rows
                 {
                     for ( int r = 0; r < kernel_cols; r++ )
                     {
-                        int row = q + e - kernel_rows / 2;
-                        int col = w + r - kernel_cols / 2;
-                        row = (row < rows) ? ((row < 0) ? 0 : row) : rows - 1;
-			col = (col < cols) ? ((col < 0) ? 0 : col) : cols - 1;
+                        int row = clampi( q + e - kernel_rows / 2, 0, rows-1 );
+                        int col = clampi( w + r - kernel_cols / 2, 0, cols-1 );
 			prod += src[row][col] * kernel_[e][r];
                     }
                 }
