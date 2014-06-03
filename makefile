@@ -5,8 +5,9 @@ BOOST_INCLUDE_DIR=/usr/include/
 BOOST_LIB_DIR=/usr/lib/x86_64-linux-gnu/
 BOOST_LIBS=-lboost_filesystem -lboost_serialization -lboost_system
 
-OPENCV_INCLUDE_DIR=/usr/local/include/
-OPENCV_LIB_DIR=/usr/local/lib/
+OPENCV_PREFIX=/usr/local/
+OPENCV_INCLUDE_DIR=$(OPENCV_PREFIX)include/
+OPENCV_LIB_DIR=$(OPENCV_PREFIX)lib/
 OPENCV_LIBS=-lopencv_core -lopencv_imgproc -lopencv_ocl -lopencv_highgui
 
 TBB_INCLUDE_DIR=/usr/include/
@@ -20,13 +21,15 @@ OPENCL_LIB=-lOpenCL
 
 PPCG_OPTIONS=--no-shared-memory -D__PENCIL__ --target=opencl
 
+EXTRA_OPENCL_LIBRARY=-lmali
+
 # Optimization Flags
 
 EXTRA_FLAGS=-O3 -DNDEBUG -march=native -fomit-frame-pointer -fPIC -ffast-math -Wall -I.
 # EXTRA_FLAGS=-O3 -DNDEBUG -march=native -fomit-frame-pointer -fPIC -ffast-math -Wall -DPRINT_OPENCL_PROFILING_KERNEL_EXEC_TIME
 CFLAGS=$(EXTRA_FLAGS) -std=c99 -Iinclude -Ibuild -I$(OPENCL_INCLUDE)
 CXXFLAGS=$(EXTRA_FLAGS) -std=c++0x -Iinclude -Ibuild -I$(OPENCL_INCLUDE) -I$(OPENCV_INCLUDE_DIR) -I$(TBB_INCLUDE_DIR) -I$(BOOST_INCLUDE_DIR)
-LDFLAGS=-L$(OPENCL_LIB_DIR) $(OPENCL_LIB) -L$(OPENCV_LIB_DIR) $(OPENCV_LIBS) -L$(TBB_LIB_DIR) $(TBB_LIBS) -Lbuild -L$(BOOST_LIB_DIR) $(BOOST_LIBS) -Wl,-rpath=$$ORIGIN:$(OPENCV_LIB_DIR) -Wl,-z,origin
+LDFLAGS=-L$(OPENCL_LIB_DIR) $(OPENCL_LIB) -L$(OPENCV_LIB_DIR) $(OPENCV_LIBS) -L$(TBB_LIB_DIR) $(TBB_LIBS) -Lbuild -L$(BOOST_LIB_DIR) $(BOOST_LIBS) -Wl,-rpath=$$ORIGIN:$(OPENCV_LIB_DIR) -Wl,-z,origin $EXTRA_OPENCL_LIBRARY
 
 all: all_test all_ppcg_test mlp_data
 
