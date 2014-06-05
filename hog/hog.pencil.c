@@ -69,7 +69,7 @@ static void hog_multi( const int rows
             for (int pointx = minxi; pointx <= maxxi; ++pointx) {
 #if SPARTIAL_WEIGHTS
                 float relative_pos_x = (pointx - minx) / cell_size - 0.5f;
-                cellxi = floor(relative_pos_x);
+                int cellxi = floor(relative_pos_x);
                 float xscale1 = relative_pos_x - cellxi;
                 float xscale0 = 1.0f - xscale1;
 #endif
