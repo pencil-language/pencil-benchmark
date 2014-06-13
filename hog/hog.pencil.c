@@ -134,8 +134,8 @@ static void hog_multi( const int rows
                 __pencil_assume(cellxi >= 0);
                 __pencil_assume(cellyi >= 0);
 #endif
-                hist[i][cellxi][cellyi][bin0] += bin_weight0;
-                hist[i][cellxi][cellyi][bin1] += bin_weight1;
+                hist[i][cellyi][cellxi][bin0] += bin_weight0;
+                hist[i][cellyi][cellxi][bin1] += bin_weight1;
 #endif
             }
         }
