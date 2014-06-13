@@ -371,22 +371,21 @@ public:
         return kernels[kernel_name];
     } // operator[]
 
-    cl_context
-    get_context() {
+    cl_context get_context() {
         return cxGPUContext.get();
     }
 
-    cl_command_queue
-    get_queue() {
+    cl_command_queue get_queue() {
         return cqCommandQueue.get();
     }
-
+    
+    cl_device_id get_device_id() const {
+        return devices[0];
+    }
 
     void erase( const std::string & kernel_name ) {
         kernels.erase(kernel_name);
     }
-
-
 }; // class device
 
 

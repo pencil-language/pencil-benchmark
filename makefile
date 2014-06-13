@@ -83,6 +83,8 @@ build/imgproc_resize.clh: resize/imgproc_resize.cl
 build/imgproc_warpAffine.clh: warpAffine/imgproc_warpAffine.cl
 	(cd warpAffine && $(XXD_COMPILER) -i imgproc_warpAffine.cl ../build/imgproc_warpAffine.clh)
 
+build/hog.clh: hog/hog.opencl.cl
+	(cd hog && $(XXD_COMPILER) -i hog.opencl.cl ../build/hog.clh)
 
 
 ## PENCIL-as-c compile
@@ -128,7 +130,7 @@ build/test_filter2D: build/imgproc_convolve.clh filter2D/test_filter2D.cpp build
 build/test_gaussian: build/filter_sep_row.clh build/filter_sep_col.clh gaussian/test_gaussian.cpp build/gaussian.pencil_as_c.o build/ocl_utilities.o
 	$(CXX) $(CXXFLAGS) -o build/test_gaussian gaussian/test_gaussian.cpp build/gaussian.pencil_as_c.o build/ocl_utilities.o $(LDFLAGS)
 
-build/test_hog: hog/test_hog.cpp build/hog.pencil_as_c.o build/ocl_utilities.o
+build/test_hog: hog/test_hog.cpp build/hog.pencil_as_c.o build/ocl_utilities.o build/hog.clh
 	$(CXX) $(CXXFLAGS) -o build/test_hog hog/test_hog.cpp build/hog.pencil_as_c.o build/ocl_utilities.o $(LDFLAGS)
 
 build/test_mlp: build/mlp_impl.clh build/operators.clh mlp/test_mlp.cpp $(MLP_SOURCES) build/mlp_impl.pencil_as_c.o build/ocl_utilities.o
@@ -215,7 +217,7 @@ build/ppcg_test_filter2D: build/imgproc_convolve.clh filter2D/test_filter2D.cpp 
 build/ppcg_test_gaussian: build/filter_sep_row.clh build/filter_sep_col.clh gaussian/test_gaussian.cpp build/gaussian.pencil_ppcg.o build/ocl_utilities.o
 	$(CXX) $(CXXFLAGS) -o build/ppcg_test_gaussian gaussian/test_gaussian.cpp build/gaussian.pencil_ppcg.o build/ocl_utilities.o $(LDFLAGS)
 
-build/ppcg_test_hog: hog/test_hog.cpp build/hog.pencil_ppcg.o build/ocl_utilities.o
+build/ppcg_test_hog: build/hog.clh hog/test_hog.cpp build/hog.pencil_ppcg.o build/ocl_utilities.o
 	$(CXX) $(CXXFLAGS) -o build/ppcg_test_hog hog/test_hog.cpp build/hog.pencil_ppcg.o build/ocl_utilities.o $(LDFLAGS)
 
 build/ppcg_test_mlp: build/mlp_impl.clh build/operators.clh mlp/test_mlp.cpp $(MLP_SOURCES) build/mlp_impl.pencil_ppcg.o build/ocl_utilities.o
