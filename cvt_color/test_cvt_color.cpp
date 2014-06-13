@@ -1,12 +1,11 @@
 // UjoImro, 2013
 
 #include <chrono>
-#include <opencv2/opencv.hpp>
+#include <opencv2/core/core.hpp>
 #include <opencv2/ocl/ocl.hpp>
 
 #include "opencl.hpp"
 #include "utility.hpp"
-#include "cvt_color.clh"
 #include "cvt_color.pencil.h"
 
 void time_cvtColor( const std::vector<carp::record_t>& pool, size_t iterations)
@@ -28,19 +27,11 @@ void time_cvtColor( const std::vector<carp::record_t>& pool, size_t iterations)
                 elapsed_time_cpu = end - start;
             }
             {
-                cv::ocl::Context * context = cv::ocl::Context::getContext();
-                carp::opencl::device device(context);
-                device.source_compile( cvt_color_cl, cvt_color_cl_len, {"RGB2Gray"} );
-
                 const auto start_copy = std::chrono::high_resolution_clock::now();
-                cv::ocl::oclMat gpu_gray;
                 cv::ocl::oclMat gpuimg(cpuimg);
-                gpu_gray.create( gpuimg.rows, gpuimg.cols, CV_8U );
-
+                cv::ocl::oclMat gpu_gray;
                 const auto start = std::chrono::high_resolution_clock::now();
-                device["RGB2Gray"]( gpuimg.cols, gpuimg.rows, static_cast<int>(gpuimg.step), static_cast<int>(gpu_gray.step)
-                                  , gpuimg.channels()+1, 2, reinterpret_cast<cl_mem>(gpuimg.data), reinterpret_cast<cl_mem>(gpu_gray.data)
-                                  ).groupsize( {16,16}, {cpuimg.cols, cpuimg.rows});
+                cv::ocl::cvtColor( gpuimg, gpu_gray, CV_RGB2GRAY );
                 const auto end = std::chrono::high_resolution_clock::now();
                 gpu_result = gpu_gray;
                 const auto end_copy = std::chrono::high_resolution_clock::now();

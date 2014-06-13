@@ -236,36 +236,6 @@ public:
 
     } // device
 
-    device( cv::ocl::Context * context )
-    : cxGPUContext( reinterpret_cast<cl_context>(context->oclContext()), [](cl_context){ } ),
-      cqCommandQueue( reinterpret_cast<cl_command_queue>(context->oclCommandQueue()), [](cl_command_queue) { }  )
-    {
-        if (!cxGPUContext)
-            throw std::runtime_error("Invalid GPU context!");
-
-        if (!cqCommandQueue)
-            throw std::runtime_error("Invalid GPU queue!");
-
-        cpPlatform.reset(new cl_platform_id);
-        utility::checkerror(clGetPlatformIDs(1, cpPlatform.get(), &num_platforms), __FILE__, __LINE__ );
-        assert(num_platforms==1);  // there is only one supported platform at the time
-
-        // getting the number of devices
-        clGetDeviceIDs(*cpPlatform, CL_DEVICE, 0, NULL, &num_devices);
-
-        if (num_devices>0) {
-            devices.resize(num_devices);
-            utility::checkerror(clGetDeviceIDs(*cpPlatform, CL_DEVICE, devices.size(), devices.data(), NULL ), __FILE__, __LINE__ );
-        } else if (num_devices<=0) {
-            utility::checkerror(clGetDeviceIDs(*cpPlatform, CL_DEVICE, 0, NULL, &num_devices), __FILE__, __LINE__ );
-            devices.resize(num_devices);
-            utility::checkerror(clGetDeviceIDs(*cpPlatform, CL_DEVICE, devices.size(), devices.data(), NULL ), __FILE__, __LINE__ );
-        }
-
-        if (num_devices>1)
-            std::cout << "warning: more then one GPU device detected, only the first will be used." << std::endl;
-    } // device
-
     ~device() {
         // if(cpProgram) clReleaseProgram(cpProgram);
         // if (automanage) {

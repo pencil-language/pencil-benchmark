@@ -1,33 +1,51 @@
+## Building CARP-Benchmarks with a working PPCG, short version for Ubuntu ##
+  cd ..
+  sudo apt-get install -y libboost-all-dev libtbb-dev build-essential p7zip cmake
+  git clone https://github.com/Itseez/opencv.git
+  cd opencv
+  git checkout 2.4.9
+  cd ..
+  mkdir opencv-build
+  cd opencv-build
+  cmake ../opencv -DWITH_TBB=ON -DENABLE_AVX=ON -DENABLE_SSE41=ON -DENABLE_SSE42=ON -DENABLE_SSSE3=ON -DENABLE_SSE3=ON
+  make all -j12
+  sudo make install
+  cd ../CARP-Benchmarks
+  make all -j12
+
 ## Building ##
 
 To build the CARP-Benchmarks, you need:
 - A working OpenCL driver.
 - PPCG compiler
 	Refer to PPCG readme how to build.
-- The following packages needs to be installed (at least on Ubuntu 13.12):
+- The following packages needs to be installed (at least on Ubuntu 13.10):
 	libboost-filesystem-dev libboost-serialization-dev libboost-system-dev (or, full Boost: libboost-all-dev)
 	libtbb-dev
 	build-essential
 	p7zip
-- Build OpenCV:
-	Tested with a patched version of 2.4.6.1 - the patch is included in the repository.
-	Download 2.4.6.1 and apply 'opencv-2.4.6.1_autolock_and_gpuimg.patch':
+	cmake
+- An OpenCV build:
+	Tested with 2.4.9
+	Download OpenCV
 	    git clone https://github.com/Itseez/opencv.git
+	Checkout 2.4.9:
 	    cd opencv
-	    git checkout 2.4.6.1
-	    patch -p0 < index path_to_CARP-Benchmarks/opencv-2.4.6.1_autolock_and_gpuimg.patch
+	    git checkout 2.4.9
 	    cd ..
-	While building OpenCV, make sure to enable opencv_ocl module in CMake.
+	Configure build with CMake:
 	    mkdir opencv-build
 	    cd opencv-build
-	    cmake ../opencv -DWITH_TBB=ON -DENABLE_AVX=ON -DENABLE_SSE41=ON -DENABLE_SSE42=ON  -DENABLE_SSSE3=ON -DENABLE_SSE3=ON -DOPENCL_INCLUDE_DIR=/usr/local/cuda/include/ -DOPENCL_LIBRARY=/usr/lib/libOpenCL.so
-	For good performance it is advised to enable all instruction sets (SSE 3/SSSE 3/SSE 4.1/SSE 4.2/AVX) supported by the processor (ENABLE_SSE3=ON, etc.), and Intel Threading Building Blocks (WITH_TBB=ON).
-	And finally:
+	    cmake ../opencv -DWITH_TBB=ON -DENABLE_AVX=ON -DENABLE_SSE41=ON -DENABLE_SSE42=ON  -DENABLE_SSSE3=ON -DENABLE_SSE3=ON
+	  (Warning, if your CPU or OS does not support AVX/SSEx instruction sets, do not add the corresponding compile switches)
 	    make all -j12
+	Make sure the necessary modules are to be built - CMake should print a (long) status with a "To be built:" list, it should contain core, ocl and highgui (plus their dependencies)
+	Optionally, install it as a system library:
+	    sudo make install
 	
 	Alternatively, you can try newer versions that might have fixed the issue in the patch, but those versions are not tested.
 - Edit required paths in the makefile in CARP-Benchmarks root directory:
-	Change the PPCG and OpenCV build directories.
+	Change the PPCG path, and OpenCV path, if you have not installed it, or not to the default directory. (Repository path points to the default install dir).
 - Build benchmark:
 	cd path_to_CARP-Benchmarks
 	make all
