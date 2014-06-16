@@ -19,8 +19,7 @@ void pencil_hog( const int rows
                , const int step
                , const uint8_t image[]
                , const int num_locations
-               , const float location_x[]
-               , const float location_y[]
+               , const float location[][2]
                , const float block_size
                , float hist[]    //out
                );

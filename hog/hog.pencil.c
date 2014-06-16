@@ -1,7 +1,6 @@
 #include "hog.pencil.h"
 
 #include "../pencil/math.h"   //sqrt, atan, atan2, ceil, floor
-#include <string.h> //memset
 
 #if SIGNED_HOG
 static const float BINSIZE_IN_DEGREES = 360.0f / NUMBER_OF_BINS;
@@ -21,8 +20,7 @@ static void hog_multi( const int rows
                      , const int step
                      , const uint8_t image[static const restrict rows][step]
                      , const int num_locations
-                     , const float location_x[static const restrict num_locations]
-                     , const float location_y[static const restrict num_locations]
+                     , const float location[static const restrict num_locations][2]
                      , const float blck_size
                      , float hist[static const restrict num_locations][NUMBER_OF_CELLS][NUMBER_OF_CELLS][NUMBER_OF_BINS]    //out
                      ) {
@@ -30,30 +28,30 @@ static void hog_multi( const int rows
 
 #pragma pencil independent
     for (int i = 0; i < num_locations; ++i) {
-	    float cell_size = blck_size / NUMBER_OF_CELLS;
-	    float minx = location_x[i] - blck_size / 2.0f;
-	    float miny = location_y[i] - blck_size / 2.0f;
-	    float maxx = location_x[i] + blck_size / 2.0f;
-	    float maxy = location_y[i] + blck_size / 2.0f;
+        float cell_size = blck_size / NUMBER_OF_CELLS;
+        float minx = location[i][0] - blck_size / 2.0f;
+        float miny = location[i][1] - blck_size / 2.0f;
+        float maxx = location[i][0] + blck_size / 2.0f;
+        float maxy = location[i][1] + blck_size / 2.0f;
 
-	    int minxi = max((int)ceil(minx), 1);
-	    int minyi = max((int)ceil(miny), 1);
-	    int maxxi = min((int)floor(maxx), cols - 2);
-	    int maxyi = min((int)floor(maxy), rows - 2);
+        int minxi = max((int)ceil(minx), 1);
+        int minyi = max((int)ceil(miny), 1);
+        int maxxi = min((int)floor(maxx), cols - 2);
+        int maxyi = min((int)floor(maxy), rows - 2);
 
-	    for (int j1 = 0; j1 < NUMBER_OF_CELLS; j1++)
-	      for (int j2 = 0; j2 < NUMBER_OF_CELLS; j2++)
-	        for (int j3 = 0; j3 < NUMBER_OF_BINS; j3++)
-	          hist[i][j1][j2][j3] = 0;
+        for (int j1 = 0; j1 < NUMBER_OF_CELLS; j1++)
+          for (int j2 = 0; j2 < NUMBER_OF_CELLS; j2++)
+            for (int j3 = 0; j3 < NUMBER_OF_BINS; j3++)
+              hist[i][j1][j2][j3] = 0;
 
 #if GAUSSIAN_WEIGHTS
-	    float sigma = blck_size / 2.0f;
-	    float sigmaSq = sigma*sigma;
-	    float m1p2sigmaSq = -1.0f / (2.0f * sigmaSq);
+        float sigma = blck_size / 2.0f;
+        float sigmaSq = sigma*sigma;
+        float m1p2sigmaSq = -1.0f / (2.0f * sigmaSq);
 #endif
 
-	    #pragma pencil independent reduction(+:hist[i])
-	    for (int pointy = minyi; pointy <= maxyi; ++pointy) {
+        #pragma pencil independent reduction(+:hist[i])
+        for (int pointy = minyi; pointy <= maxyi; ++pointy) {
 #if SPARTIAL_WEIGHTS
             float relative_pos_y = (pointy - miny) / cell_size - 0.5f;
             int cellyi = floor(relative_pos_y);
@@ -61,7 +59,7 @@ static void hog_multi( const int rows
             float yscale0 = 1.0f - yscale1;
 #endif
 #if GAUSSIAN_WEIGHTS
-            float dy = pointy - location_y[i];
+            float dy = pointy - location[i][1];
             float dySq = dy*dy;
 #endif
 
@@ -75,7 +73,7 @@ static void hog_multi( const int rows
 #endif
 
 #if GAUSSIAN_WEIGHTS
-                float dx = pointx - location_x[i];
+                float dx = pointx - location[i][0];
                 float dxSq = dx*dx;
 #endif
 		int temp1 = pointx-1;
@@ -148,11 +146,10 @@ void pencil_hog( const int rows
                , const int step
                , const uint8_t image[]
                , const int num_locations
-               , const float location_x[]
-               , const float location_y[]
+               , const float location[][2]
                , const float blck_size
                , float hist[]    //out
                ) {
-    hog_multi(rows,cols,step,image,num_locations,location_x,location_y,blck_size,hist);
+    hog_multi(rows,cols,step,image,num_locations,location,blck_size,hist);
 }
 

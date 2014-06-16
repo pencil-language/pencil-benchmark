@@ -20,10 +20,9 @@ namespace nel {
     class HOGDescriptor {
         static_assert(numberOfCells > 1 || !spinterp, "Cannot apply spatial interpolation with only one cell.");
     public:
-        static cv::Mat_<float> compute( const cv::Mat_<uint8_t>  &img
-                                      , const std::vector<float> &locationsx
-                                      , const std::vector<float> &locationsy
-                                      , const float              &blocksize
+        static cv::Mat_<float> compute( const cv::Mat_<uint8_t>                &img
+                                      , const std::vector<std::array<float,2>> &locations
+                                      , const float                            &blocksize
                                       );
         static int getNumberOfBins();
 

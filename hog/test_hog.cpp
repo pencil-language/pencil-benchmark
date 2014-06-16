@@ -1,5 +1,6 @@
 #include <chrono>
 #include <random>
+#include <array>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/ocl/ocl.hpp>
@@ -22,12 +23,12 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
                 cv::Mat cpu_gray;
                 cv::cvtColor( item.cpuimg(), cpu_gray, CV_RGB2GRAY );
 
-                std::vector<float> locations_x, locations_y;
+                static_assert(sizeof(float[2]) == sizeof(std::array<float,2>), "This code needs std::array to behave exactly like C arrays.");
+                std::vector<std::array<float,2>> locations;
                 std::uniform_real_distribution<float> genx(size/2+1, cpu_gray.rows-1-size/2-1);
                 std::uniform_real_distribution<float> geny(size/2+1, cpu_gray.cols-1-size/2-1);
-                std::generate_n(std::back_inserter(locations_x), num_positions, [&](){ return genx(rng); });
-                std::generate_n(std::back_inserter(locations_y), num_positions, [&](){ return geny(rng); });
-
+                std::generate_n(std::back_inserter(locations), num_positions, [&](){ return std::array<float,2>{{ genx(rng), geny(rng) }}; });
+                
                 std::vector<float> cpu_result(num_positions * HISTOGRAM_BINS), gpu_result(num_positions * HISTOGRAM_BINS), pen_result(num_positions * HISTOGRAM_BINS);
                 std::chrono::duration<double> elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil;
 
@@ -40,7 +41,7 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
                                                     , GAUSSIAN_WEIGHTS
                                                     , SPARTIAL_WEIGHTS
                                                     , SIGNED_HOG
-                                                    >::compute(cpu_gray, locations_x, locations_y, size);
+                                                    >::compute(cpu_gray, locations, size);
 
                     const auto cpu_end = std::chrono::high_resolution_clock::now();
 
@@ -72,20 +73,13 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
                                                     , &err
                                                     );
                     if (err != CL_SUCCESS) throw std::runtime_error("Cannot copy source image to GPU.");
-                    cl_mem gpu_locations_x = clCreateBuffer( device.get_context()
-                                                           , CL_MEM_READ_ONLY|CL_MEM_COPY_HOST_PTR
-                                                           , sizeof(int)*num_positions
-                                                           , locations_x.data()
-                                                           , &err
-                                                           );
-                    if (err != CL_SUCCESS) throw std::runtime_error("Cannot copy locations_x array to GPU.");
-                    cl_mem gpu_locations_y = clCreateBuffer( device.get_context()
-                                                           , CL_MEM_READ_ONLY|CL_MEM_COPY_HOST_PTR
-                                                           , sizeof(int)*num_positions
-                                                           , locations_y.data()
-                                                           , &err
-                                                           );
-                    if (err != CL_SUCCESS) throw std::runtime_error("Cannot copy locations_y array to GPU.");
+                    cl_mem gpu_locations = clCreateBuffer( device.get_context()
+                                                         , CL_MEM_READ_ONLY|CL_MEM_COPY_HOST_PTR
+                                                         , sizeof(float[2])*num_positions
+                                                         , locations.data()
+                                                         , &err
+                                                         );
+                    if (err != CL_SUCCESS) throw std::runtime_error("Cannot copy locations array to GPU.");
                     cl_mem gpu_hist = clCreateBuffer(device.get_context(), CL_MEM_WRITE_ONLY, sizeof(cl_float)*HISTOGRAM_BINS*num_positions, nullptr, &err);
                     if (err != CL_SUCCESS) throw std::runtime_error("Cannot allocate histogram array.");
                     device["fill_zeros"](gpu_hist, HISTOGRAM_BINS*num_positions).groupsize({HISTOGRAM_BINS*num_positions}, {HISTOGRAM_BINS*num_positions});
@@ -96,8 +90,7 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
                                             , (int)cpu_gray.step1()
                                             , gpu_gray
                                             , num_positions
-                                            , gpu_locations_x
-                                            , gpu_locations_y
+                                            , gpu_locations
                                             , size
                                             , gpu_hist
                                             ).groupsize({4,4,4}, {num_positions, (int)ceil(size), (int)ceil(size)});
@@ -108,10 +101,8 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
 
                     err = clReleaseMemObject(gpu_hist);
                     if (err != CL_SUCCESS) throw std::runtime_error("Cannot free histogram array.");
-                    err = clReleaseMemObject(gpu_locations_y);
-                    if (err != CL_SUCCESS) throw std::runtime_error("Cannot free gpu_locations_y array.");
-                    err = clReleaseMemObject(gpu_locations_x);
-                    if (err != CL_SUCCESS) throw std::runtime_error("Cannot free gpu_locations_x array.");
+                    err = clReleaseMemObject(gpu_locations);
+                    if (err != CL_SUCCESS) throw std::runtime_error("Cannot free gpu_locations array.");
                     err = clReleaseMemObject(gpu_gray);
                     if (err != CL_SUCCESS) throw std::runtime_error("Cannot free gpu_image array.");
 
@@ -127,7 +118,7 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
                     pen_result.resize(num_positions * HISTOGRAM_BINS, 0.0f);
                     const auto pencil_start = std::chrono::high_resolution_clock::now();
                     pencil_hog( cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<uint8_t>()
-                              , num_positions, locations_x.data(), locations_y.data()
+                              , num_positions, reinterpret_cast<const float (*)[2]>(locations.data())
                               , size
                               , pen_result.data()
                               );

@@ -48,7 +48,7 @@ __kernel void fill_zeros(__global float* arr, int size) {
 
 //Calculates the intermediate data
 __kernel void calc_histogram( const int rows, const int cols, const int step, __global const unsigned char *image
-                            , const int num_locations, __global const float *location_x, __global const float *location_y
+                            , const int num_locations, __global const float2 *location
                             , const float blck_size
                             , __global float *hist
                             )
@@ -57,10 +57,10 @@ __kernel void calc_histogram( const int rows, const int cols, const int step, __
     if (i >= num_locations)
         return;
     
-    float minx = location_x[i] - blck_size / 2.0f;
-    float miny = location_y[i] - blck_size / 2.0f;
-    float maxx = location_x[i] + blck_size / 2.0f;
-    float maxy = location_y[i] + blck_size / 2.0f;
+    float minx = location[i].x - blck_size / 2.0f;
+    float miny = location[i].y - blck_size / 2.0f;
+    float maxx = location[i].x + blck_size / 2.0f;
+    float maxy = location[i].y + blck_size / 2.0f;
 
     int minxi = max((int)ceil(minx), 1);
     int minyi = max((int)ceil(miny), 1);
@@ -92,8 +92,8 @@ __kernel void calc_histogram( const int rows, const int cols, const int step, __
         float sigma = blck_size / 2.0f;
         float sigmaSq = sigma*sigma;
         float m1p2sigmaSq = -1.0f / (2.0f * sigmaSq);
-        float dy = pointy - location_y[i];
-        float dx = pointx - location_x[i];
+        float dy = pointy - location[i].y;
+        float dx = pointx - location[i].x;
         float dySq = dy*dy;
         float dxSq = dx*dx;
         magnitude *= exp((dxSq+dySq) * m1p2sigmaSq);
