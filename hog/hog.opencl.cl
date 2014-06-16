@@ -50,7 +50,6 @@ __kernel void fill_zeros(__global float* arr, int size) {
 __kernel void calc_histogram( const int rows, const int cols, const int step, __global const unsigned char *image
                             , const int num_locations, __global const float *location_x, __global const float *location_y
                             , const float blck_size
-                            , const int num_pixels_in_block //=ceil(blck_size)
                             , __global float *hist
                             )
 {
