@@ -82,7 +82,7 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
                     if (err != CL_SUCCESS) throw std::runtime_error("Cannot copy locations array to GPU.");
                     cl_mem gpu_hist = clCreateBuffer(device.get_context(), CL_MEM_WRITE_ONLY, sizeof(cl_float)*HISTOGRAM_BINS*num_positions, nullptr, &err);
                     if (err != CL_SUCCESS) throw std::runtime_error("Cannot allocate histogram array.");
-                    device["fill_zeros"](gpu_hist, HISTOGRAM_BINS*num_positions).groupsize({HISTOGRAM_BINS*num_positions}, {HISTOGRAM_BINS*num_positions});
+                    device["fill_zeros"](gpu_hist, HISTOGRAM_BINS*num_positions).groupsize({255}, {HISTOGRAM_BINS*num_positions});
 
                     const auto gpu_start = std::chrono::high_resolution_clock::now();
                     device["calc_histogram"]( cpu_gray.rows
