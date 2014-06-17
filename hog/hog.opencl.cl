@@ -6,15 +6,7 @@
 #define SIGNED_HOG 1
 //parameters end
 
-#if SIGNED_HOG
-#define BINSIZE_IN_DEGREES (360.0f / NUMBER_OF_BINS)
-#else
-#define BINSIZE_IN_DEGREES (180.0f / NUMBER_OF_BINS)
-#endif
-
-#ifndef M_PI
-#define M_PI           3.14159265358979323846
-#endif
+#define TOTAL_NUMBER_OF_BINS (NUMBER_OF_CELLS * NUMBER_OF_CELLS * NUMBER_OF_BINS)
 
 //get_global_id(0): per location
 //get_global_id(1): x coordinate
@@ -56,35 +48,32 @@ __kernel void calc_histogram( const int rows, const int cols, const int step, __
     int i = get_global_id(0);
     if (i >= num_locations)
         return;
-    
-    float minx = location[i].x - blck_size / 2.0f;
-    float miny = location[i].y - blck_size / 2.0f;
-    float maxx = location[i].x + blck_size / 2.0f;
-    float maxy = location[i].y + blck_size / 2.0f;
 
-    int minxi = max((int)ceil(minx), 1);
-    int minyi = max((int)ceil(miny), 1);
-    int maxxi = min((int)floor(maxx), cols - 2);
-    int maxyi = min((int)floor(maxy), rows - 2);
+    int2 img_size = (int2)(cols, rows);
 
-    int pointy = minyi + get_global_id(2); //int+size_t !!
-    int pointx = minxi + get_global_id(1);
+    float2 minloc = location[i] - blck_size / 2.0f;
+    float2 maxloc = location[i] + blck_size / 2.0f;
 
-    if (pointy > maxyi || pointx > maxxi)
+    int2 mini = max(convert_int2_rtp(minloc), 1);
+    int2 maxi = min(convert_int2_rtn(maxloc), img_size - 2);
+
+    int2 point = mini + (int2)(get_global_id(1),get_global_id(2));
+
+    if (!all(point <= maxi))
         return;
 
     //Read the image
-    float mdx = image[(pointy  )*step + pointx+1] - image[(pointy  )*step + pointx-1];
-    float mdy = image[(pointy+1)*step + pointx  ] - image[(pointy-1)*step + pointx  ];
+    float mdx = image[(point.y  )*step + point.x+1] - image[(point.y  )*step + point.x-1];
+    float mdy = image[(point.y+1)*step + point.x  ] - image[(point.y-1)*step + point.x  ];
 
     //calculate the magnitude
     float magnitude = hypot(mdx, mdy);
 
     //calculate the orientation
 #if SIGNED_HOG
-    float orientation = atan2(mdy, mdx) / (float)M_PI * 180.0f;
+    float orientation = atan2pi(mdy, mdx) / 2.0f;
 #else
-    float orientation = tan2(mdy / mdx + DBL_EPSILON) / (float)M_PI * 180.0f + 90.0f;
+    float orientation = tan2pi(mdy / mdx + DBL_EPSILON) + 0.5f;
 #endif
 
 #if GAUSSIAN_WEIGHTS
@@ -92,20 +81,18 @@ __kernel void calc_histogram( const int rows, const int cols, const int step, __
         float sigma = blck_size / 2.0f;
         float sigmaSq = sigma*sigma;
         float m1p2sigmaSq = -1.0f / (2.0f * sigmaSq);
-        float dy = pointy - location[i].y;
-        float dx = pointx - location[i].x;
-        float dySq = dy*dy;
-        float dxSq = dx*dx;
-        magnitude *= exp((dxSq+dySq) * m1p2sigmaSq);
+        float2 distanceSq = pown(convert_float2(point) - location[i], 2);
+        magnitude *= exp(dot(distanceSq, m1p2sigmaSq));
     }
 #endif
-    float relative_orientation = (orientation - BINSIZE_IN_DEGREES/2.0f) / BINSIZE_IN_DEGREES;
+    float relative_orientation = orientation * NUMBER_OF_BINS - 0.5f;
     int bin1 = ceil(relative_orientation);
     int bin0 = bin1 - 1;
     float bin_weight0 = magnitude * (bin1 - relative_orientation);
     float bin_weight1 = magnitude * (relative_orientation - bin0);
     bin0 = (bin0 + NUMBER_OF_BINS) % NUMBER_OF_BINS;
     bin1 = (bin1 + NUMBER_OF_BINS) % NUMBER_OF_BINS;
+
 #if SPARTIAL_WEIGHTS
     if (cellyi >= 0 && cellxi >= 0) {
         atomic_add_float( HIST_INDEX(i, cellyi  , cellxi  , bin0), yscale0 * xscale0 * bin_weight0);
