@@ -147,10 +147,10 @@ run()
 
   success $ppcg_exit_status
   if [ $ppcg_exit_status = 0 ]; then
-          cat $TEMP_OUTPUT_FILE | grep -F "Total GPU time (inc copy):" | awk '{print $NF;}' 1> $TEMP_TIME_FILE_2
+          cat $TEMP_OUTPUT_FILE | grep -F "Total GPU time (w/o copy):" | awk '{print $NF;}' 1> $TEMP_TIME_FILE_2
 	  echo -n `$BENCH_ROOT/get_median_first_column.sh $TEMP_TIME_FILE_2` >>  ${OUTPUT_TIME_FILE}.${KERNEL}.csv
 	  echo -n "$DELIMITER" >> ${OUTPUT_TIME_FILE}.${KERNEL}.csv
-	  cat $TEMP_OUTPUT_FILE | grep -F "[PPCG] Kernel execution time in seconds (with data copy but without kernel compilation time) :" | awk '{print $NF;}' 1> $TEMP_TIME_FILE_1
+	  cat $TEMP_OUTPUT_FILE | grep -F "[PPCG] Kernel execution time in seconds (without data copy and without kernel compilation time) :" | awk '{print $NF;}' 1> $TEMP_TIME_FILE_1
 	  echo -n `$BENCH_ROOT/get_median_first_column.sh $TEMP_TIME_FILE_1` >> ${OUTPUT_TIME_FILE}.${KERNEL}.csv
 	  echo -n "$DELIMITER" >> ${OUTPUT_TIME_FILE}.${KERNEL}.csv
   else
