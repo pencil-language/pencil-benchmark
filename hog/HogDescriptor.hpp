@@ -41,18 +41,16 @@ float nel::HOGDescriptor<numberOfCells, numberOfBins, gauss, spinterp, _signed>:
 }
 
 template<int numberOfCells, int numberOfBins, bool gauss, bool spinterp, bool _signed>
-cv::Mat_<float> nel::HOGDescriptor<numberOfCells, numberOfBins, gauss, spinterp, _signed>::compute( const cv::Mat_<uint8_t>  &image
-                                                                                                  , const std::vector<float> &locationsx
-                                                                                                  , const std::vector<float> &locationsy
-                                                                                                  , const float              &blocksize
+cv::Mat_<float> nel::HOGDescriptor<numberOfCells, numberOfBins, gauss, spinterp, _signed>::compute( const cv::Mat_<uint8_t>                &image
+                                                                                                  , const std::vector<std::array<float,2>> &locations
+                                                                                                  , const float                            &blocksize
                                                                                                   ) {
-    assert(locationsx.size() == locationsy.size());
-    cv::Mat_<float> descriptors(locationsx.size(), getNumberOfBins(), 0.0f);
+    cv::Mat_<float> descriptors(locations.size(), getNumberOfBins(), 0.0f);
     
-    tbb::parallel_for(tbb::blocked_range<size_t>(0, locationsx.size(), 5), [&](const tbb::blocked_range<size_t> range) {
+    tbb::parallel_for(tbb::blocked_range<size_t>(0, locations.size(), 5), [&](const tbb::blocked_range<size_t> range) {
     for (size_t n = range.begin(); n != range.end(); ++n) {
-        const float centerx = locationsx[n];
-        const float centery = locationsy[n];
+        const float centerx = locations[n][0];
+        const float centery = locations[n][1];
 
         const float cellsize = blocksize / numberOfCells;
         const float halfblocksize = blocksize / 2.0f;
