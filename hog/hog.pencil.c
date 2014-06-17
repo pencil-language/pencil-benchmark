@@ -39,11 +39,6 @@ static void hog_multi( const int rows
         int maxxi = min((int)floor(maxx), cols - 2);
         int maxyi = min((int)floor(maxy), rows - 2);
 
-        for (int j1 = 0; j1 < NUMBER_OF_CELLS; j1++)
-          for (int j2 = 0; j2 < NUMBER_OF_CELLS; j2++)
-            for (int j3 = 0; j3 < NUMBER_OF_BINS; j3++)
-              hist[i][j1][j2][j3] = 0;
-
 #if GAUSSIAN_WEIGHTS
         float sigma = blck_size / 2.0f;
         float sigmaSq = sigma*sigma;
@@ -150,6 +145,10 @@ void pencil_hog( const int rows
                , const float blck_size
                , float hist[]    //out
                ) {
+
+   for (int ii = 0; ii < num_locations*NUMBER_OF_CELLS*NUMBER_OF_CELLS*NUMBER_OF_BINS; ++ii)
+       hist[ii] = 0;
+
     hog_multi(rows,cols,step,image,num_locations,location,blck_size,hist);
 }
 
