@@ -28,7 +28,7 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
                 std::uniform_real_distribution<float> genx(size/2+1, cpu_gray.rows-1-size/2-1);
                 std::uniform_real_distribution<float> geny(size/2+1, cpu_gray.cols-1-size/2-1);
                 std::generate_n(std::back_inserter(locations), num_positions, [&](){ return std::array<float,2>{{ genx(rng), geny(rng) }}; });
-                
+
                 std::vector<float> cpu_result(num_positions * HISTOGRAM_BINS), gpu_result(num_positions * HISTOGRAM_BINS), pen_result(num_positions * HISTOGRAM_BINS);
                 std::chrono::duration<double> elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil;
 
@@ -60,6 +60,9 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
                                          , &max_work_group_size
                                          , nullptr
                                          );
+                    const int work_size_locations = 64;
+                    const int work_size_x = pow(2, std::ceil(std::log2(max_work_group_size / work_size_locations)/2));  //The square root of the max size/locations, rounded up to power-of-two
+                    const int work_size_y = max_work_group_size / work_size_locations / work_size_x;
                     if (err != CL_SUCCESS) throw std::runtime_error("Cannot query max work group size.");
 
                     const auto gpu_compile_start = std::chrono::high_resolution_clock::now();
@@ -93,7 +96,8 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
                                             , gpu_locations
                                             , size
                                             , gpu_hist
-                                            ).groupsize({4,4,4}, {num_positions, (int)ceil(size), (int)ceil(size)});
+                                            , carp::opencl::buffer(sizeof(cl_float)*HISTOGRAM_BINS*num_positions)
+                                            ).groupsize({work_size_locations,work_size_x,work_size_y}, {num_positions, (int)ceil(size), (int)ceil(size)});
                     const auto gpu_end = std::chrono::high_resolution_clock::now();
 
                     err = clEnqueueReadBuffer(device.get_queue(), gpu_hist, CL_TRUE, 0, sizeof(cl_float)*HISTOGRAM_BINS*num_positions, gpu_result.data(), 0, nullptr, nullptr);
@@ -132,6 +136,9 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
                   || cv::norm( cpu_result, pen_result, cv::NORM_INF) > cv::norm( cpu_result, cv::NORM_INF)*1e-5
                    )
                 {
+                    std::vector<float> diff;
+                    std::transform(cpu_result.begin(), cpu_result.end(), gpu_result.begin(), std::back_inserter(diff), std::minus<float>());
+
                     std::cerr << "ERROR: Results don't match." << std::endl;
                     std::cerr << "CPU norm:" << cv::norm(cpu_result, cv::NORM_INF) << std::endl;
                     std::cerr << "GPU norm:" << cv::norm(gpu_result, cv::NORM_INF) << std::endl;
