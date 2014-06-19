@@ -60,7 +60,7 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
                                          , &max_work_group_size
                                          , nullptr
                                          );
-                    const int work_size_locations = 64;
+                    const int work_size_locations = num_positions;
                     const int work_size_x = pow(2, std::ceil(std::log2(max_work_group_size / work_size_locations)/2));  //The square root of the max size/locations, rounded up to power-of-two
                     const int work_size_y = max_work_group_size / work_size_locations / work_size_x;
                     if (err != CL_SUCCESS) throw std::runtime_error("Cannot query max work group size.");
