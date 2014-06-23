@@ -130,7 +130,7 @@ extern "C" {
     /* Integer clamp */
 /*#define clampi(val, min, max) \
         ((val) < (min)) ? (min) : ((val) > (max)) ? (max) : (val)*/
-int clampi(float val, int min, int max)
+inline int clampi(float val, int min, int max)
 {
 	return  ((val) < (min)) ? (min) : ((val) > (max)) ? (max) : (val);
 }
