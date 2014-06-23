@@ -128,8 +128,12 @@ extern "C" {
     /* PPCG does not support value expressions (GCC extension) so need to use macros that evaluate parameters multiple times */
 
     /* Integer clamp */
-#define clampi(val, min, max) \
-        ((val) < (min)) ? (min) : ((val) > (max)) ? (max) : (val)
+/*#define clampi(val, min, max) \
+        ((val) < (min)) ? (min) : ((val) > (max)) ? (max) : (val)*/
+int clampi(float val, int min, int max)
+{
+	return  ((val) < (min)) ? (min) : ((val) > (max)) ? (max) : (val);
+}
 
 #ifdef	__cplusplus
 }
