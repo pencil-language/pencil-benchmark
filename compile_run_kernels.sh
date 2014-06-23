@@ -9,17 +9,19 @@ OPENCL_PREFIX=/opt/AMDAPP/
 PPCG_EXTRA_OPTIONS="--target=opencl --opencl-print-time-measurements -D__PENCIL__" 
 
 LIST_OF_KERNELS="resize dilate cvt_color warpAffine filter2D gaussian"
-PPCG_OPTIONS[0]="--isl-schedule-fuse=min  --no-private-memory --sizes={kernel[i]->tile[128,128];kernel[i]->grid[464,53];kernel[i]->block[8,32]}"
-PPCG_OPTIONS[1]="--target=opencl --opencl-print-time-measurements -D__PENCIL__ --isl-schedule-fuse=min  --no-private-memory --sizes={kernel[i]->tile[16,16];kernel[i]->grid[16,16];kernel[i]->block[16,16]}"
-PPCG_OPTIONS[2]="--isl-schedule-fuse=max --no-isl-schedule-separate-components --no-shared-memory --no-private-memory --sizes={kernel[i]->tile[32,32];kernel[i]->grid[928,27];kernel[i]->block[4,64]}"
+
+# Carotte
+PPCG_OPTIONS[0]="--isl-schedule-fuse=min                    --no-private-memory --sizes={kernel[i]->tile[128,128];kernel[i]->grid[464,53];kernel[i]->block[8,32]}"
+PPCG_OPTIONS[1]="--isl-schedule-fuse=min                    --no-private-memory --sizes={kernel[i]->tile[16,16];kernel[i]->grid[16,16];kernel[i]->block[16,16]}"
+PPCG_OPTIONS[2]="--isl-schedule-fuse=min --no-shared-memory --no-private-memory --sizes={kernel[i]->tile[32,32];kernel[i]->grid[928,27];kernel[i]->block[4,64]}"
 PPCG_OPTIONS[3]="--isl-schedule-fuse=min --no-shared-memory --no-private-memory --sizes={kernel[i]->tile[32,32];kernel[i]->grid[928,27];kernel[i]->block[4,64]}"
-PPCG_OPTIONS[4]="--isl-schedule-fuse=min  --no-private-memory --sizes={kernel[i]->tile[32,8];kernel[i]->grid[116,53];kernel[i]->block[32,32]}"
-PPCG_OPTIONS[5]="--target=opencl  --isl-schedule-fuse=min --no-shared-memory --no-private-memory --sizes={kernel[i]->tile[32,32];kernel[i]->grid[464,53];kernel[i]->block[8,32]}"
+PPCG_OPTIONS[4]="--isl-schedule-fuse=min                    --no-private-memory --sizes={kernel[i]->tile[32,8];kernel[i]->grid[116,53];kernel[i]->block[32,32]}"
+PPCG_OPTIONS[5]="--isl-schedule-fuse=min --no-shared-memory --no-private-memory --sizes={kernel[i]->tile[32,32];kernel[i]->grid[464,53];kernel[i]->block[8,32]}"
 
-#LIST_OF_KERNELS="dilate"
-#PPCG_OPTIONS[0]="--isl-schedule-fuse=min --no-shared-memory --no-private-memory --sizes={kernel[i]->tile[16,16];kernel[i]->grid[232,106];kernel[i]->block[16,16]}"
+#LIST_OF_KERNELS="gaussian"
+#PPCG_OPTIONS[0]="--isl-schedule-fuse=min --no-shared-memory --no-private-memory --sizes={kernel[i]->tile[8,32];kernel[i]->grid[464,53];kernel[i]->block[8,32]}"
 
-NB_TESTS=1
+NB_TESTS=3
 PEROFRM_ONLY_ONE_TEST=1
 COMPILE_WITH_PPCG_AND_USE_AUTOTUNING_OPTIONS=1
 USE_DEFAULT_MAKE_FILE=0
