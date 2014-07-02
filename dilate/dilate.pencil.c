@@ -22,17 +22,8 @@ static void dilate( const int rows
 {
 #pragma scop
 #if __PENCIL__
-    __pencil_assume(rows        >  0);
-    __pencil_assume(cols        >  0);
-    __pencil_assume(step        >= cols);
-    __pencil_assume(dilate_step >= cols);
-    __pencil_assume(se_rows     >  0);
-    __pencil_assume(se_cols     >  0);
     __pencil_assume(se_rows     <  16);
     __pencil_assume(se_cols     <  16);
-    __pencil_assume(se_step     >= se_cols);
-    __pencil_assume(anchor_row  >= 0);
-    __pencil_assume(anchor_col  >= 0);
 #endif
     #pragma pencil independent
     for ( int q = 0; q < rows; q++ )
