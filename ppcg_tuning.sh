@@ -51,11 +51,11 @@ TUNING_PRIVATE_MEM[0]="--no-private-memory"
 
 # Blocks > 16 are interesting. On AMD HD 5670, grid size is limited to 256, on NVIDIA GTX 470, grid size is limited to 1024
 #image:2868x1607
-TUNING_GRID_SIZES[0]="16,16  180,101 359,51  90,201 717,26 45,402  90,51"
-TUNING_BLOCK_SIZES[0]="16,16  16,16    8,32  32,8     4,64 64,4    32,32"
+TUNING_GRID_SIZES[0]="180,101 359,51  90,201 717,26 45,402  90,51"
+TUNING_BLOCK_SIZES[0]="16,16    8,32  32,8     4,64 64,4    32,32"
 
 TUNING_TILE_SIZES[0]="16 32 64 128 256 512 1024"
-TUNING_TILE_SIZES[1]="16,16 32,32 32,8 8,32 32,16 16,32 64,64 128,128 256,256 512,512"
+TUNING_TILE_SIZES[1]="16,16 32,32 32,8 8,32 32,16 16,32 64,64 128,128"
 
 #OpenCL options
 # The following option may be contradictory with the same option set in the PPCG_OMP_BASIC_OPTIONS.
