@@ -19,7 +19,7 @@ OPENCL_INCLUDE=$(OPENCL_PREFIX)include/
 OPENCL_LIB_DIR=$(OPENCL_PREFIX)lib/
 OPENCL_LIB=-lOpenCL
 
-PPCG_OPTIONS=--no-shared-memory -D__PENCIL__ --target=opencl
+PPCG_OPTIONS=--no-shared-memory -D__PENCIL__ --target=opencl --opencl-include-file=../pencil/pencil_math.h
 
 #EXTRA_OPENCL_LIBRARY=-lmali
 

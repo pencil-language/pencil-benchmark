@@ -7,7 +7,7 @@ BENCH_ROOT=~/src/pencil_codes/CARP-Benchmarks/
 #OPENCL_PREFIX=/usr/local/cuda-5.5/
 OPENCL_PREFIX=/opt/AMDAPP/
 
-PPCG_EXTRA_OPTIONS="--target=opencl --opencl-print-time-measurements -D__PENCIL__" 
+PPCG_EXTRA_OPTIONS="--target=opencl --opencl-print-time-measurements -D__PENCIL__ --opencl-include-file=../pencil/pencil_math.h" 
 
 LIST_OF_KERNELS="resize dilate cvt_color warpAffine filter2D gaussian"
 
