@@ -33,11 +33,11 @@ LDFLAGS=-L$(OPENCL_LIB_DIR) $(OPENCL_LIB) -L$(OPENCV_LIB_DIR) $(OPENCV_LIBS) -L$
 
 all: all_test all_ppcg_test mlp_data
 
-all_test: build/test_gaussian build/test_cvt_color build/test_filter2D build/test_dilate build/test_mlp build/test_opencl_mlp build/test_gel_mlp build/test_warpAffine build/test_resize build/test_hog
+all_test: build/test_gaussian build/test_cvt_color build/test_filter2D build/test_dilate build/test_mlp build/test_opencl_mlp build/test_gel_mlp build/test_warpAffine build/test_resize build/test_hog build/test_histogram
 
-all_ppcg_test: build/ppcg_test_gaussian build/ppcg_test_cvt_color build/ppcg_test_filter2D build/ppcg_test_dilate build/ppcg_test_mlp build/ppcg_test_opencl_mlp build/ppcg_test_gel_mlp build/ppcg_test_warpAffine build/ppcg_test_resize build/ppcg_test_hog
+all_ppcg_test: build/ppcg_test_gaussian build/ppcg_test_cvt_color build/ppcg_test_filter2D build/ppcg_test_dilate build/ppcg_test_mlp build/ppcg_test_opencl_mlp build/ppcg_test_gel_mlp build/ppcg_test_warpAffine build/ppcg_test_resize build/ppcg_test_hog build/ppcg_test_histogram
 
-all_pencil_source: build/gaussian.pencil_ppcg.c build/cvt_color.pencil_ppcg.c build/filter2D.pencil_ppcg.c build/dilate.pencil_ppcg.c build/warpAffine.pencil_ppcg.c build/resize.pencil_ppcg.c build/mlp_impl.pencil_ppcg.c  build/hog.pencil_ppcg.c
+all_pencil_source: build/gaussian.pencil_ppcg.c build/cvt_color.pencil_ppcg.c build/filter2D.pencil_ppcg.c build/dilate.pencil_ppcg.c build/warpAffine.pencil_ppcg.c build/resize.pencil_ppcg.c build/mlp_impl.pencil_ppcg.c build/hog.pencil_ppcg.c build/histogram.pencil_ppcg.c
 
 clean: 
 	-rm -f build/*.cl build/*.clh  build/*.c build/*.o  build/*.h build/*.so build/*.csv build/ppcg_test_* build/test_* build/temp_output_file build/temp_time* build/log
@@ -50,7 +50,7 @@ build/pool/response_dumps.xml:
 
 ## Common Library
 CL_SOURCES= gaussian/filter_sep_row.cl gaussian/filter_sep_col.cl cvt_color/cvt_color.cl filter2D/imgproc_convolve.cl dilate/filtering_morph.cl mlp/mlp_impl.cl mlp/operators.cl warpAffine/imgproc_warpAffine.cl resize/imgproc_resize.cl
-PENCIL_SOURCES= gaussian/gaussian.pencil.c cvt_color/cvt_color.pencil.c filter2D/filter2D.pencil.c dilate/dilate.pencil.c warpAffine/warpAffine.pencil.c resize/resize.pencil.c hog/hog.pencil.c
+PENCIL_SOURCES= gaussian/gaussian.pencil.c cvt_color/cvt_color.pencil.c filter2D/filter2D.pencil.c dilate/dilate.pencil.c warpAffine/warpAffine.pencil.c resize/resize.pencil.c hog/hog.pencil.c histogram/histogram.pencil.c
 MLP_SOURCES=mlp/serialization.cpp mlp/allocator.cpp
 
 
@@ -103,6 +103,9 @@ build/filter2D.pencil_as_c.o: filter2D/filter2D.pencil.c
 build/gaussian.pencil_as_c.o: gaussian/gaussian.pencil.c
 	$(CXX) -x c -c $(CFLAGS) gaussian/gaussian.pencil.c -o build/gaussian.pencil_as_c.o
 
+build/histogram.pencil_as_c.o: histogram/histogram.pencil.c
+	$(CXX) -x c -c $(CFLAGS) histogram/histogram.pencil.c -o build/histogram.pencil_as_c.o
+
 build/hog.pencil_as_c.o: hog/hog.pencil.c
 	$(CXX) -x c -c $(CFLAGS) hog/hog.pencil.c -o build/hog.pencil_as_c.o
 
@@ -129,6 +132,9 @@ build/test_filter2D: build/imgproc_convolve.clh filter2D/test_filter2D.cpp build
 
 build/test_gaussian: build/filter_sep_row.clh build/filter_sep_col.clh gaussian/test_gaussian.cpp build/gaussian.pencil_as_c.o build/ocl_utilities.o
 	$(CXX) $(CXXFLAGS) -o build/test_gaussian gaussian/test_gaussian.cpp build/gaussian.pencil_as_c.o build/ocl_utilities.o $(LDFLAGS)
+
+build/test_histogram: histogram/test_histogram.cpp build/histogram.pencil_as_c.o build/ocl_utilities.o
+	$(CXX) $(CXXFLAGS) -o build/test_histogram histogram/test_histogram.cpp build/histogram.pencil_as_c.o build/ocl_utilities.o $(LDFLAGS)
 
 build/test_hog: hog/test_hog.cpp build/hog.pencil_as_c.o build/ocl_utilities.o build/hog.clh
 	$(CXX) $(CXXFLAGS) -o build/test_hog hog/test_hog.cpp build/hog.pencil_as_c.o build/ocl_utilities.o $(LDFLAGS)
@@ -163,6 +169,9 @@ build/filter2D.pencil_ppcg.c: filter2D/filter2D.pencil.c
 build/gaussian.pencil_ppcg.c: gaussian/gaussian.pencil.c
 	(cd build && $(PPCG_COMPILER) $(PPCG_OPTIONS) -o gaussian.pencil_ppcg.c ../gaussian/gaussian.pencil.c )
 
+build/histogram.pencil_ppcg.c: histogram/histogram.pencil.c
+	(cd build && $(PPCG_COMPILER) $(PPCG_OPTIONS) -o histogram.pencil_ppcg.c ../histogram/histogram.pencil.c )
+
 build/hog.pencil_ppcg.c: hog/hog.pencil.c
 	(cd build && $(PPCG_COMPILER) $(PPCG_OPTIONS) -o hog.pencil_ppcg.c ../hog/hog.pencil.c )
 
@@ -190,6 +199,9 @@ build/filter2D.pencil_ppcg.o: build/filter2D.pencil_ppcg.c
 build/gaussian.pencil_ppcg.o: build/gaussian.pencil_ppcg.c
 	$(CXX) -x c -c $(CFLAGS) -Igaussian build/gaussian.pencil_ppcg.c -o build/gaussian.pencil_ppcg.o
 
+build/histogram.pencil_ppcg.o: build/histogram.pencil_ppcg.c
+	$(CXX) -x c -c $(CFLAGS) -Ihistogram build/histogram.pencil_ppcg.c -o build/histogram.pencil_ppcg.o
+
 build/hog.pencil_ppcg.o: build/hog.pencil_ppcg.c
 	$(CXX) -x c -c $(CFLAGS) -Ihog build/hog.pencil_ppcg.c -o build/hog.pencil_ppcg.o
 
@@ -216,6 +228,9 @@ build/ppcg_test_filter2D: build/imgproc_convolve.clh filter2D/test_filter2D.cpp 
 
 build/ppcg_test_gaussian: build/filter_sep_row.clh build/filter_sep_col.clh gaussian/test_gaussian.cpp build/gaussian.pencil_ppcg.o build/ocl_utilities.o
 	$(CXX) $(CXXFLAGS) -o build/ppcg_test_gaussian gaussian/test_gaussian.cpp build/gaussian.pencil_ppcg.o build/ocl_utilities.o $(LDFLAGS)
+
+build/ppcg_test_histogram: histogram/test_histogram.cpp build/histogram.pencil_ppcg.o build/ocl_utilities.o
+	$(CXX) $(CXXFLAGS) -o build/ppcg_test_hog histogram/test_histogram.cpp build/histogram.pencil_ppcg.o build/ocl_utilities.o $(LDFLAGS)
 
 build/ppcg_test_hog: build/hog.clh hog/test_hog.cpp build/hog.pencil_ppcg.o build/ocl_utilities.o
 	$(CXX) $(CXXFLAGS) -o build/ppcg_test_hog hog/test_hog.cpp build/hog.pencil_ppcg.o build/ocl_utilities.o $(LDFLAGS)
