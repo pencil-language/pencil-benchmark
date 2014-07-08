@@ -4,6 +4,7 @@
 
 PPCG_COMPILER=~/src/ppcgs/ppcg-gforge-pet-tree/ppcg 
 BENCH_ROOT=~/src/pencil_codes/CARP-Benchmarks/
+#OPENCL_PREFIX=/usr/local/cuda-5.5/
 OPENCL_PREFIX=/opt/AMDAPP/
 
 PPCG_EXTRA_OPTIONS="--target=opencl --opencl-print-time-measurements -D__PENCIL__" 
