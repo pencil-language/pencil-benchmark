@@ -45,16 +45,17 @@ void time_histogram( const std::vector<carp::record_t>& pool, size_t iterations)
                 elapsed_time_gpu_nocopy = end      - start;
             }
             {
-                pen_result.create( cpu_result.rows, cpu_result.cols, CV_8U );
-
+                pen_result.create( cpu_result.rows, cpu_result.cols, CV_32S );
                 const auto pencil_start = std::chrono::high_resolution_clock::now();
-                pencil_calcHist();
+                pencil_calcHist( cpuimg.rows, cpuimg.cols, cpuimg.step1(), cpuimg.ptr<uint8_t>()
+                               , pen_result.ptr<int>()
+                               );
                 const auto pencil_end = std::chrono::high_resolution_clock::now();
                 elapsed_time_pencil = pencil_end - pencil_start;
             }
             // Verifying the results
             float gpu_err = cv::norm(gpu_result - cpu_result);
-            float pencil_err = 0.0; // =cv::norm(pen_result - cpu_result);
+            float pencil_err = cv::norm(pen_result - cpu_result);
             if ( (gpu_err > 0.01) || (pencil_err>0.01) )
             {
                 PRINT(cv::norm(gpu_result - cpu_result));
@@ -75,7 +76,7 @@ int main(int argc, char* argv[])
     std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
 
     auto pool = carp::get_pool("pool");
-    size_t num_iterations = 100;
+    size_t num_iterations = 80;
 
 #ifdef RUN_ONLY_ONE_EXPERIMENT
     num_iterations = 1;
