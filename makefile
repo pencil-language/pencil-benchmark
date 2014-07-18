@@ -230,7 +230,7 @@ build/ppcg_test_gaussian: build/filter_sep_row.clh build/filter_sep_col.clh gaus
 	$(CXX) $(CXXFLAGS) -o build/ppcg_test_gaussian gaussian/test_gaussian.cpp build/gaussian.pencil_ppcg.o build/ocl_utilities.o $(LDFLAGS)
 
 build/ppcg_test_histogram: histogram/test_histogram.cpp build/histogram.pencil_ppcg.o build/ocl_utilities.o
-	$(CXX) $(CXXFLAGS) -o build/ppcg_test_hog histogram/test_histogram.cpp build/histogram.pencil_ppcg.o build/ocl_utilities.o $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -o build/ppcg_test_histogram histogram/test_histogram.cpp build/histogram.pencil_ppcg.o build/ocl_utilities.o $(LDFLAGS)
 
 build/ppcg_test_hog: build/hog.clh hog/test_hog.cpp build/hog.pencil_ppcg.o build/ocl_utilities.o
 	$(CXX) $(CXXFLAGS) -o build/ppcg_test_hog hog/test_hog.cpp build/hog.pencil_ppcg.o build/ocl_utilities.o $(LDFLAGS)
