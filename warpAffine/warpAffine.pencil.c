@@ -75,14 +75,14 @@ static void affine( const int src_rows, const int src_cols, const int src_step, 
             int coord_11_r = coord_00_r + 1;
             int coord_11_c = coord_00_c + 1;
 
-            coord_00_r = clip(coord_00_r, 0, src_rows);
-            coord_00_c = clip(coord_00_c, 0, src_cols);
-            coord_01_r = clip(coord_01_r, 0, src_rows);
-            coord_01_c = clip(coord_01_c, 0, src_cols);
-            coord_10_r = clip(coord_10_r, 0, src_rows);
-            coord_10_c = clip(coord_10_c, 0, src_cols);
-            coord_11_r = clip(coord_11_r, 0, src_rows);
-            coord_11_c = clip(coord_11_c, 0, src_cols);
+            coord_00_r = clamp(coord_00_r, 0, src_rows);
+            coord_00_c = clamp(coord_00_c, 0, src_cols);
+            coord_01_r = clamp(coord_01_r, 0, src_rows);
+            coord_01_c = clamp(coord_01_c, 0, src_cols);
+            coord_10_r = clamp(coord_10_r, 0, src_rows);
+            coord_10_c = clamp(coord_10_c, 0, src_cols);
+            coord_11_r = clamp(coord_11_r, 0, src_rows);
+            coord_11_c = clamp(coord_11_c, 0, src_cols);
 
             float A00 = src[coord_00_r][coord_00_c];
             float A10 = src[coord_10_r][coord_10_c];

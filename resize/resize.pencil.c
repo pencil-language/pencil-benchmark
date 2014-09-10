@@ -42,10 +42,10 @@ static void resize( const int original_rows
     __pencil_assume(resampled_step >= resampled_cols);
 #endif
     {
-        float o_h = original_rows;
-        float o_w = original_cols;
-        float n_h = resampled_rows;
-        float n_w = resampled_cols;
+        int o_h = original_rows;
+        int o_w = original_cols;
+        int n_h = resampled_rows;
+        int n_w = resampled_cols;
 
         #pragma pencil independent
         for ( int n_r = 0; n_r < resampled_rows; n_r++ )
@@ -59,17 +59,17 @@ static void resize( const int original_rows
                 float r = o_r - floor(o_r);
                 float c = o_c - floor(o_c);
 
-                int coord_00_r = sat( floor(o_r), 0, o_h - 1 );
-                int coord_00_c = sat( floor(o_c), 0, o_w - 1 );
+                int coord_00_r = clamp( (int) floor(o_r), 0, o_h - 1 );
+                int coord_00_c = clamp( (int) floor(o_c), 0, o_w - 1 );
 
                 int coord_01_r = coord_00_r;
-                int coord_01_c = sat( coord_00_c + 1, 0, o_w - 1 );
+                int coord_01_c = clamp( coord_00_c + 1, 0, o_w - 1 );
 
-                int coord_10_r = sat( coord_00_r + 1, 0, o_h - 1 );
+                int coord_10_r = clamp( coord_00_r + 1, 0, o_h - 1 );
                 int coord_10_c = coord_00_c;
 
-                int coord_11_r = sat( coord_00_r + 1, 0, o_h - 1 );
-                int coord_11_c = sat( coord_00_c + 1, 0, o_w - 1 );
+                int coord_11_r = clamp( coord_00_r + 1, 0, o_h - 1 );
+                int coord_11_c = clamp( coord_00_c + 1, 0, o_w - 1 );
 
                 unsigned char A00 = original[coord_00_r][coord_00_c];
                 unsigned char A10 = original[coord_10_r][coord_10_c];

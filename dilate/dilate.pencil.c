@@ -2,7 +2,9 @@
 #include <stdint.h>
 #include <assert.h>
 
+#ifndef __PENCIL__
 #include "../pencil/math.h"
+#endif
 
 #include "dilate.pencil.h"
 
@@ -28,8 +30,8 @@ static void dilate( const int rows
     __pencil_assume(dilate_step >= cols);
     __pencil_assume(se_rows     >  0);
     __pencil_assume(se_cols     >  0);
-    __pencil_assume(se_rows     <  16);
-    __pencil_assume(se_cols     <  16);
+    __pencil_assume(se_rows     <  8);
+    __pencil_assume(se_cols     <  8);
     __pencil_assume(se_step     >= se_cols);
     __pencil_assume(anchor_row  >= 0);
     __pencil_assume(anchor_col  >= 0);
@@ -46,11 +48,10 @@ static void dilate( const int rows
             {
                 for ( int r = 0; r < se_cols; r++ )
                 {
-                   int candidate_row = q - anchor_row + e;
-                   int candidate_col = w - anchor_col + r;
+                   int candidate_row = clamp(q - anchor_row + e, 0, rows);
+                   int candidate_col = clamp(w - anchor_col + r, 0, cols);
 
-		   int test = (((candidate_row >= 0) && (candidate_row < rows) && (candidate_col >= 0) && (candidate_col < cols)) && ((se[e][r]!=0)));
-		   sup = test ? max(sup, cpu_gray[candidate_row][candidate_col]) : sup;
+		   sup = (se[e][r]!=0) ? max(sup, cpu_gray[candidate_row][candidate_col]) : sup;
                 }
             }
             dilate[q][w] = sup;
