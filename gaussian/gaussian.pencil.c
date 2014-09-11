@@ -1,6 +1,8 @@
 #include "gaussian.pencil.h"
 
+#ifndef __PENCIL__
 #include "../pencil/math.h"
+#endif
 
 static void gaussian( const int rows
                     , const int cols
@@ -51,8 +53,8 @@ static void gaussian( const int rows
                 {
                     for ( int r = 0; r < kernelX_cols; r++ )
                     {
-                        int row = clampi(q + e - kernelX_rows / 2, 0, rows-1);
-                        int col = clampi(w + r - kernelX_cols / 2, 0, cols-1);
+                        int row = clamp(q + e - kernelX_rows / 2, 0, rows-1);
+                        int col = clamp(w + r - kernelX_cols / 2, 0, cols-1);
                         prod += src[row][col] * kernelX[e][r];
                     }
                 }
@@ -75,8 +77,8 @@ static void gaussian( const int rows
                 {
                     for ( int r = 0; r < kernelY_cols; r++ )
                     {
-                        int row = clampi(q + e - kernelY_rows / 2, 0, rows-1);
-                        int col = clampi(w + r - kernelY_cols / 2, 0, cols-1);
+                        int row = clamp(q + e - kernelY_rows / 2, 0, rows-1);
+                        int col = clamp(w + r - kernelY_cols / 2, 0, cols-1);
 #if __PENCIL__
                         prod += temp[row][col] * kernelY[e][r];
 #else

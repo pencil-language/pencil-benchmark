@@ -3,23 +3,42 @@
 #set -x
 
 PPCG_COMPILER=~/src/ppcgs/ppcg-gforge-pet-tree/ppcg 
+#PPCG_COMPILER=~/src/ppcgs/ppcg_summary/ppcg
 BENCH_ROOT=~/src/pencil_codes/CARP-Benchmarks/
-OPENCL_PREFIX=/opt/AMDAPP/
+OPENCL_PREFIX=/usr/local/cuda-5.5/
+#OPENCL_PREFIX=/opt/AMDAPP/
 
-PPCG_EXTRA_OPTIONS="--target=opencl --opencl-print-time-measurements -D__PENCIL__" 
+# Use PPCG pet tree for all except for filter2D and gaussian where PPCG summary must be used !
+
+#ppcg_pet_tree:
+PPCG_EXTRA_OPTIONS="--target=opencl  -D__PENCIL__  --opencl-print-time-measurements "
+
+#ppcg_summary:
+#PPCG_EXTRA_OPTIONS="--target=opencl  -D__PENCIL__  --opencl-print-kernels-time-measurements   --opencl-include-file=../pencil/pencil_math.h"
 
 LIST_OF_KERNELS="resize dilate cvt_color warpAffine filter2D gaussian"
 
-# Carotte
-PPCG_OPTIONS[0]="--isl-schedule-fuse=min                    --no-private-memory --sizes={kernel[i]->tile[128,128];kernel[i]->grid[464,53];kernel[i]->block[8,32]}"
-PPCG_OPTIONS[1]="--isl-schedule-fuse=min                    --no-private-memory --sizes={kernel[i]->tile[16,16];kernel[i]->grid[16,16];kernel[i]->block[16,16]}"
-PPCG_OPTIONS[2]="--isl-schedule-fuse=min --no-shared-memory --no-private-memory --sizes={kernel[i]->tile[32,32];kernel[i]->grid[928,27];kernel[i]->block[4,64]}"
-PPCG_OPTIONS[3]="--isl-schedule-fuse=min --no-shared-memory --no-private-memory --sizes={kernel[i]->tile[32,32];kernel[i]->grid[928,27];kernel[i]->block[4,64]}"
-PPCG_OPTIONS[4]="--isl-schedule-fuse=min                    --no-private-memory --sizes={kernel[i]->tile[32,8];kernel[i]->grid[116,53];kernel[i]->block[32,32]}"
-PPCG_OPTIONS[5]="--isl-schedule-fuse=min --no-shared-memory --no-private-memory --sizes={kernel[i]->tile[32,32];kernel[i]->grid[464,53];kernel[i]->block[8,32]}"
 
-#LIST_OF_KERNELS="gaussian"
-#PPCG_OPTIONS[0]="--isl-schedule-fuse=min --no-shared-memory --no-private-memory --sizes={kernel[i]->tile[8,32];kernel[i]->grid[464,53];kernel[i]->block[8,32]}"
+# Carotte
+#PPCG_OPTIONS[0]="--isl-schedule-fuse=min                    --no-private-memory --sizes={kernel[i]->tile[128,128];kernel[i]->grid[464,53];kernel[i]->block[8,32]}"
+#PPCG_OPTIONS[1]="--isl-schedule-fuse=min                    --no-private-memory --sizes={kernel[i]->tile[16,16];kernel[i]->grid[16,16];kernel[i]->block[16,16]}"
+#PPCG_OPTIONS[2]="--isl-schedule-fuse=min --no-shared-memory --no-private-memory --sizes={kernel[i]->tile[32,32];kernel[i]->grid[928,27];kernel[i]->block[4,64]}"
+#PPCG_OPTIONS[3]="--isl-schedule-fuse=min --no-shared-memory --no-private-memory --sizes={kernel[i]->tile[32,32];kernel[i]->grid[928,27];kernel[i]->block[4,64]}"
+#PPCG_OPTIONS[4]="--isl-schedule-fuse=min                    --no-private-memory --sizes={kernel[i]->tile[32,8];kernel[i]->grid[116,53];kernel[i]->block[32,32]}"
+#PPCG_OPTIONS[5]="--isl-schedule-fuse=min --no-shared-memory --no-private-memory --sizes={kernel[i]->tile[32,32];kernel[i]->grid[464,53];kernel[i]->block[8,32]}"
+
+
+# Fermi
+PPCG_OPTIONS[0]="--isl-schedule-fuse=min  --no-private-memory --sizes={kernel[i]->tile[64,64];kernel[i]->grid[717,26];kernel[i]->block[4,64]}"
+PPCG_OPTIONS[1]="--isl-schedule-fuse=min  --no-private-memory --no-shared-memory --sizes={kernel[i]->tile[32,32];kernel[i]->grid[180,101];kernel[i]->block[16,16]}"
+PPCG_OPTIONS[2]="--isl-schedule-fuse=min  --no-private-memory --no-shared-memory --sizes={kernel[i]->tile[64,64];kernel[i]->grid[180,101];kernel[i]->block[16,16]}"
+PPCG_OPTIONS[3]="--isl-schedule-fuse=min  --no-private-memory --sizes={kernel[i]->tile[64,64];kernel[i]->grid[180,101];kernel[i]->block[16,16]}"
+PPCG_OPTIONS[4]="--isl-schedule-fuse=min  --no-private-memory --no-shared-memory --sizes={kernel[i]->tile[32,32];kernel[i]->grid[717,26];kernel[i]->block[4,64]}"
+PPCG_OPTIONS[5]="--isl-schedule-fuse=min  --no-private-memory --sizes={kernel[i]->tile[32,32];kernel[i]->grid[717,26];kernel[i]->block[4,64]}"
+
+
+#LIST_OF_KERNELS="resize"
+#PPCG_OPTIONS[0]="--isl-schedule-fuse=min  --no-private-memory  --sizes={kernel[i]->tile[64,64];kernel[i]->grid[717,26];kernel[i]->block[4,64]}"
 
 NB_TESTS=3
 PEROFRM_ONLY_ONE_TEST=1

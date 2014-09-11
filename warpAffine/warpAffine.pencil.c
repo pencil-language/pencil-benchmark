@@ -1,8 +1,7 @@
+#include <math.h>
 #include <stdint.h>
 
 #include "warpAffine.pencil.h"
-
-#include "../pencil/math.h"
 
 /*
 A00 -------- A01
@@ -20,6 +19,9 @@ bilinear interpolation of the value of P.
 //Do not use this macro with expressions in parameters.
 #define bilinear(A00, A01, A11, A10, r, c) \
     (1-c) * (1-r) * A00 + (1-c) * r * A10 + c * (1-r) * A01 + c * r * A11       //TODO: use mix(a,b,c)
+
+#define clip(x, min, max) \
+    (x<min) ? min : ((x>=max) ? max-1 : x)
 
 /*
 
@@ -61,13 +63,11 @@ static void affine( const int src_rows, const int src_cols, const int src_step, 
             float o_r = a11 * n_r + a10 * n_c + b00;
             float o_c = a01 * n_r + a00 * n_c + b10;
 
-            float i_r;                      //Integer part
-            float i_c;
-            float r = fract(o_r, &i_r);     //Fractional part
-            float c = fract(o_c, &i_c);
+            float r = o_r - floor(o_r);
+            float c = o_c - floor(o_c);
 
-            int coord_00_r = (int)i_r;
-            int coord_00_c = (int)i_c;
+            int coord_00_r = floor(o_r);
+            int coord_00_c = floor(o_c);
             int coord_01_r = coord_00_r;
             int coord_01_c = coord_00_c + 1;
             int coord_10_r = coord_00_r + 1;
@@ -75,14 +75,14 @@ static void affine( const int src_rows, const int src_cols, const int src_step, 
             int coord_11_r = coord_00_r + 1;
             int coord_11_c = coord_00_c + 1;
 
-            coord_00_r = clampi(coord_00_r, 0, src_rows);
-            coord_00_c = clampi(coord_00_c, 0, src_cols);
-            coord_01_r = clampi(coord_01_r, 0, src_rows);
-            coord_01_c = clampi(coord_01_c, 0, src_cols);
-            coord_10_r = clampi(coord_10_r, 0, src_rows);
-            coord_10_c = clampi(coord_10_c, 0, src_cols);
-            coord_11_r = clampi(coord_11_r, 0, src_rows);
-            coord_11_c = clampi(coord_11_c, 0, src_cols);
+            coord_00_r = clamp(coord_00_r, 0, src_rows);
+            coord_00_c = clamp(coord_00_c, 0, src_cols);
+            coord_01_r = clamp(coord_01_r, 0, src_rows);
+            coord_01_c = clamp(coord_01_c, 0, src_cols);
+            coord_10_r = clamp(coord_10_r, 0, src_rows);
+            coord_10_c = clamp(coord_10_c, 0, src_cols);
+            coord_11_r = clamp(coord_11_r, 0, src_rows);
+            coord_11_c = clamp(coord_11_c, 0, src_cols);
 
             float A00 = src[coord_00_r][coord_00_c];
             float A10 = src[coord_10_r][coord_10_c];

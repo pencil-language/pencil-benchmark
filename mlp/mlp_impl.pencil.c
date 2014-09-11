@@ -164,7 +164,7 @@ static uint8_t minChar(int subImageRows, int subImageCols, int imageRows,
     return minvalue;
 }
 
-static uint8_t max(uint8_t a, uint8_t b) { return a > b ? a : b; }
+#define max(a, b) (((a) > (b)) ? (a) : (b))
 
 static uint8_t maxChar(int subImageRows, int subImageCols, int imageRows,
 		       int imageCols, uint8_t image[imageRows][imageCols],

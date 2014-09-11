@@ -81,7 +81,7 @@ extern "C" {
     /* Definitions for functions to be used when compiled as C code */
 
     /* Lot of stuff defined as type-generic macros */
-#include <tgmath.h>
+//#include <tgmath.h>
 
     /* Some functions can be defined with a simple equation */
             

@@ -15,6 +15,8 @@
 #include "errors.hpp"
 #include "utility.hpp"
 
+#define CL_DEVICE CL_DEVICE_TYPE_GPU
+
 namespace carp {
 
 namespace opencl {
@@ -211,11 +213,11 @@ public:
         assert(num_platforms==1);  // there is only one supported platform at the time
 
         // getting the number of devices
-        utility::checkerror(clGetDeviceIDs( *cpPlatform, CL_DEVICE_TYPE_GPU, 0, NULL, &num_devices), __FILE__, __LINE__ );
+        utility::checkerror(clGetDeviceIDs( *cpPlatform, CL_DEVICE, 0, NULL, &num_devices), __FILE__, __LINE__ );
         assert(num_devices>0);
 
         devices.resize(num_devices);
-        utility::checkerror(clGetDeviceIDs( *cpPlatform, CL_DEVICE_TYPE_GPU, devices.size(), devices.data(), NULL ), __FILE__, __LINE__ );
+        utility::checkerror(clGetDeviceIDs( *cpPlatform, CL_DEVICE, devices.size(), devices.data(), NULL ), __FILE__, __LINE__ );
         if (num_devices>1)
             std::cout << "warning: more then one GPU device detected, only the first will be used." << std::endl;
 
@@ -249,15 +251,15 @@ public:
         assert(num_platforms==1);  // there is only one supported platform at the time
 
         // getting the number of devices
-        clGetDeviceIDs(*cpPlatform, CL_DEVICE_TYPE_GPU, 0, NULL, &num_devices);
+        clGetDeviceIDs(*cpPlatform, CL_DEVICE, 0, NULL, &num_devices);
 
         if (num_devices>0) {
             devices.resize(num_devices);
-            utility::checkerror(clGetDeviceIDs(*cpPlatform, CL_DEVICE_TYPE_GPU, devices.size(), devices.data(), NULL ), __FILE__, __LINE__ );
+            utility::checkerror(clGetDeviceIDs(*cpPlatform, CL_DEVICE, devices.size(), devices.data(), NULL ), __FILE__, __LINE__ );
         } else if (num_devices<=0) {
-            utility::checkerror(clGetDeviceIDs(*cpPlatform, CL_DEVICE_TYPE_CPU, 0, NULL, &num_devices), __FILE__, __LINE__ );
+            utility::checkerror(clGetDeviceIDs(*cpPlatform, CL_DEVICE, 0, NULL, &num_devices), __FILE__, __LINE__ );
             devices.resize(num_devices);
-            utility::checkerror(clGetDeviceIDs(*cpPlatform, CL_DEVICE_TYPE_CPU, devices.size(), devices.data(), NULL ), __FILE__, __LINE__ );
+            utility::checkerror(clGetDeviceIDs(*cpPlatform, CL_DEVICE, devices.size(), devices.data(), NULL ), __FILE__, __LINE__ );
         }
 
         if (num_devices>1)
