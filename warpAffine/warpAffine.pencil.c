@@ -1,7 +1,5 @@
-#include <math.h>
-#include <stdint.h>
-
 #include "warpAffine.pencil.h"
+#include "../pencil/math.h"
 
 /*
 A00 -------- A01
@@ -19,9 +17,6 @@ bilinear interpolation of the value of P.
 //Do not use this macro with expressions in parameters.
 #define bilinear(A00, A01, A11, A10, r, c) \
     (1-c) * (1-r) * A00 + (1-c) * r * A10 + c * (1-r) * A01 + c * r * A11       //TODO: use mix(a,b,c)
-
-#define clip(x, min, max) \
-    (x<min) ? min : ((x>=max) ? max-1 : x)
 
 /*
 

@@ -1,7 +1,8 @@
 #include "gaussian.pencil.h"
-
-#ifndef __PENCIL__
 #include "../pencil/math.h"
+
+#if !__PENCIL__
+#include <stdlib.h>
 #endif
 
 static void gaussian( const int rows

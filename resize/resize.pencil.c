@@ -1,9 +1,5 @@
-#include <math.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <assert.h>
-
 #include "resize.pencil.h"
+#include "../pencil/math.h"
 
 /*
 A00 -------- A01
@@ -19,8 +15,6 @@ bilinear interpolation of the value of P.
  */
 
 #define bilinear( A00, A01, A11, A10, r, c ) ((1-c) * ( (1-r) * A00 + r * A10 ) + c * ( (1-r) * A01 + r * A11 )) //TODO: use mix(a,b,c)
-
-#define sat( val, lo, hi ) ((val >= lo) ? ((val <= hi) ? val : hi) : lo)
 
 static void resize( const int original_rows
                   , const int original_cols

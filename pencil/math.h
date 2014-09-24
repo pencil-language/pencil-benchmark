@@ -17,38 +17,50 @@ extern "C" {
     /* Almost all of the functions are available as OpenCL builtins */
 
 #define __PENCIL_IMPL_DEFINE_OVERLOADS_1_PARAM(functionname) \
-    float  __attribute((overloadable)) functionname(     float );   \
-    double __attribute((overloadable)) functionname(     double);   \
+    float  __attribute((overloadable)) functionname(float );   \
+    double __attribute((overloadable)) functionname(double);   \
 
 #define __PENCIL_IMPL_DEFINE_OVERLOADS_2_PARAMS(functionname) \
-    float  __attribute((overloadable)) functionname(     float ,      float );   \
-    double __attribute((overloadable)) functionname(     double,      double);   \
+    float  __attribute((overloadable)) functionname(float , float );   \
+    double __attribute((overloadable)) functionname(double, double);   \
 
 #define __PENCIL_IMPL_DEFINE_OVERLOADS_2_PARAMS_2ND_POINTER(functionname) \
-    float  __attribute((overloadable)) functionname(     float ,      float *);   \
-    double __attribute((overloadable)) functionname(     double,      double*);   \
+    float  __attribute((overloadable)) functionname(float , float *);   \
+    double __attribute((overloadable)) functionname(double, double*);   \
 
 #define __PENCIL_IMPL_DEFINE_OVERLOADS_3_PARAMS(functionname) \
-    float  __attribute((overloadable)) functionname(     float ,      float ,      float );   \
-    double __attribute((overloadable)) functionname(     double,      double,      double);   \
+    float  __attribute((overloadable)) functionname(float , float , float );   \
+    double __attribute((overloadable)) functionname(double, double, double);   \
 
 #define __PENCIL_IMPL_DEFINE_INTEGER_OVERLOADS_2_PARAMS(functionname) \
-      signed     short int __attribute((overloadable)) functionname(  signed     short int,   signed     short int); \
-      signed           int __attribute((overloadable)) functionname(  signed           int,   signed           int); \
-      signed      long int __attribute((overloadable)) functionname(  signed      long int,   signed      long int); \
-    unsigned     short int __attribute((overloadable)) functionname(unsigned     short int, unsigned     short int); \
-    unsigned           int __attribute((overloadable)) functionname(unsigned           int, unsigned           int); \
-    unsigned      long int __attribute((overloadable)) functionname(unsigned      long int, unsigned      long int); \
-             char __attribute((overloadable)) functionname(         char,          char,          char); \
-      signed char __attribute((overloadable)) functionname(  signed char,   signed char,   signed char); \
-    unsigned char __attribute((overloadable)) functionname(unsigned char, unsigned char, unsigned char); \
+      signed     short int __attribute((overloadable)) functionname(  signed short int,   signed short int); \
+      signed           int __attribute((overloadable)) functionname(  signed       int,   signed       int); \
+      signed      long int __attribute((overloadable)) functionname(  signed  long int,   signed  long int); \
+    unsigned     short int __attribute((overloadable)) functionname(unsigned short int, unsigned short int); \
+    unsigned           int __attribute((overloadable)) functionname(unsigned       int, unsigned       int); \
+    unsigned      long int __attribute((overloadable)) functionname(unsigned  long int, unsigned  long int); \
+             char __attribute((overloadable)) functionname(         char,          char); \
+      signed char __attribute((overloadable)) functionname(  signed char,   signed char); \
+    unsigned char __attribute((overloadable)) functionname(unsigned char, unsigned char); \
+
+#define __PENCIL_IMPL_DEFINE_INTEGER_OVERLOADS_3_PARAMS(functionname) \
+    signed     short int __attribute((overloadable)) functionname(  signed short int,   signed short int,   signed short int); \
+    signed           int __attribute((overloadable)) functionname(  signed       int,   signed       int,   signed       int); \
+    signed      long int __attribute((overloadable)) functionname(  signed  long int,   signed  long int,   signed  long int); \
+  unsigned     short int __attribute((overloadable)) functionname(unsigned short int, unsigned short int, unsigned short int); \
+  unsigned           int __attribute((overloadable)) functionname(unsigned       int, unsigned       int, unsigned       int); \
+  unsigned      long int __attribute((overloadable)) functionname(unsigned  long int, unsigned  long int, unsigned  long int); \
+           char __attribute((overloadable)) functionname(         char,          char,          char); \
+    signed char __attribute((overloadable)) functionname(  signed char,   signed char,   signed char); \
+  unsigned char __attribute((overloadable)) functionname(unsigned char, unsigned char, unsigned char); \
 
     __PENCIL_IMPL_DEFINE_OVERLOADS_2_PARAMS(min)
     __PENCIL_IMPL_DEFINE_INTEGER_OVERLOADS_2_PARAMS(min)
     __PENCIL_IMPL_DEFINE_OVERLOADS_2_PARAMS(max)
     __PENCIL_IMPL_DEFINE_INTEGER_OVERLOADS_2_PARAMS(max)
     __PENCIL_IMPL_DEFINE_OVERLOADS_3_PARAMS(clamp)
-            
+    __PENCIL_IMPL_DEFINE_INTEGER_OVERLOADS_3_PARAMS(clamp)
+
     __PENCIL_IMPL_DEFINE_OVERLOADS_2_PARAMS(atan)
     __PENCIL_IMPL_DEFINE_OVERLOADS_2_PARAMS(atan2)
     __PENCIL_IMPL_DEFINE_OVERLOADS_1_PARAM(tan)
@@ -81,7 +93,7 @@ extern "C" {
     /* Definitions for functions to be used when compiled as C code */
 
     /* Lot of stuff defined as type-generic macros */
-//#include <tgmath.h>
+#include <tgmath.h>
 
     /* Some functions can be defined with a simple equation */
             
@@ -125,15 +137,6 @@ extern "C" {
 #endif
 
     /* Some added functions */
-    /* PPCG does not support value expressions (GCC extension) so need to use macros that evaluate parameters multiple times */
-
-    /* Integer clamp */
-/*#define clampi(val, min, max) \
-        ((val) < (min)) ? (min) : ((val) > (max)) ? (max) : (val)*/
-inline int clampi(float val, int min, int max)
-{
-	return  ((val) < (min)) ? (min) : ((val) > (max)) ? (max) : (val);
-}
 
 #ifdef	__cplusplus
 }
