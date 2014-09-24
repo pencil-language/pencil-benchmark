@@ -1,9 +1,9 @@
-## Building CARP-Benchmarks with a working PPCG, short version for Ubuntu ##
+## Building CARP-Benchmarks with a working PPCG, copy-paste version for Ubuntu ##
   cd ..
   sudo apt-get install -y libboost-all-dev libtbb-dev build-essential p7zip cmake
   git clone https://github.com/Itseez/opencv.git
   cd opencv
-  git checkout 2.4.9
+  git checkout 2.4.9.1
   cd ..
   mkdir opencv-build
   cd opencv-build
@@ -26,12 +26,12 @@ To build the CARP-Benchmarks, you need:
 	p7zip
 	cmake
 - An OpenCV build:
-	Tested with 2.4.9
+	Tested with 2.4.9.1
 	Download OpenCV
 	    git clone https://github.com/Itseez/opencv.git
-	Checkout 2.4.9:
+	Checkout 2.4.9.1:
 	    cd opencv
-	    git checkout 2.4.9
+	    git checkout 2.4.9.1
 	    cd ..
 	Configure build with CMake:
 	    mkdir opencv-build
