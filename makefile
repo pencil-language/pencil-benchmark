@@ -1,4 +1,6 @@
-PPCG_COMPILER=/home/davidrobi/ppcg/ppcg
+## parameters, paths
+## Edit these according to paths on your system.
+PPCG_COMPILER=ppcg
 XXD_COMPILER=xxd
 
 BOOST_INCLUDE_DIR=/usr/include/
@@ -14,12 +16,13 @@ TBB_INCLUDE_DIR=/usr/include/
 TBB_LIB_DIR=/usr/lib/
 TBB_LIBS=-ltbb -ltbbmalloc
 
-OPENCL_PREFIX=/usr/
+OPENCL_PREFIX=/opt/AMDAPPSDK-2.9-1/
 OPENCL_INCLUDE=$(OPENCL_PREFIX)include/
 OPENCL_LIB_DIR=$(OPENCL_PREFIX)lib/
 OPENCL_LIB=-lOpenCL
 
 PPCG_OPTIONS=--no-shared-memory -D__PENCIL__ --target=opencl --opencl-include-file=../pencil/pencil_math.h
+OCL_UTILITIES=/home/davidrobi/CARP/ppcg/ocl_utilities.c
 
 #EXTRA_OPENCL_LIBRARY=-lmali
 
@@ -65,11 +68,11 @@ build/operators.clh: mlp/operators.cl
 build/hog.clh: hog/hog.opencl.cl
 	(cd hog && $(XXD_COMPILER) -i hog.opencl.cl ../build/hog.clh)
 
+## PENCIL OCL utilites
+build/ocl_utilities.o:
+	$(CXX) -x c -c $(CFLAGS) $(OCL_UTILITIES) -o build/ocl_utilities.o
 
 ## PENCIL-as-c compile
-build/ocl_utilities.o: base/ocl_utilities.c
-	$(CXX) -x c -c $(CFLAGS) base/ocl_utilities.c -o build/ocl_utilities.o
-
 build/cvt_color.pencil_as_c.o: cvt_color/cvt_color.pencil.c
 	$(CXX) -x c -c $(CFLAGS) cvt_color/cvt_color.pencil.c -o build/cvt_color.pencil_as_c.o
 
