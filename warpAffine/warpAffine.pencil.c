@@ -95,5 +95,8 @@ void pencil_affine_linear( const int src_rows, const int src_cols, const int src
                          , const float a00, const float a01, const float a10, const float a11, const float b00, const float b10
                          )
 {
-    affine( src_rows, src_cols, src_step, src, dst_rows, dst_cols, dst_step, dst, a00, a01, a10, a11, b00, b10 );
+    affine( src_rows, src_cols, src_step, (const float(*)[src_step])src
+          , dst_rows, dst_cols, dst_step, (      float(*)[dst_step])dst
+          , a00, a01, a10, a11, b00, b10
+          );
 }

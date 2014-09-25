@@ -21,7 +21,6 @@ static void gaussian( const int rows
                     )
 {
 #pragma scop
-#if __PENCIL__
     __pencil_assume(rows         >  0);
     __pencil_assume(cols         >  0);
     __pencil_assume(step         >= cols);
@@ -35,7 +34,6 @@ static void gaussian( const int rows
     __pencil_assume(kernelX_cols <= 128);
     __pencil_assume(kernelY_rows <= 128);
     __pencil_assume(kernelY_cols <= 2);
-#endif
     {
 #if __PENCIL__
         float temp[rows][step];
@@ -112,5 +110,9 @@ void pencil_gaussian( const int rows
                     , float conv[]
                     )
 {
-    gaussian ( rows, cols, step, src, kernelX_rows, kernelX_cols, kernelX_step, kernelX, kernelY_rows, kernelY_cols, kernelY_step, kernelY, conv );
+    gaussian(         rows,         cols,         step, (const float(*)[        step])src
+            , kernelX_rows, kernelX_cols, kernelX_step, (const float(*)[kernelX_step])kernelX
+            , kernelY_rows, kernelY_cols, kernelY_step, (const float(*)[kernelY_step])kernelY
+            ,                                           (      float(*)[        step])conv
+            );
 }

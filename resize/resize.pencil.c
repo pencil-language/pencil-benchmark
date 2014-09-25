@@ -87,5 +87,7 @@ void pencil_resize_LN( const int original_rows
                      , unsigned char resampled[]
                      )
 {
-    resize(original_rows, original_cols, original_step, original, resampled_rows, resampled_cols, resampled_step, resampled );
+    resize(  original_rows,  original_cols,  original_step, (const unsigned char(*)[ original_step])original
+          , resampled_rows, resampled_cols, resampled_step, (      unsigned char(*)[resampled_step])resampled
+          );
 }

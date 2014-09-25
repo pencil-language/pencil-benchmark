@@ -17,10 +17,8 @@ static void dilate( const int rows
                   )
 {
 #pragma scop
-#if __PENCIL__
     __pencil_assume(se_rows     <  8);
     __pencil_assume(se_cols     <  8);
-#endif
     #pragma pencil independent
     for ( int q = 0; q < rows; q++ )
     {
@@ -59,5 +57,11 @@ void pencil_dilate( const int rows
                   , const int anchor_col
                   )
 {
-    dilate( rows, cols, cpu_step, cpu_gray, dilate_step, pdilate, se_rows, se_cols, se_step, se, anchor_row, anchor_col );
+    dilate( rows, cols
+          , cpu_step   , (const unsigned char(*)[cpu_step   ])cpu_gray
+          , dilate_step, (      unsigned char(*)[dilate_step])pdilate
+          , se_rows, se_cols
+          , se_step    , (const unsigned char(*)[se_step    ])se
+          , anchor_row, anchor_col
+          );
 }

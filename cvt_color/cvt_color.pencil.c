@@ -1,22 +1,28 @@
-#include <stdint.h>
-
 #include "cvt_color.pencil.h"
+#include <pencil.h>
+
+#define CV_DESCALE(x,n) (((x) + (1 << ((n)-1))) >> (n))
+enum
+{
+    yuv_shift  = 14,
+    R2Y        = 4899,
+    G2Y        = 9617,
+    B2Y        = 1868,
+};
 
 static void RGB2Gray( const int rows
                     , const int cols
                     , const int src_step
                     , const int dst_step
-                    , const DATA_TYPE src[static const restrict rows][src_step][3]
-                    , DATA_TYPE dst[static const restrict rows][dst_step]
+                    , const uint8_t src[static const restrict rows][src_step][3]
+                    , uint8_t dst[static const restrict rows][dst_step]
                     )
 {
 #pragma scop
-#if __PENCIL__
     __pencil_assume(rows     >  0);
     __pencil_assume(cols     >  0);
     __pencil_assume(src_step >= cols);
     __pencil_assume(dst_step >= cols);
-#endif
     #pragma pencil independent
     for ( int q = 0; q < rows; q++ )
     {
@@ -33,9 +39,9 @@ void pencil_RGB2Gray( const int rows
                     , const int cols
                     , const int src_step
                     , const int dst_step
-                    , const DATA_TYPE src[]
-                    , DATA_TYPE dst[]
+                    , const uint8_t src[]
+                    , uint8_t dst[]
                     )
 {
-    RGB2Gray( rows, cols, src_step, dst_step, src, dst );
+    RGB2Gray( rows, cols, src_step, dst_step, (const uint8_t(*)[src_step][3])src, (uint8_t(*)[src_step])dst );
 }

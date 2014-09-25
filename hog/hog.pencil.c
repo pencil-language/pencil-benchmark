@@ -146,6 +146,10 @@ void pencil_hog( const int rows
    for (int ii = 0; ii < num_locations*NUMBER_OF_CELLS*NUMBER_OF_CELLS*NUMBER_OF_BINS; ++ii)
        hist[ii] = 0;
 
-    hog_multi(rows,cols,step,image,num_locations,location,blck_size,hist);
+    hog_multi( rows, cols, step, (const uint8_t(*)[step])image
+             , num_locations, (const float(*)[2])location
+             , blck_size
+             , (float(*)[NUMBER_OF_CELLS][NUMBER_OF_CELLS][NUMBER_OF_BINS])hist
+             );
 }
 

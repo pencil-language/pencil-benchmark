@@ -14,12 +14,10 @@ static void filter2D( const int rows
                     )
 {
 #pragma scop
-#if __PENCIL__
     __pencil_assume(kernel_rows <=  8);
     __pencil_assume(kernel_cols <=  8);
     __pencil_assume(kernel_rows >=  3);
     __pencil_assume(kernel_cols >=  3);
-#endif
     {
         #pragma pencil independent
         for ( int q = 0; q < rows; q++ )
@@ -56,5 +54,8 @@ void pencil_filter2D( const int rows
                     , float conv[]
                     )
 {
-    filter2D( rows, cols, step, src, kernel_rows, kernel_cols, kernel_step, kernel_, conv );
+    filter2D(        rows,        cols,        step, (const float (*)[       step])src
+            , kernel_rows, kernel_cols, kernel_step, (const float (*)[kernel_step])kernel_
+            ,                                        (      float (*)[       step])conv
+            );
 }
