@@ -1,12 +1,6 @@
-#include <stdio.h>
-#include <stdint.h>
-#include <assert.h>
-
-#ifndef __PENCIL__
-#include "../pencil/math.h"
-#endif
-
 #include "dilate.pencil.h"
+
+#include <pencil.h>
 
 static void dilate( const int rows
                   , const int cols

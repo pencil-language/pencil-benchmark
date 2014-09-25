@@ -1,5 +1,5 @@
 #include "resize.pencil.h"
-#include "../pencil/math.h"
+#include <pencil.h>
 
 /*
 A00 -------- A01

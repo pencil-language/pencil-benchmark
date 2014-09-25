@@ -1,6 +1,6 @@
 #include "hog.pencil.h"
 
-#include "../pencil/math.h"   //sqrt, atan, atan2, ceil, floor
+#include <pencil.h>
 
 #if SIGNED_HOG
 static const float BINSIZE_IN_DEGREES = 360.0f / NUMBER_OF_BINS;
@@ -11,9 +11,6 @@ static const float BINSIZE_IN_DEGREES = 180.0f / NUMBER_OF_BINS;
 #ifndef M_PI
 #define M_PI           3.14159265358979323846
 #endif
-
-#define min(x,y)    ((x) < (y) ? (x) : (y))
-#define max(x,y)    ((x) > (y) ? (x) : (y))
 
 static void hog_multi( const int rows
                      , const int cols

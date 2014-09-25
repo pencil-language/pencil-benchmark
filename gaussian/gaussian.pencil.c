@@ -1,5 +1,5 @@
 #include "gaussian.pencil.h"
-#include "../pencil/math.h"
+#include <pencil.h>
 
 #if !__PENCIL__
 #include <stdlib.h>

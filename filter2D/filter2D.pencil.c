@@ -1,8 +1,6 @@
 #include "filter2D.pencil.h"
 
-#ifndef __PENCIL__
-#include "../pencil/math.h"
-#endif
+#include <pencil.h>
 
 static void filter2D( const int rows
                     , const int cols
