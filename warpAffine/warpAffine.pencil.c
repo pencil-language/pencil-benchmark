@@ -1,54 +1,18 @@
 #include "warpAffine.pencil.h"
 #include <pencil.h>
 
-/*
-A00 -------- A01
- |            |
- |            |
- |  P         |
- |            |
-A10 -------- A11
-
-
-The coordinates of P are [r,c] (row, col). The function returns
-bilinear interpolation of the value of P.
- */
-
-//Do not use this macro with expressions in parameters.
-#define bilinear(A00, A01, A11, A10, r, c) \
-    (1-c) * (1-r) * A00 + (1-c) * r * A10 + c * (1-r) * A01 + c * r * A11       //TODO: use mix(a,b,c)
-
-/*
-
-A = [ a00, a01
-      a10, a11 ]
-
-B = [ b00
-      b10 ]
-
-N[[o_r, o_c]] = [ a00 n_r + a01 n_c + b00
-                  a10 n_r + a11 n_c + b10 ]
-
-n_r -- new row
-n_c -- new col
-o_r -- old row
-o_c -- old col
-
-*/
 static void affine( const int src_rows, const int src_cols, const int src_step, const float src[static const restrict src_rows][src_step]
                   , const int dst_rows, const int dst_cols, const int dst_step,       float dst[static const restrict dst_rows][dst_step]
                   , const float a00, const float a01, const float a10, const float a11, const float b00, const float b10
                   )
 {
 #pragma scop
-#if __PENCIL__
     __pencil_assume(src_rows >  0);
     __pencil_assume(src_cols >  0);
     __pencil_assume(src_step >= src_cols);
     __pencil_assume(dst_rows >  0);
     __pencil_assume(dst_cols >  0);
     __pencil_assume(dst_step >= dst_cols);
-#endif
     #pragma pencil independent
     for ( int n_r=0; n_r<dst_rows; n_r++ )
     {
@@ -84,7 +48,7 @@ static void affine( const int src_rows, const int src_cols, const int src_step, 
             float A01 = src[coord_01_r][coord_01_c];
             float A11 = src[coord_11_r][coord_11_c];
 
-            dst[n_r][n_c] = bilinear( A00, A01, A11, A10, r, c );
+            dst[n_r][n_c] = mix( mix(A00, A10, r), mix(A01, A11, r), c);
         }
     }
 #pragma endscop
