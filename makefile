@@ -1,43 +1,29 @@
-## parameters, paths
-## Edit these according to paths on your system.
+include makefile.in
+
 PPCG_COMPILER=ppcg
 XXD_COMPILER=xxd
 
-BOOST_INCLUDE_DIR=/usr/include/
-BOOST_LIB_DIR=/usr/lib/x86_64-linux-gnu/
 BOOST_LIBS=-lboost_filesystem -lboost_serialization -lboost_system
 
-OPENCV_PREFIX=/usr/local/
-OPENCV_INCLUDE_DIR=$(OPENCV_PREFIX)include/
-OPENCV_LIB_DIR=$(OPENCV_PREFIX)lib/
+OPENCV_INCLUDE_DIR=$(OPENCV_PREFIX)/include/
+OPENCV_LIB_DIR=$(OPENCV_PREFIX)/lib/
 OPENCV_LIBS=-lopencv_core -lopencv_imgproc -lopencv_ocl -lopencv_highgui
 
-TBB_INCLUDE_DIR=/usr/include/
-TBB_LIB_DIR=/usr/lib/
 TBB_LIBS=-ltbb -ltbbmalloc
 
-OPENCL_PREFIX=/opt/AMDAPPSDK-2.9-1/
 OPENCL_INCLUDE=$(OPENCL_PREFIX)include/
 OPENCL_LIB_DIR=$(OPENCL_PREFIX)lib/
 OPENCL_LIB=-lOpenCL
-#OPENCL_LIB=-lOpenCL -lmali
 
-OCL_UTILITIES=/home/davidrobi/CARP/ppcg/ocl_utilities.c
-PENCIL_HEADERS=/home/davidrobi/CARP/pencil/etc/pencil_headers
-
-# Optimization Flags
+EXTRA_FLAGS=-O3 -DNDEBUG -fomit-frame-pointer -fPIC -ffast-math -Wall -Wno-unknown-pragmas -I. -I$(PENCIL_HEADERS) ${USER_FLAGS}
 
 PPCG_OPTIONS=--no-shared-memory -D__PENCIL__ --target=opencl --sizes="{kernel[i]->block[16,16]}" -I$(PENCIL_HEADERS)
-EXTRA_FLAGS=-O3 -DNDEBUG -march=native -fomit-frame-pointer -fPIC -ffast-math -Wall -Wno-unknown-pragmas -I. -I$(PENCIL_HEADERS)
-#-DPRINT_OPENCL_PROFILING_KERNEL_EXEC_TIME
 
 CFLAGS=$(EXTRA_FLAGS) -std=c1x -Iinclude -Ibuild -I$(OPENCL_INCLUDE)
-CXXFLAGS=$(EXTRA_FLAGS) -std=c++0x -Iinclude -Ibuild -I$(OPENCL_INCLUDE) -I$(OPENCV_INCLUDE_DIR) -I$(TBB_INCLUDE_DIR) -I$(BOOST_INCLUDE_DIR)
-LDFLAGS=-L$(OPENCL_LIB_DIR) $(OPENCL_LIB) -L$(OPENCV_LIB_DIR) $(OPENCV_LIBS) -L$(TBB_LIB_DIR) $(TBB_LIBS) -Lbuild -L$(BOOST_LIB_DIR) $(BOOST_LIBS) -Wl,-rpath=$$ORIGIN:$(OPENCV_LIB_DIR) -Wl,-z,origin ${EXTRA_OPENCL_LIBRARY}
 
-#uncomment to compile with clang
-#CXX=clang
-#CXXFLAGS=$(EXTRA_FLAGS) -std=c++0x -Iinclude -Ibuild -I$(OPENCL_INCLUDE) -I$(OPENCV_INCLUDE_DIR) -I$(TBB_INCLUDE_DIR) -I$(BOOST_INCLUDE_DIR) -lstdc++ -lm
+CXXFLAGS=$(EXTRA_FLAGS) -std=c++0x -Iinclude -Ibuild -I$(OPENCL_INCLUDE) -I$(OPENCV_INCLUDE_DIR) -I$(TBB_INCLUDE_DIR) -I$(BOOST_INCLUDE_DIR)
+
+LDFLAGS=-L$(OPENCL_LIB_DIR) $(OPENCL_LIB) -L$(OPENCV_LIB_DIR) $(OPENCV_LIBS) -L$(TBB_LIB_DIR) $(TBB_LIBS) -Lbuild -L$(BOOST_LIB_DIR) $(BOOST_LIBS) -Wl,-rpath=$$ORIGIN:$(OPENCV_LIB_DIR) -Wl,-z,origin ${EXTRA_OPENCL_LIBRARY} ${USER_LD_FLAGS}
 
 all: all_test all_ppcg_test mlp_data
 

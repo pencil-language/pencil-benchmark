@@ -3,3 +3,4 @@
 response_dumps.xml
 *.orig
 build/*
+makefile.in
