@@ -1,21 +1,6 @@
 #include "resize.pencil.h"
 #include <pencil.h>
 
-/*
-A00 -------- A01
- |            |
- |            |
- |  P         |
- |            |
-A10 -------- A11
-
-
-The coordinates of P are [r,c] (row, col). The function returns
-bilinear interpolation of the value of P.
- */
-
-#define bilinear( A00, A01, A11, A10, r, c ) ((1-c) * ( (1-r) * A00 + r * A10 ) + c * ( (1-r) * A01 + r * A11 )) //TODO: use mix(a,b,c)
-
 static void resize( const int original_rows
                   , const int original_cols
                   , const int original_step
@@ -27,14 +12,12 @@ static void resize( const int original_rows
                   )
 {
 #pragma scop
-#if __PENCIL__
     __pencil_assume(original_rows  >  0);
     __pencil_assume(original_cols  >  0);
     __pencil_assume(original_step  >= original_cols);
     __pencil_assume(resampled_rows >  0);
     __pencil_assume(resampled_cols >  0);
     __pencil_assume(resampled_step >= resampled_cols);
-#endif
     {
         int o_h = original_rows;
         int o_w = original_cols;
@@ -70,7 +53,7 @@ static void resize( const int original_rows
                 unsigned char A01 = original[coord_01_r][coord_01_c];
                 unsigned char A11 = original[coord_11_r][coord_11_c];
 
-                resampled[n_r][n_c] = bilinear( A00, A01, A11, A10, r, c );
+                resampled[n_r][n_c] = mix( mix(A00, A10, r), mix(A01, A11, r), c);
             }
         }
     }
