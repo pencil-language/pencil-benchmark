@@ -38,7 +38,7 @@ static void gaussian( const int rows
 #if __PENCIL__
         float temp[rows][step];
 #else
-        float* temp = (float*)malloc(sizeof(float)*rows*step);
+        float (*temp)[step] = (float (*)[step])malloc(sizeof(float)*rows*step);
 #endif
         #pragma pencil independent
         for ( int q = 0; q < rows; q++ )
@@ -57,11 +57,7 @@ static void gaussian( const int rows
                         prod += src[row][col] * kernelX[e][r];
                     }
                 }
-#if __PENCIL__
                 temp[q][w] = prod;
-#else
-                temp[q*step+w] = prod;
-#endif
             }
         }
         #pragma pencil independent
@@ -78,11 +74,7 @@ static void gaussian( const int rows
                     {
                         int row = clamp(q + e - kernelY_rows / 2, 0, rows-1);
                         int col = clamp(w + r - kernelY_cols / 2, 0, cols-1);
-#if __PENCIL__
                         prod += temp[row][col] * kernelY[e][r];
-#else
-                        prod += temp[row*step+col] * kernelY[e][r];
-#endif
                     }
                 }
                 conv[q][w] = prod;
