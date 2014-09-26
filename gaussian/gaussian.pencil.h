@@ -5,13 +5,9 @@ void pencil_gaussian( const int rows
                     , const int cols
                     , const int step
                     , const float src[]
-                    , const int kernelX_rows
-                    , const int kernelX_cols
-                    , const int kernelX_step
+                    , const int kernelX_length
                     , const float kernelX[]
-                    , const int kernelY_rows
-                    , const int kernelY_cols
-                    , const int kernelY_step
+                    , const int kernelY_length
                     , const float kernelY[]
                     , float conv[]
                     );

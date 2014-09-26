@@ -51,15 +51,15 @@ void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<i
                 //Free up resources
             }
             {
-                cv::Mat kernel_x = cv::getGaussianKernel(ksize.width, gaussX, CV_32F).t();
+                cv::Mat kernel_x = cv::getGaussianKernel(ksize.width , gaussX, CV_32F);
                 cv::Mat kernel_y = cv::getGaussianKernel(ksize.height, gaussY, CV_32F);
 
                 pen_result.create( cpu_gray.size(), CV_32F );
 
                 const auto pencil_start = std::chrono::high_resolution_clock::now();
                 pencil_gaussian( cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<float>()
-                               , kernel_x.rows, kernel_x.cols, kernel_x.step1(), kernel_x.ptr<float>()
-                               , kernel_y.rows, kernel_y.cols, kernel_y.step1(), kernel_y.ptr<float>()
+                               , kernel_x.rows, kernel_x.ptr<float>()
+                               , kernel_y.rows, kernel_y.ptr<float>()
                                , pen_result.ptr<float>()
                                );
                 const auto pencil_end = std::chrono::high_resolution_clock::now();

@@ -76,27 +76,16 @@ void pencil_gaussian( const int rows
                     , const int cols
                     , const int step
                     , const float src[]
-                    , const int kernelX_rows
-                    , const int kernelX_cols
-                    , const int kernelX_step
+                    , const int kernelX_length
                     , const float kernelX[]
-                    , const int kernelY_rows
-                    , const int kernelY_cols
-                    , const int kernelY_step
+                    , const int kernelY_length
                     , const float kernelY[]
                     , float conv[]
                     )
 {
-//    printf("%d %d %d / %d %d %d\n", kernelX_rows, kernelX_cols, kernelX_step, kernelY_rows, kernelY_cols, kernelY_step);
-    assert( kernelX_rows == 1 );
-    assert( kernelX_cols  > 0 );
-    assert( kernelX_step == kernelX_cols );
-    assert( kernelY_rows  > 0 );
-    assert( kernelY_cols == 1 );
-    assert( kernelY_step == 1 );
     gaussian( rows, cols, step, (const float(*)[step])src
-            , kernelX_cols, kernelX
-            , kernelY_rows, kernelY
+            , kernelX_length, kernelX
+            , kernelY_length, kernelY
             , (float(*)[step])conv
             );
 }
