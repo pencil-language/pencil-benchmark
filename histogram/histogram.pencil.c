@@ -23,7 +23,7 @@ static void calcHist( const int rows
         #pragma pencil independent reduction(+:hist)
         for(int c = 0; c < cols; ++c)
         {
-            uint8_t pixel = image[r*step+c];
+            uint8_t pixel = image[r][c];
             ++hist[pixel];
         }
     }
