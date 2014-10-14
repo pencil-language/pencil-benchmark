@@ -4,7 +4,7 @@
 static void calcHist( const int rows
                     , const int cols
                     , const int step
-                    , const uint8_t image[static const restrict rows][step]
+                    , const unsigned char image[static const restrict rows][step]
                     , int hist[static const restrict HISTOGRAM_BINS]    //out
                     )
 {
@@ -23,14 +23,14 @@ static void calcHist( const int rows
         #pragma pencil independent reduction(+:hist)
         for(int c = 0; c < cols; ++c)
         {
-            uint8_t pixel = image[r][c];
+            unsigned char pixel = image[r][c];
             ++hist[pixel];
         }
     }
 #pragma endscop
 }
 
-void pencil_calcHist( const int rows, const int cols, const int step, const uint8_t image[], int hist[HISTOGRAM_BINS])
+void pencil_calcHist( const int rows, const int cols, const int step, const unsigned char image[], int hist[HISTOGRAM_BINS])
 {
-    calcHist( rows, cols, step, (const uint8_t(*)[step])image, hist);
+    calcHist( rows, cols, step, (const unsigned char(*)[step])image, hist);
 }
