@@ -33,27 +33,27 @@ static void resize( const int original_rows
                 float o_r = ( n_r + 0.5 ) * (o_h) / (n_h) - 0.5;
                 float o_c = ( n_c + 0.5 ) * (o_w) / (n_w) - 0.5;
 
-                float r = o_r - floor(o_r);
-                float c = o_c - floor(o_c);
+                float r = o_r - floorf(o_r);
+                float c = o_c - floorf(o_c);
 
-                int coord_00_r = clamp( (int) floor(o_r), 0, o_h - 1 );
-                int coord_00_c = clamp( (int) floor(o_c), 0, o_w - 1 );
+                int coord_00_r = clampi( (int) floorf(o_r), 0, o_h - 1 );
+                int coord_00_c = clampi( (int) floorf(o_c), 0, o_w - 1 );
 
                 int coord_01_r = coord_00_r;
-                int coord_01_c = clamp( coord_00_c + 1, 0, o_w - 1 );
+                int coord_01_c = clampi( coord_00_c + 1, 0, o_w - 1 );
 
-                int coord_10_r = clamp( coord_00_r + 1, 0, o_h - 1 );
+                int coord_10_r = clampi( coord_00_r + 1, 0, o_h - 1 );
                 int coord_10_c = coord_00_c;
 
-                int coord_11_r = clamp( coord_00_r + 1, 0, o_h - 1 );
-                int coord_11_c = clamp( coord_00_c + 1, 0, o_w - 1 );
+                int coord_11_r = clampi( coord_00_r + 1, 0, o_h - 1 );
+                int coord_11_c = clampi( coord_00_c + 1, 0, o_w - 1 );
 
                 unsigned char A00 = original[coord_00_r][coord_00_c];
                 unsigned char A10 = original[coord_10_r][coord_10_c];
                 unsigned char A01 = original[coord_01_r][coord_01_c];
                 unsigned char A11 = original[coord_11_r][coord_11_c];
 
-                resampled[n_r][n_c] = mix( mix(A00, A10, r), mix(A01, A11, r), c);
+                resampled[n_r][n_c] = mixf( mixf(A00, A10, r), mixf(A01, A11, r), c);
             }
         }
     }

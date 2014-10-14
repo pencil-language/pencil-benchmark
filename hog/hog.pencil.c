@@ -31,10 +31,10 @@ static void hog_multi( const int rows
         float maxx = location[i][0] + blck_size / 2.0f;
         float maxy = location[i][1] + blck_size / 2.0f;
 
-        int minxi = max((int)ceil(minx), 1);
-        int minyi = max((int)ceil(miny), 1);
-        int maxxi = min((int)floor(maxx), cols - 2);
-        int maxyi = min((int)floor(maxy), rows - 2);
+        int minxi = max((int)ceilf(minx), 1);
+        int minyi = max((int)ceilf(miny), 1);
+        int maxxi = min((int)floorf(maxx), cols - 2);
+        int maxyi = min((int)floorf(maxy), rows - 2);
 
 #if GAUSSIAN_WEIGHTS
         float sigma = blck_size / 2.0f;
@@ -46,7 +46,7 @@ static void hog_multi( const int rows
         for (int pointy = minyi; pointy <= maxyi; ++pointy) {
 #if SPARTIAL_WEIGHTS
             float relative_pos_y = (pointy - miny) / cell_size - 0.5f;
-            int cellyi = floor(relative_pos_y);
+            int cellyi = floorf(relative_pos_y);
             float yscale1 = relative_pos_y - cellyi;
             float yscale0 = 1.0f - yscale1;
 #endif
@@ -59,7 +59,7 @@ static void hog_multi( const int rows
             for (int pointx = minxi; pointx <= maxxi; ++pointx) {
 #if SPARTIAL_WEIGHTS
                 float relative_pos_x = (pointx - minx) / cell_size - 0.5f;
-                int cellxi = floor(relative_pos_x);
+                int cellxi = floorf(relative_pos_x);
                 float xscale1 = relative_pos_x - cellxi;
                 float xscale0 = 1.0f - xscale1;
 #endif
@@ -73,17 +73,17 @@ static void hog_multi( const int rows
                 float mdx = image[pointy][pointx+1] - image[pointy][temp1];
                 float mdy = image[pointy+1][pointx] - image[temp2][pointx];
 
-                float magnitude = hypot(mdx, mdy);   //or = sqrt(mdx*mdx + mdy*mdy);
+                float magnitude = hypotf(mdx, mdy);   //or = sqrt(mdx*mdx + mdy*mdy);
 #if SIGNED_HOG
-                float orientation = atan2(mdy, mdx) / M_PI * 180.0f;
+                float orientation = atan2f(mdy, mdx) / M_PI * 180.0f;
 #else
-                float orientation = tan2(mdy / mdx + DBL_EPSILON) / M_PI * 180.0f + 90.0f;
+                float orientation = tan2f(mdy / mdx + DBL_EPSILON) / M_PI * 180.0f + 90.0f;
 #endif
 #if GAUSSIAN_WEIGHTS
-                magnitude *= exp((dxSq+dySq) * m1p2sigmaSq);
+                magnitude *= expf((dxSq+dySq) * m1p2sigmaSq);
 #endif
                 float relative_orientation = (orientation - BINSIZE_IN_DEGREES/2.0) / BINSIZE_IN_DEGREES;
-                int bin1 = ceil(relative_orientation);
+                int bin1 = ceilf(relative_orientation);
                 int bin0 = bin1 - 1;
                 float bin_weight0 = magnitude * (bin1 - relative_orientation);
                 float bin_weight1 = magnitude * (relative_orientation - bin0);

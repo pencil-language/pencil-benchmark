@@ -35,8 +35,8 @@ static void dilate( const int rows
             {
                 for ( int r = 0; r < se_cols; r++ )
                 {
-                   int candidate_row = clamp(q - anchor_row + e, 0, rows);
-                   int candidate_col = clamp(w - anchor_col + r, 0, cols);
+                   int candidate_row = clampi(q - anchor_row + e, 0, rows);
+                   int candidate_col = clampi(w - anchor_col + r, 0, cols);
 
 		   sup = (se[e][r]!=0) ? max(sup, cpu_gray[candidate_row][candidate_col]) : sup;
                 }

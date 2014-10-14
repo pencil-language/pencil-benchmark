@@ -22,11 +22,11 @@ static void affine( const int src_rows, const int src_cols, const int src_step, 
             float o_r = a11 * n_r + a10 * n_c + b00;
             float o_c = a01 * n_r + a00 * n_c + b10;
 
-            float r = o_r - floor(o_r);
-            float c = o_c - floor(o_c);
+            float r = o_r - floorf(o_r);
+            float c = o_c - floorf(o_c);
 
-            int coord_00_r = floor(o_r);
-            int coord_00_c = floor(o_c);
+            int coord_00_r = floorf(o_r);
+            int coord_00_c = floorf(o_c);
             int coord_01_r = coord_00_r;
             int coord_01_c = coord_00_c + 1;
             int coord_10_r = coord_00_r + 1;
@@ -34,21 +34,21 @@ static void affine( const int src_rows, const int src_cols, const int src_step, 
             int coord_11_r = coord_00_r + 1;
             int coord_11_c = coord_00_c + 1;
 
-            coord_00_r = clamp(coord_00_r, 0, src_rows);
-            coord_00_c = clamp(coord_00_c, 0, src_cols);
-            coord_01_r = clamp(coord_01_r, 0, src_rows);
-            coord_01_c = clamp(coord_01_c, 0, src_cols);
-            coord_10_r = clamp(coord_10_r, 0, src_rows);
-            coord_10_c = clamp(coord_10_c, 0, src_cols);
-            coord_11_r = clamp(coord_11_r, 0, src_rows);
-            coord_11_c = clamp(coord_11_c, 0, src_cols);
+            coord_00_r = clampi(coord_00_r, 0, src_rows);
+            coord_00_c = clampi(coord_00_c, 0, src_cols);
+            coord_01_r = clampi(coord_01_r, 0, src_rows);
+            coord_01_c = clampi(coord_01_c, 0, src_cols);
+            coord_10_r = clampi(coord_10_r, 0, src_rows);
+            coord_10_c = clampi(coord_10_c, 0, src_cols);
+            coord_11_r = clampi(coord_11_r, 0, src_rows);
+            coord_11_c = clampi(coord_11_c, 0, src_cols);
 
             float A00 = src[coord_00_r][coord_00_c];
             float A10 = src[coord_10_r][coord_10_c];
             float A01 = src[coord_01_r][coord_01_c];
             float A11 = src[coord_11_r][coord_11_c];
 
-            dst[n_r][n_c] = mix( mix(A00, A10, r), mix(A01, A11, r), c);
+            dst[n_r][n_c] = mixf( mixf(A00, A10, r), mixf(A01, A11, r), c);
         }
     }
 #pragma endscop

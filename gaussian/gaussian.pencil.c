@@ -42,7 +42,7 @@ static void gaussian( const int rows
                 for ( int r = 0; r < kernelX_length; r++ )
                 {
                     int row = q;
-                    int col = clamp(w + r - kernelX_length / 2, 0, cols-1);
+                    int col = clampi(w + r - kernelX_length / 2, 0, cols-1);
                     prod += src[row][col] * kernelX[r];
                 }
                 temp[q][w] = prod;
@@ -58,7 +58,7 @@ static void gaussian( const int rows
                 #pragma pencil independent reduction (+: prod);
                 for ( int e = 0; e < kernelY_length; e++ )
                 {
-                    int row = clamp(q + e - kernelY_length / 2, 0, rows-1);
+                    int row = clampi(q + e - kernelY_length / 2, 0, rows-1);
                     int col = w;
                     prod += temp[row][col] * kernelY[e];
                 }

@@ -17,7 +17,7 @@ OPENCL_LIB=-lOpenCL
 
 EXTRA_FLAGS=-O3 -DNDEBUG -fomit-frame-pointer -fPIC -ffast-math -Wall -Wno-unknown-pragmas -I. -I$(PENCIL_HEADERS) ${USER_FLAGS}
 
-PPCG_OPTIONS=--no-shared-memory -D__PENCIL__ --target=opencl --sizes="{kernel[i]->block[16,16]}" -I$(PENCIL_HEADERS)
+PPCG_OPTIONS=--no-shared-memory -D__PENCIL__ --target=opencl --sizes="{kernel[i]->block[16,16]}" -I$(PENCIL_HEADERS) --opencl-include-file="$(PENCIL_HEADERS)/pencil_opencl.h"
 
 CFLAGS=$(EXTRA_FLAGS) -std=c1x -Iinclude -Ibuild -I$(OPENCL_INCLUDE)
 
