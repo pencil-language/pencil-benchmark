@@ -15,26 +15,60 @@
 
 #include <opencv2/core/core.hpp>
 
+#define NOMINMAX
+#define __CL_ENABLE_EXCEPTIONS
+#include <CL/cl.hpp>
+
+#include <vector>
+#include <chrono>
+
 namespace nel {
-    template<int numberOfCells, int numberOfBins, bool gauss, bool spinterp, bool _signed>
-    class HOGDescriptor {
-        static_assert(numberOfCells > 1 || !spinterp, "Cannot apply spatial interpolation with only one cell.");
+    class HOGDescriptorCPP {
     public:
-        static cv::Mat_<float> compute( const cv::Mat_<uint8_t>                &img
-                                      , const std::vector<std::array<float,2>> &locations
-                                      , const float                            &blocksize
-                                      );
-        static int getNumberOfBins();
+        HOGDescriptorCPP(int numberOfCells, int numberOfBins, bool gauss, bool spinterp, bool _signed);
+        cv::Mat_<float> compute( const cv::Mat_<uint8_t> &img
+                               , const cv::Mat_<float>   &locations
+                               , const cv::Mat_<float>   &blocksizes
+                               ) const;
+
+        int getNumberOfBins() const;
 
     private:
-        static float get_orientation(float mdy, float mdx);
-        static void normalize(const cv::Mat_<float> &hist, cv::Mat_<float> &normalizedHist);
+        float get_orientation(float mdy, float mdx) const;
 
     private:
-        static const int binSizeInDegrees = (_signed ? 360 : 180) / numberOfBins;
+        std::vector<std::pair<float, float> > m_lookupTable;
+        int numberOfCells;
+        int numberOfBins;
+        bool gauss;
+        bool spinterp;
+        bool _signed;
+    };
+
+	class HOGDescriptorOCL {
+    public:
+        HOGDescriptorOCL(int numberOfCells, int numberOfBins, bool gauss, bool spinterp, bool _signed);
+
+        cv::Mat_<float> compute( const cv::Mat_<uint8_t> &img
+                               , const cv::Mat_<float> &locations
+                               , const cv::Mat_<float> &blocksizes
+                               , std::chrono::duration<double> &elapsed_time_gpu_nocopy
+                               ) const;
+
+        int getNumberOfBins() const;
+
+    private:
+        int numberOfCells;
+        int numberOfBins;
+
+        cl::Device device;
+        cl::Context context;
+        cl::Program program;
+        mutable cl::CommandQueue queue;
+
+        size_t max_work_group_size;
+        size_t suggested_work_group_size;
     };
 }
-
-#include "HogDescriptor.hpp"
 
 #endif

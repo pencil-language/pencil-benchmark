@@ -101,8 +101,8 @@ build/test_gaussian: gaussian/test_gaussian.cpp build/gaussian.pencil_as_c.o bui
 build/test_histogram: histogram/test_histogram.cpp build/histogram.pencil_as_c.o build/ocl_utilities.o
 	@$(CXX) $(CXXFLAGS) -o build/test_histogram histogram/test_histogram.cpp build/histogram.pencil_as_c.o build/ocl_utilities.o $(LDFLAGS)
 
-build/test_hog: hog/test_hog.cpp build/hog.pencil_as_c.o build/ocl_utilities.o build/hog.clh
-	@$(CXX) $(CXXFLAGS) -o build/test_hog hog/test_hog.cpp build/hog.pencil_as_c.o build/ocl_utilities.o $(LDFLAGS)
+build/test_hog: hog/test_hog.cpp hog/HogDescriptor.cpp build/hog.pencil_as_c.o build/ocl_utilities.o build/hog.clh
+	@$(CXX) $(CXXFLAGS) -o build/test_hog hog/test_hog.cpp hog/HogDescriptor.cpp build/hog.pencil_as_c.o build/ocl_utilities.o $(LDFLAGS)
 
 build/test_mlp: build/mlp_impl.clh build/operators.clh mlp/test_mlp.cpp mlp/serialization.cpp mlp/allocator.cpp build/mlp_impl.pencil_as_c.o build/ocl_utilities.o
 	@$(CXX) $(CXXFLAGS) -o build/test_mlp mlp/test_mlp.cpp mlp/serialization.cpp mlp/allocator.cpp build/mlp_impl.pencil_as_c.o build/ocl_utilities.o $(LDFLAGS)
@@ -197,8 +197,8 @@ build/ppcg_test_gaussian: gaussian/test_gaussian.cpp build/gaussian.pencil_ppcg.
 build/ppcg_test_histogram: histogram/test_histogram.cpp build/histogram.pencil_ppcg.o build/ocl_utilities.o
 	@$(CXX) $(CXXFLAGS) -o build/ppcg_test_histogram histogram/test_histogram.cpp build/histogram.pencil_ppcg.o build/ocl_utilities.o $(LDFLAGS)
 
-build/ppcg_test_hog: build/hog.clh hog/test_hog.cpp build/hog.pencil_ppcg.o build/ocl_utilities.o
-	@$(CXX) $(CXXFLAGS) -o build/ppcg_test_hog hog/test_hog.cpp build/hog.pencil_ppcg.o build/ocl_utilities.o $(LDFLAGS)
+build/ppcg_test_hog: build/hog.clh hog/test_hog.cpp hog/HogDescriptor.cpp build/hog.pencil_ppcg.o build/ocl_utilities.o
+	@$(CXX) $(CXXFLAGS) -o build/ppcg_test_hog hog/test_hog.cpp hog/HogDescriptor.cpp build/hog.pencil_ppcg.o build/ocl_utilities.o $(LDFLAGS)
 
 build/ppcg_test_mlp: build/mlp_impl.clh build/operators.clh mlp/test_mlp.cpp mlp/serialization.cpp mlp/allocator.cpp build/mlp_impl.pencil_ppcg.o build/ocl_utilities.o
 	@$(CXX) $(CXXFLAGS) -o build/ppcg_test_mlp mlp/test_mlp.cpp mlp/serialization.cpp mlp/allocator.cpp build/mlp_impl.pencil_ppcg.o build/ocl_utilities.o $(LDFLAGS)

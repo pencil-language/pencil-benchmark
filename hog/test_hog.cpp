@@ -23,26 +23,31 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
                 cv::Mat cpu_gray;
                 cv::cvtColor( item.cpuimg(), cpu_gray, CV_RGB2GRAY );
 
-                static_assert(sizeof(float[2]) == sizeof(std::array<float,2>), "This code needs std::array to behave exactly like C arrays.");
-                std::vector<std::array<float,2>> locations;
+                cv::Mat_<float> locations(num_positions, 2);
+                cv::Mat_<float> blocksizes(num_positions, 2);
+                //fill locations and blocksizes
                 std::uniform_real_distribution<float> genx(size/2+1, cpu_gray.rows-1-size/2-1);
                 std::uniform_real_distribution<float> geny(size/2+1, cpu_gray.cols-1-size/2-1);
-                std::generate_n(std::back_inserter(locations), num_positions, [&](){ return std::array<float,2>{{ genx(rng), geny(rng) }}; });
+                for( int i = 0; i < num_positions; ++i) {
+                    locations(i, 0) = genx(rng);
+                    locations(i, 1) = geny(rng);
+                    blocksizes(i, 0) = size;
+                    blocksizes(i, 1) = size;
+                }
 
                 std::vector<float> cpu_result(num_positions * HISTOGRAM_BINS), gpu_result(num_positions * HISTOGRAM_BINS), pen_result(num_positions * HISTOGRAM_BINS);
                 std::chrono::duration<double> elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil;
 
                 {
                     //CPU implement
+                    static nel::HOGDescriptorCPP descriptor( NUMBER_OF_CELLS
+                                                           , NUMBER_OF_BINS
+                                                           , GAUSSIAN_WEIGHTS
+                                                           , SPARTIAL_WEIGHTS
+                                                           , SIGNED_HOG
+                                                           );
                     const auto cpu_start = std::chrono::high_resolution_clock::now();
-
-                    auto result = nel::HOGDescriptor< NUMBER_OF_CELLS
-                                                    , NUMBER_OF_BINS
-                                                    , GAUSSIAN_WEIGHTS
-                                                    , SPARTIAL_WEIGHTS
-                                                    , SIGNED_HOG
-                                                    >::compute(cpu_gray, locations, size);
-
+                    const auto result = descriptor.compute(cpu_gray, locations, blocksizes);
                     const auto cpu_end = std::chrono::high_resolution_clock::now();
 
                     std::copy(result.begin(), result.end(), cpu_result.begin());
@@ -50,79 +55,26 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
                     //Free up resources
                 }
                 {
-                    carp::opencl::device device;
-
-                    size_t max_work_group_size;
-                    cl_int err;
-                    err = clGetDeviceInfo( device.get_device_id()
-                                         , CL_DEVICE_MAX_WORK_GROUP_SIZE
-                                         , sizeof(size_t)
-                                         , &max_work_group_size
-                                         , nullptr
-                                         );
-                    const int work_size_locations = num_positions;
-                    const int work_size_x = pow(2, std::ceil(std::log2(max_work_group_size / work_size_locations)/2));  //The square root of the max size/locations, rounded up to power-of-two
-                    const int work_size_y = max_work_group_size / work_size_locations / work_size_x;
-                    if (err != CL_SUCCESS) throw std::runtime_error("Cannot query max work group size.");
-
-                    const auto gpu_compile_start = std::chrono::high_resolution_clock::now();
-                    device.source_compile( hog_opencl_cl, hog_opencl_cl_len, {"calc_histogram", "fill_zeros"} );
-
-                    const auto gpu_copy_start = std::chrono::high_resolution_clock::now();
-                    cl_mem gpu_gray = clCreateBuffer( device.get_context()
-                                                    , CL_MEM_READ_ONLY|CL_MEM_COPY_HOST_PTR
-                                                    , cpu_gray.elemSize()*cpu_gray.rows*cpu_gray.step1()
-                                                    , cpu_gray.data
-                                                    , &err
-                                                    );
-                    if (err != CL_SUCCESS) throw std::runtime_error("Cannot copy source image to GPU.");
-                    cl_mem gpu_locations = clCreateBuffer( device.get_context()
-                                                         , CL_MEM_READ_ONLY|CL_MEM_COPY_HOST_PTR
-                                                         , sizeof(float[2])*num_positions
-                                                         , locations.data()
-                                                         , &err
-                                                         );
-                    if (err != CL_SUCCESS) throw std::runtime_error("Cannot copy locations array to GPU.");
-                    cl_mem gpu_hist = clCreateBuffer(device.get_context(), CL_MEM_WRITE_ONLY, sizeof(cl_float)*HISTOGRAM_BINS*num_positions, nullptr, &err);
-                    if (err != CL_SUCCESS) throw std::runtime_error("Cannot allocate histogram array.");
-                    device["fill_zeros"](gpu_hist, HISTOGRAM_BINS*num_positions).groupsize({std::min<size_t>(max_work_group_size, HISTOGRAM_BINS*num_positions)}, {HISTOGRAM_BINS*num_positions});
-
+                    //GPU implement
+                    static nel::HOGDescriptorOCL descriptor( NUMBER_OF_CELLS
+                                                           , NUMBER_OF_BINS
+                                                           , GAUSSIAN_WEIGHTS
+                                                           , SPARTIAL_WEIGHTS
+                                                           , SIGNED_HOG
+                                                           );
                     const auto gpu_start = std::chrono::high_resolution_clock::now();
-                    device["calc_histogram"]( cpu_gray.rows
-                                            , cpu_gray.cols
-                                            , (int)cpu_gray.step1()
-                                            , gpu_gray
-                                            , num_positions
-                                            , gpu_locations
-                                            , size
-                                            , gpu_hist
-                                            , carp::opencl::buffer(sizeof(cl_float)*HISTOGRAM_BINS*num_positions)
-                                            ).groupsize({work_size_locations,work_size_x,work_size_y}, {num_positions, (int)ceil(size), (int)ceil(size)});
+                    const auto result = descriptor.compute(cpu_gray, locations, blocksizes, elapsed_time_gpu_nocopy);
                     const auto gpu_end = std::chrono::high_resolution_clock::now();
 
-                    err = clEnqueueReadBuffer(device.get_queue(), gpu_hist, CL_TRUE, 0, sizeof(cl_float)*HISTOGRAM_BINS*num_positions, gpu_result.data(), 0, nullptr, nullptr);
-                    if (err != CL_SUCCESS) throw std::runtime_error("Cannot copy histogram array to host.");
-
-                    err = clReleaseMemObject(gpu_hist);
-                    if (err != CL_SUCCESS) throw std::runtime_error("Cannot free histogram array.");
-                    err = clReleaseMemObject(gpu_locations);
-                    if (err != CL_SUCCESS) throw std::runtime_error("Cannot free gpu_locations array.");
-                    err = clReleaseMemObject(gpu_gray);
-                    if (err != CL_SUCCESS) throw std::runtime_error("Cannot free gpu_image array.");
-
-                    const auto gpu_copy_end = std::chrono::high_resolution_clock::now();
-                    const auto gpu_compile_end = std::chrono::high_resolution_clock::now();
-
-                    elapsed_time_gpu_p_copy = gpu_copy_end - gpu_copy_start;
-                    elapsed_time_gpu_nocopy = gpu_end      - gpu_start;
-                    auto elapsed_time_gpu_compile = gpu_compile_end - gpu_compile_start;
+                    std::copy(result.begin(), result.end(), gpu_result.begin());
+                    elapsed_time_gpu_p_copy = gpu_end - gpu_start;
                     //Free up resources
                 }
                 {
                     pen_result.resize(num_positions * HISTOGRAM_BINS, 0.0f);
                     const auto pencil_start = std::chrono::high_resolution_clock::now();
                     pencil_hog( cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<uint8_t>()
-                              , num_positions, reinterpret_cast<const float (*)[2]>(locations.data())
+                              , num_positions, reinterpret_cast<const float (*)[2]>(locations.data)
                               , size
                               , pen_result.data()
                               );
