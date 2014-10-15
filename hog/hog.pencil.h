@@ -2,25 +2,22 @@
 extern "C" {
 #endif
 
+#include <pencil.h>
 #include <stdint.h>
+#include <stdbool.h>
 
-//parameters
-#define NUMBER_OF_CELLS 1
-#define NUMBER_OF_BINS 8
-#define GAUSSIAN_WEIGHTS 1
-#define SPARTIAL_WEIGHTS 0
-#define SIGNED_HOG 1
-//parameters end
-
-static const int HISTOGRAM_BINS = NUMBER_OF_CELLS * NUMBER_OF_CELLS * NUMBER_OF_BINS;
-
-void pencil_hog( const int rows
+void pencil_hog( int NUMBER_OF_CELLS
+               , int NUMBER_OF_BINS
+               , bool GAUSSIAN_WEIGHTS
+               , bool SPARTIAL_WEIGHTS
+               , bool SIGNED_HOG
+               , const int rows
                , const int cols
                , const int step
                , const uint8_t image[]
                , const int num_locations
                , const float location[][2]
-               , const float block_size
+               , const float block_size[][2]
                , float hist[]    //out
                );
 

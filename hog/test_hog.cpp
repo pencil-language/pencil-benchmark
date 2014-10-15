@@ -11,6 +11,12 @@
 #include "HogDescriptor.h"
 #include "hog.clh"
 
+#define NUMBER_OF_CELLS 1
+#define NUMBER_OF_BINS 8
+#define GAUSSIAN_WEIGHTS 1
+#define SPARTIAL_WEIGHTS 0
+#define SIGNED_HOG 1
+
 void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>& sizes, int num_positions, int repeat )
 {
     carp::Timing timing("HOG");
@@ -35,6 +41,7 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
                     blocksizes(i, 1) = size;
                 }
 
+                const int HISTOGRAM_BINS = NUMBER_OF_CELLS * NUMBER_OF_CELLS * NUMBER_OF_BINS;
                 std::vector<float> cpu_result(num_positions * HISTOGRAM_BINS), gpu_result(num_positions * HISTOGRAM_BINS), pen_result(num_positions * HISTOGRAM_BINS);
                 std::chrono::duration<double> elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil;
 
@@ -73,9 +80,11 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
                 {
                     pen_result.resize(num_positions * HISTOGRAM_BINS, 0.0f);
                     const auto pencil_start = std::chrono::high_resolution_clock::now();
-                    pencil_hog( cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<uint8_t>()
-                              , num_positions, reinterpret_cast<const float (*)[2]>(locations.data)
-                              , size
+                    pencil_hog( NUMBER_OF_CELLS, NUMBER_OF_BINS, GAUSSIAN_WEIGHTS, SPARTIAL_WEIGHTS, SIGNED_HOG
+                              , cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<uint8_t>()
+                              , num_positions
+                              , reinterpret_cast<const float (*)[2]>(locations.data)
+                              , reinterpret_cast<const float (*)[2]>(blocksizes.data)
                               , pen_result.data()
                               );
 
