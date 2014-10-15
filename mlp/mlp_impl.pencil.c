@@ -4,98 +4,46 @@
 // Copyright (c) RealEyes, 2013
 // This is a c-implementation of the PCA->MLP response map calculation
 
-#include <math.h>
-#include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <pencil.h>
 
 #include "mlp_impl.h"
-#define NOMEMORY
-
-static void copyMatFloatToArray(MatFloat In, int n, int m, float Out[][m]) {
-    // assert(In.rows == n);
-    // assert(In.cols == m);
-
-    for (int i = 0; i < In.rows; i++)
-        for (int j = 0; j < In.cols; j++)
-            Out[i][j] = In.data[In.start + i * In.step + j];
-    return;
-}
 
 static void copyMatCharToArray(MatChar In, int n, int m, uint8_t Out[][m]) {
-    // assert(In.rows == n);
-    // assert(In.cols == m);
+    assert(In.rows == n);
+    assert(In.cols == m);
 
     for (int i = 0; i < In.rows; i++)
         for (int j = 0; j < In.cols; j++)
             Out[i][j] = In.data[In.start + i * In.step + j];
-    return;
 }
 
 static void copyArrayToMatFloat(int n, int m, float In[][m], MatFloat Out) {
-    // assert(Out.rows == n);
-    // assert(Out.cols == m);
-    // assert(Out.step == m);
+    assert(Out.rows == n);
+    assert(Out.cols == m);
+    assert(Out.step == m);
 
     for (int i = 0; i < n; i++)
         for (int j = 0; j < m; j++)
             Out.data[Out.start + i * Out.step + j] = In[i][j];
-    return;
-}
-
-void printArray(int n, int m, float Array[n][m]) {
-    printf("%s = [\n", "NAME");
-
-
-    for (int q = 0; q < n; q++) {
-        printf("[ ");
-        for (int w = 0; w < m; w++) {
-            printf("%.40f, ", Array[q][w]);
-        }
-        printf(" ]\n");
-    }
-
-    printf("]\n");
-
-    return;
-}
-
-float GetValueFloat(MatFloat self, int row, int col);
-
-void printMatFloat(MatFloat mat, char *name) {
-    printf("%s = [\n", name);
-
-    int q, w;
-
-    for (q = 0; q < mat.rows; q++) {
-        printf("[ ");
-        for (w = 0; w < mat.cols; w++) {
-            printf("%f, ", GetValueFloat(mat, q, w));
-        }
-        printf(" ]\n");
-    }
-
-    printf("]\n");
-
-    return;
 }
 
 void freeMLP(mlp *classifier) {
     freeMatFloat(&classifier->m_wIn);
     freeMatFloat(&classifier->m_wOut);
     freeMatFloat(&classifier->m_U);
-    return;
 }
 
 MatFloat CreateMatFloat(int rows, int cols) {
     MatFloat result;
-    // assert(rows > 0);
-    // assert(cols > 0);
+    assert(rows > 0);
+    assert(cols > 0);
 
     result.data = NULL;
     result.data = (float *)malloc(sizeof(float) * rows * cols);
-    // assert(result.data);
+    assert(result.data);
     result.rows = rows;
     result.cols = cols;
     result.step = cols;
@@ -106,12 +54,12 @@ MatFloat CreateMatFloat(int rows, int cols) {
 
 MatChar CreateMatChar(int rows, int cols) {
     MatChar result;
-    // assert(rows > 0);
-    // assert(cols > 0);
+    assert(rows > 0);
+    assert(cols > 0);
 
     result.data = NULL;
     result.data = (uint8_t *)malloc(sizeof(uint8_t) * rows * cols);
-    // assert(result.data);
+    assert(result.data);
     result.rows = rows;
     result.cols = cols;
     result.step = cols;
@@ -120,19 +68,17 @@ MatChar CreateMatChar(int rows, int cols) {
     return result;
 }
 
-static void transposeFloat(int InRows, int InCols,
-                           float In[InRows][InCols], int OutRows,
-                           int OutCols, float Out[OutRows][OutCols]) {
+static void transposeFloat( int InRows, int InCols, float In[InRows][InCols]
+                          , int OutRows, int OutCols, float Out[OutRows][OutCols])
+{
 #pragma scop
-    // assert(InRows == OutCols);
-    // assert(OutCols == InRows);
+    __pencil_assume(InRows == OutCols);
+    __pencil_assume(OutCols == InRows);
 
     for (int i = 0; i < InRows; i++)
         for (int j = 0; j < InCols; j++)
             Out[j][i] = In[i][j];
-
 #pragma endscop
-    return;
 }
 
 static float meanChar(int subImageRows, int subImageCols, int imageRows,
@@ -141,15 +87,14 @@ static float meanChar(int subImageRows, int subImageCols, int imageRows,
 #pragma scop
     float sum = 0;
 
-    for (int i = 0; i < subImageRows; i++)
+    for (int i = 0; i < subImageRows; i++) {
         for (int j = 0; j < subImageCols; j++) {
             sum += image[i + imageOffsetRow][j + imageOffsetCol];
         }
+    }
 #pragma endscop
     return sum / (subImageRows * subImageCols);
 }
-
-static uint8_t min(uint8_t a, uint8_t b) { return a < b ? a : b; }
 
 static uint8_t minChar(int subImageRows, int subImageCols, int imageRows,
 		       int imageCols, uint8_t image[imageRows][imageCols],
@@ -164,8 +109,6 @@ static uint8_t minChar(int subImageRows, int subImageCols, int imageRows,
     return minvalue;
 }
 
-#define max(a, b) (((a) > (b)) ? (a) : (b))
-
 static uint8_t maxChar(int subImageRows, int subImageCols, int imageRows,
 		       int imageCols, uint8_t image[imageRows][imageCols],
 		       int imageOffsetRow, int imageOffsetCol) {
@@ -179,43 +122,26 @@ static uint8_t maxChar(int subImageRows, int subImageCols, int imageRows,
     return maxvalue;
 }
 
-static void convertFromCharToFloatArray(int imageRows, int imageCols,
-                                        uint8_t In[imageRows][imageCols],
-					int imageOffsetRow, int imageOffsetCol,
-                                        float quotient, float shift,
-                                        int OutRows, int OutCols,
-                                        float Out[OutRows][OutCols]) {
-#pragma scop
-
-    for (int i = 0; i < OutRows; i++)
-        for (int j = 0; j < OutCols; j++)
-            Out[i][j] = quotient * (float)In[i + imageOffsetRow][j + imageOffsetCol] + shift;
-#pragma endscop
-    return;
-}
-
 void freeMatFloat(MatFloat *mat) {
-    // assert(mat->data);
-    // assert(mat->start == 0);
+    assert(mat->data);
+    assert(mat->start == 0);
     free(mat->data);
     mat->data = NULL;
     mat->rows = 0;
     mat->cols = 0;
     mat->step = 0;
     mat->start = 0;
-    return;
 }
 
 void freeMatChar(MatChar *mat) {
-    // assert(mat->data);
-    // assert(mat->start == 0);
+    assert(mat->data);
+    assert(mat->start == 0);
     free(mat->data);
     mat->data = NULL;
     mat->rows = 0;
     mat->cols = 0;
     mat->step = 0;
     mat->start = 0;
-    return;
 }
 
 // returns alpha*A*B + beta * C
@@ -225,112 +151,25 @@ static void gemmFloatArray(int ARows, int ACols, float A[ARows][ACols],
                            float C[CRows][CCols], float beta, int ResRows,
                            int ResCols, float Res[ResRows][ResCols]) {
 #pragma scop
-    // assert(ARows == CRows);
-    // assert(ACols == BRows);
-    // assert(BCols == CCols);
-    // assert(CRows == ResRows);
-    // assert(CCols == ResCols);
+    __pencil_assume(ARows == CRows);
+    __pencil_assume(ACols == BRows);
+    __pencil_assume(BCols == CCols);
+    __pencil_assume(CRows == ResRows);
+    __pencil_assume(CCols == ResCols);
 
-    for (int i = 0; i < CRows; i++)
+    for (int i = 0; i < CRows; i++) {
         for (int j = 0; j < CCols; j++) {
             Res[i][j] = beta * C[i][j];
             for (int k = 0; k < ACols; k++) {
                 Res[i][j] += alpha * A[i][k] * B[k][j];
             }
         }
-
+    }
 #pragma endscop
-    return;
-}
-
-static void expFloat(int rows, int cols, float Mat[rows][cols]) {
-#pragma scop
-
-    for (int i = 0; i < rows; i++)
-        for (int j = 0; j < cols; j++)
-            Mat[i][j] = exp(Mat[i][j]);	//This should be expf in C and exp in OpenCL
-
-#pragma endscop
-    return;
-}
-
-static void addFloat(int rows, int cols, float Mat[rows][cols], float Val) {
-#pragma scop
-
-    for (int i = 0; i < rows; i++)
-        for (int j = 0; j < cols; j++)
-            Mat[i][j] = Val + Mat[i][j];
-
-#pragma endscop
-    return;
-}
-
-static void divideFloat(float Val, int rows, int cols, float Mat[rows][cols]) {
-#pragma scop
-
-    for (int i = 0; i < rows; i++)
-        for (int j = 0; j < cols; j++)
-            Mat[i][j] = Val / Mat[i][j];
-
-#pragma endscop
-    return;
 }
 
 float GetValueFloat(MatFloat self, int row, int col) {
     return self.data[row * self.step + col + self.start];
-}
-
-static float dotProduct(int LeftRows, int LeftCols, int RightRows,
-                        int RightCols, float Left[][LeftCols],
-                        float Right[][RightCols]) {
-#pragma scop
-    // assert(LeftCols == 1);
-    // assert(RightCols == 1);
-    // assert(LeftRows == RightRows);
-
-    float Result = 0.;
-
-    for (int i = 0; i < LeftRows; i++) {
-        Result += Left[i][0] * Right[i][0];
-    }
-#pragma endscop
-    return Result;
-}
-
-/* This function takes an image[imageRows][imageCols] as input and then works on a subset of that
- * image. imageOffsetRow and imageOffsetCol are used as offsets for image[][] while
- * subImageRows ad subImageCols define the size of the subimage.
- */
-static void normalizeSample(int subImageRows, int subImageCols, int imageRows,
-		            int imageCols,
-			    uint8_t imageArray[imageRows][imageCols],
-			    int imageOffsetRow, int imageOffsetCol,
-                            int resultRows, int resultCols,
-                            float resultArray[resultRows][resultCols]) {
-
-    float sampleMean = meanChar(subImageRows, subImageCols, imageRows,
-                                imageCols, imageArray, imageOffsetRow,
-                                imageOffsetCol);
-    float sampleMin = minChar(subImageRows, subImageCols, imageRows,
-                              imageCols, imageArray, imageOffsetRow,
-                              imageOffsetCol);
-    float sampleMax = maxChar(subImageRows, subImageCols, imageRows,
-                              imageCols, imageArray, imageOffsetRow,
-                              imageOffsetCol);
-
-    sampleMax -= sampleMean;
-    sampleMin -= sampleMean;
-
-    sampleMax = fmaxf(fabsf(sampleMin), fabsf(sampleMax));
-
-    if (sampleMax == 0.0)
-        sampleMax = 1.0;
-
-    convertFromCharToFloatArray(imageRows, imageCols, imageArray, imageOffsetRow,
-                                imageOffsetCol, 1.0 / sampleMax,
-                                -(1.0 / sampleMax) * sampleMean, resultRows,
-                                resultCols, resultArray);
-    return;
 }
 
 static void copySubArrayFloat(int arrayRows, int arrayCols,
@@ -343,79 +182,9 @@ static void copySubArrayFloat(int arrayRows, int arrayCols,
         for (int j = 0; j < subArrayCols; j++)
             subArray[i][j] = Array[i + offsetRow][j + offsetCol];
 #pragma endscop
-    return;
 }
 
 static float generateResponseMapPatch(
-    int mapSize, int ncx, int ncy, int bInRows, int bInCols,
-    float bInArray[bInRows][bInCols], mlp classifier, int ImageRows,
-    int ImageCols, uint8_t Image[ImageRows][ImageCols], Point2i center,
-    int wInRows, int wInCols, float wInArray[wInCols][wInRows], int wOutRows,
-    int wOutCols, float wOutArray[wOutRows][wOutCols], float bOut) {
-
-    int cy = ncy + center.y - mapSize;
-    int cx = ncx + center.x - mapSize;
-
-    // We allocate memory within the program.
-    //
-    // This is a temporary array, that is just used within this loop.
-    // Requering the user to declare this outside cause problems:
-    //
-    //   a) We bloat the code, as this array needs to be propagated
-    //      up to this location.
-    //   b) We introduce memory dependences, that would not be here
-    //      if we would create different temporary arrays for
-    //      different parallel execution streams.
-    int xOutRows = bInRows;
-    int xOutCols = bInCols;
-    float (*xOutArray)[xOutCols] = malloc(sizeof(float) * xOutRows * xOutCols);
-
-    int imagePatchRows =
-        2 * classifier.m_patchSize + 1; // m_patchSize is always 5
-    int imagePatchCols = 2 * classifier.m_patchSize + 1;
-
-    int patchRows = imagePatchRows;
-    int patchCols = imagePatchCols;
-    float (*patchArray)[patchCols] =
-        malloc(sizeof(float) * patchRows * patchCols);
-    
-    normalizeSample(imagePatchRows, imagePatchCols, ImageRows, ImageCols, Image,
-                    cy - classifier.m_patchSize, cx - classifier.m_patchSize,
-                    patchRows, patchCols, patchArray);
-
-    // Reshape the C99 Array.
-    //
-    // This reshaping linearizes the array. It would be interesting to see if/why
-    // this is
-    // necessary.
-    //
-    int patchReshapedRows = imagePatchRows * imagePatchCols; // is always 121
-    int patchReshapedCols = 1;
-
-    gemmFloatArray(wInRows, wInCols, wInArray, patchReshapedRows,
-                   patchReshapedCols, patchArray, -1.0, bInRows, bInCols,
-                   bInArray, -1.0, xOutRows, xOutCols, xOutArray);
-
-    expFloat(xOutRows, xOutCols, xOutArray);
-    addFloat(xOutRows, xOutCols, xOutArray, 1.0f);
-    divideFloat(2.0f, xOutRows, xOutCols, xOutArray);
-    addFloat(xOutRows, xOutCols, xOutArray, -1.0f);
-
-    float result;
-    result =
-        -dotProduct(wOutRows, wOutCols, xOutRows, xOutCols, wOutArray, xOutArray);
-
-    result -= bOut;
-    result = 1.0f / (1.0f + exp(result)); //This should be expf in C and exp in OpenCL
-
-    free(patchArray);
-    free(xOutArray);
-    return result;
-}
-
-// This function has identical behavior as the generateResponseMapPatch
-// function, but it does not need to allocate any memory.
-static float generateResponseMapPatchNoMemory(
     int mapSize, int ncx, int ncy, int bInRows, int bInCols,
     float bInArray[bInRows][bInCols], mlp classifier, int ImageRows,
     int ImageCols, uint8_t Image[ImageRows][ImageCols], Point2i center,
@@ -425,12 +194,8 @@ static float generateResponseMapPatchNoMemory(
     int cy = ncy + center.y - mapSize;
     int cx = ncx + center.x - mapSize;
 
-    int imagePatchRows =
-        2 * classifier.m_patchSize + 1; // m_patchSize is always 5
+    int imagePatchRows = 2 * classifier.m_patchSize + 1; // m_patchSize is always 5
     int imagePatchCols = 2 * classifier.m_patchSize + 1;
-
-    int patchRows = imagePatchRows;
-    int patchCols = imagePatchCols;
 
     int imageOffsetRow = cy - classifier.m_patchSize;
     int imageOffsetCol = cx - classifier.m_patchSize;
@@ -496,23 +261,23 @@ static void generateResponseMap(
     // The problem here is that the size of the arrays is not know to
     // be identical for each respond map calculation. Hence, we can
     // not easily move those allocations out of the core computation.
-    // assert(classifier.m_U.start == 0);
-    // assert(classifier.m_U.cols == classifier.m_U.step);
+    __pencil_assume(classifier.m_U.start == 0);
+    __pencil_assume(classifier.m_U.cols == classifier.m_U.step);
     int m_URows = classifier.m_U.rows; // Always 121
     int m_UCols = classifier.m_U.cols; // Varies between 17 and 30
     float (*m_UArray)[m_UCols] = (void*)classifier.m_U.data;
 
 
     // Translate input arrays into C99 Arrays
-    // assert(classifier.m_wIn.start == 0);
-    // assert(classifier.m_wIn.cols == classifier.m_wIn.step);
+    __pencil_assume(classifier.m_wIn.start == 0);
+    __pencil_assume(classifier.m_wIn.cols == classifier.m_wIn.step);
     int m_wInRows = classifier.m_wIn.rows; // Always 25
     int m_wInCols = classifier.m_wIn.cols; // Varies between 17 and 31
     float (*m_wInArray)[m_wInCols] = (void*)classifier.m_wIn.data;
 
     // Translate input arrays into C99 Arrays
-    // assert(classifier.m_wOut.start == 0);
-    // assert(classifier.m_wOut.cols == classifier.m_wOut.step);
+    __pencil_assume(classifier.m_wOut.start == 0);
+    __pencil_assume(classifier.m_wOut.cols == classifier.m_wOut.step);
     int m_wOutRows = classifier.m_wOut.rows; // Always 1
     int m_wOutCols = classifier.m_wOut.cols; // Always 26
     float (*m_wOutArray)[m_wOutCols] = (void*)classifier.m_wOut.data;
@@ -587,18 +352,10 @@ static void generateResponseMap(
 
     for (int ncy = 0; ncy <= 2 * mapSize; ++ncy) {
         for (int ncx = 0; ncx <= 2 * mapSize; ++ncx) {
-
-#ifdef NOMEMORY
-            ResponseMap[ncy][ncx] = generateResponseMapPatchNoMemory(
-                mapSize, ncx, ncy, bInRows, bInCols, bInArray, classifier,
-                ImageRows, ImageCols, Image, center, wInRows, wInCols, wInArray,
-                wOutRows, wOutCols, wOutArray, bOut);
-#else
             ResponseMap[ncy][ncx] = generateResponseMapPatch(
                 mapSize, ncx, ncy, bInRows, bInCols, bInArray, classifier,
                 ImageRows, ImageCols, Image, center, wInRows, wInCols, wInArray,
                 wOutRows, wOutCols, wOutArray, bOut);
-#endif
         }
     }
 
@@ -607,8 +364,6 @@ static void generateResponseMap(
     free(wInArray);
     free(wOut_tmpArray);
     free(wOutArray);
-
-    return;
 }
 
 static int cvRound(float value) {
@@ -661,7 +416,6 @@ void calculateRespondMaps(
     }
 
 #pragma endscop
-    return;
 }
 
 /// @brief Calculate a set of response maps.
@@ -690,6 +444,4 @@ void calculateMaps(int NumLandMarks, int MapSize, MatChar Image, MatFloat Shape,
 
     free(ImageArray);
     free(ResponseMaps);
-
-    return;
 }
