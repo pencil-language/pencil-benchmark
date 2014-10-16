@@ -58,8 +58,6 @@ void time_histogram( const std::vector<carp::record_t>& pool, size_t iterations)
             float pencil_err = cv::norm(pen_result - cpu_result);
             if ( (gpu_err > 0.01) || (pencil_err>0.01) )
             {
-                PRINT(cv::norm(gpu_result - cpu_result));
-                PRINT(cv::norm(pen_result - cpu_result));
                 cv::imwrite( "gpu_img.png", gpu_result );
                 cv::imwrite( "cpu_img.png", cpu_result );
                 cv::imwrite("pencil_dilate.png", pen_result );

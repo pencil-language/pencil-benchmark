@@ -17,7 +17,6 @@ void time_resize( const std::vector<carp::record_t>& pool, const std::vector<cv:
     for ( int q=0; q<iteration; q++ ) {
         for ( auto & size : sizes ) {
             for ( auto & item : pool ) {
-                PRINT(item.path());
                 cv::Mat cpu_gray;
                 cv::cvtColor( item.cpuimg(), cpu_gray, CV_RGB2GRAY );
 
@@ -52,7 +51,7 @@ void time_resize( const std::vector<carp::record_t>& pool, const std::vector<cv:
                     elapsed_time_pencil = pencil_end - pencil_start;
                 }
                 // Verifying the results - TODO - Something fishy is happening at borders
-    #define REMOVE_BORDER(img) img(cv::Range(1, size.height-1), cv::Range(1, size.width-1))
+#define REMOVE_BORDER(img) img(cv::Range(1, size.height-1), cv::Range(1, size.width-1))
                 if (( cv::norm(REMOVE_BORDER(cpu_result), REMOVE_BORDER(gpu_result), cv::NORM_INF) > 1 )
                   ||( cv::norm(REMOVE_BORDER(cpu_result), REMOVE_BORDER(pen_result), cv::NORM_INF) > 1 )
                    )
@@ -70,7 +69,7 @@ void time_resize( const std::vector<carp::record_t>& pool, const std::vector<cv:
             } // for pool
         }
     }
-} // text_boxFilter
+}
 
 int main(int argc, char* argv[])
 {
@@ -89,4 +88,4 @@ int main(int argc, char* argv[])
 
     time_resize( pool, sizes, iteration );
     return EXIT_SUCCESS;
-} // main
+}

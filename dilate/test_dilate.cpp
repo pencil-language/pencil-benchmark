@@ -15,10 +15,7 @@ void time_dilate( const std::vector<carp::record_t>& pool, const std::vector<int
 
     for ( int q=0; q<iteration; q++ ) {
         for ( auto & item : pool ) {
-            PRINT(item.path());
             for ( auto & elemsize : elemsizes ) {
-                PRINT(elemsize);
-
                 // acquiring the image for the test
                 cv::Mat cpu_gray;
                 cv::cvtColor( item.cpuimg(), cpu_gray, CV_RGB2GRAY );
@@ -62,8 +59,6 @@ void time_dilate( const std::vector<carp::record_t>& pool, const std::vector<int
                 }
                 // Verifying the results
                 if ( (cv::norm(cpu_result - gpu_result) > 0.01) || (cv::norm(cpu_result - pen_result) > 0.01) ) {
-                    PRINT(cv::norm(gpu_result - cpu_result));
-                    PRINT(cv::norm(cpu_result - pen_result));
                     cv::imwrite("cpu_dilate.png", cpu_result);
                     cv::imwrite("gpu_dilate.png", gpu_result );
                     cv::imwrite("pencil_dilate.png", pen_result );

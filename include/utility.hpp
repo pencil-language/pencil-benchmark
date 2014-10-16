@@ -10,13 +10,9 @@
 #include <iostream>
 
 #include <opencv2/core/core.hpp>
-#include <opencv2/ocl/ocl.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
 #include <boost/filesystem.hpp>
-
-//#define PRINT(var)  std::cout << "debug: " << BOOST_PP_STRINGIZE(var) << " = " << var << std::endl
-#define PRINT(var)
 
 namespace carp {
 
@@ -39,7 +35,7 @@ public:
         std::cout << std::setw(8) << gpu_nocopy.count() << "s - ";
         std::cout << std::setw(8) << pen       .count() << "s" << std::endl;
 
-	cpu_timings       .push_back(cpu       .count());
+        cpu_timings       .push_back(cpu       .count());
         gpu_p_copy_timings.push_back(gpu_p_copy.count());
         gpu_nocopy_timings.push_back(gpu_nocopy.count());
         pen_timings       .push_back(pen       .count());
@@ -62,14 +58,10 @@ public:
         return cv::imread(m_path.string());
     }
 
-    std::string path() const {
-        return m_path.string();
-    }
-
     record_t( const boost::filesystem::path & path )
     : m_path(path)  { }
 
-}; // record_t
+};
 
 
 template <class T0>
@@ -90,23 +82,13 @@ get_pool( T0 pathname )
         {
             std::string extension = iter->path().extension().string();
             if ( (extension ==".jpg") or (extension==".jpeg") ) {
-                PRINT(iter->path().string());
                 pool.push_back(record_t(iter->path()));
             }
         }
     }
 
     return pool;
-} // get_pool
+}
+}
 
-static std::map<int, std::string> borders
-{{ cv::BORDER_CONSTANT   , "BORDER_CONSTANT"    }
-,{ cv::BORDER_REPLICATE  , "BORDER_REPLICATE"   }
-,{ cv::BORDER_REFLECT    , "BORDER_REFLECT"     }
-,{ cv::BORDER_WRAP       , "BORDER_WRAP"        }
-,{ cv::BORDER_REFLECT_101, "BORDER_REFLECT_101" }
-};
-
-} // namespace carp
-
-#endif /* __CARP__UTILITY__HPP__ */
+#endif

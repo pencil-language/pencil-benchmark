@@ -7,7 +7,7 @@
 #include <boost/archive/xml_iarchive.hpp>
 
 #include "mlp.hpp"
-#include "mlp_impl.h"
+#include "mlp_impl_pencil.h"
 
 namespace carp {   
 
@@ -58,7 +58,6 @@ namespace carp {
     public:
         guard_t guard;        
         int id;
-        hack_t hack;
         std::ifstream dumpStream;
         boost::archive::xml_iarchive importer;
     

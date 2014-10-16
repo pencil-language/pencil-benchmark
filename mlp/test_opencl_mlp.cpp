@@ -13,6 +13,8 @@
 // OpenCL includes
 #include "mlp_impl.clh"
 
+#include <CL/cl.hpp>
+
 const int processed_frames = 100;
 const int local_memsize = 21 * 1024;
 
@@ -20,50 +22,38 @@ int main()
 {
     std::cout << "MLP benchmark using OpenCL:" << std::endl;
 
-    std::vector<carp::hack_t> packages;
     carp::conductor_t conductor; // the class for importing the input from the clm
     carp::opencl::device device;
     device.source_compile( mlp_impl_cl, mlp_impl_cl_len, {"calculateMaps"} );
 
-    for ( conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id);
-            ((conductor.id != -1) && (conductor.id != processed_frames));
-            conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id)
+    int gangsize = 8*32;
+    std::chrono::duration<double> elapsed_time(0), elapsed_time_copy(0);
+
+    for ( conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id)
+        ; (conductor.id != -1) && (conductor.id != processed_frames)
+        ; conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id)
     )
     {
-        carp::hack_t hack;
+        carp::hack_t package;
 
-        PRINT(conductor.id);
-        conductor.importer >> BOOST_SERIALIZATION_NVP(hack);
-        packages.push_back(hack);
-    } // for conductor
+        conductor.importer >> BOOST_SERIALIZATION_NVP(package);
 
-    int gangsize = 8*32;
-    PRINT(gangsize);
-    std::chrono::duration<double> elapsed_time(0), elapsed_time_copy(0);
-    int64_t maxnetallocated = 0;
-    int64_t maxgrossallocated = 0;
-    for ( auto & package : packages ) {
         int groupsize = package.m_visibleLandmarks_size;
         std::vector<char> buffer(groupsize * local_memsize);
-
-        std::vector<carp::memory::dense> pools( groupsize, carp::memory::dense(carp::memory::allocator::sizer(local_memsize, uint8_t())));
-        carp::memory::local_memory_manager locmm( groupsize * local_memsize, groupsize, local_memsize );
-
-        char * self = buffer.data();
-        std::vector<int> segments = locmm.get_segments();
-
-        auto calcpackages = convertHackToMlp( self, pools, segments, package );
-
-        for ( auto & pool : pools ) {
-            maxgrossallocated = std::max( maxgrossallocated, pool.grossallocated() );
-            maxnetallocated = std::max( maxnetallocated, pool.netallocated() );
+        std::vector<carp::memory::allocator> pools( groupsize, carp::memory::allocator(local_memsize));
+        std::vector<int> segments(groupsize);
+        {
+            for (int q = 0; q < groupsize; q++ )
+                segments[q] = local_memsize * q;
         }
+        
+        auto calcpackages = convertHackToMlp( buffer.data(), pools, segments, package );
 
         // preparing the opencl data
         auto start_copy = std::chrono::high_resolution_clock::now();
-        carp::opencl::array_<uint8_t> clSelf( device, groupsize * local_memsize, self );
-        carp::opencl::array_<int> clSegments( device, segments );
-        carp::opencl::array_<calcpackage> clCalcpackages( device, calcpackages );
+        carp::opencl::array_<char> clSelf( device, groupsize * local_memsize, buffer.data() );
+        carp::opencl::array_<int> clSegments( device, segments.size(), segments.data() );
+        carp::opencl::array_<calcpackage> clCalcpackages( device, calcpackages.size(), calcpackages.data() );
 
         auto start = std::chrono::high_resolution_clock::now();
         device["calculateMaps"]( clSelf.cl()
@@ -105,11 +95,5 @@ int main()
 
     std::cout << "total elapsed time (inc copy) = " << elapsed_time_copy.count() << " s." << std::endl;
     std::cout << "processing speed   (inc copy) = " << processed_frames / elapsed_time_copy.count() << "fps" << std::endl;
-    PRINT(maxnetallocated);
-    PRINT(maxgrossallocated);
-
     return EXIT_SUCCESS;
-} // int main
-
-
-// LuM end of file
+}

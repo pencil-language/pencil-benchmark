@@ -35,8 +35,6 @@ void time_affine( const std::vector<carp::record_t>& pool, int iteration )
 
     for ( int q=0; q<iteration; q++ ) {
         for ( auto & item : pool ) {
-            PRINT(item.path());
-
             cv::Mat cpu_gray;
             cv::cvtColor( item.cpuimg(), cpu_gray, CV_RGB2GRAY );
             cpu_gray.convertTo( cpu_gray, CV_32F, 1.0/255. );
@@ -83,9 +81,6 @@ void time_affine( const std::vector<carp::record_t>& pool, int iteration )
             // Verifying the results
             if ( (cv::norm(cv::abs(cpu_result - gpu_result), cv::NORM_INF ) > 1 ) || (cv::norm(cv::abs(cpu_result - pen_result), cv::NORM_INF ) > 1 ) )
             {
-                PRINT(cv::norm(cv::abs(cpu_result - gpu_result), cv::NORM_INF ));
-                PRINT(cv::norm(cv::abs(cpu_result - pen_result), cv::NORM_INF ));
-
                 cv::Mat gpu_result8;
                 cv::Mat cpu_result8;
                 cv::Mat pen_result8;
@@ -118,4 +113,4 @@ int main(int argc, char* argv[])
     time_affine( pool, 45 );
 #endif
     return EXIT_SUCCESS;
-} // main
+}

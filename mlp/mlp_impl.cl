@@ -304,19 +304,14 @@ cvRound( float value )
 
 
 __kernel void
-calculateMaps(
-    // global variables
-    __global void * self,
-    __constant int memory_segments[], // representing the start of the gang's memory segment
-    int m_visibleLandmarks_size,
-    int m_mapSize,
-
-    __constant calcpackage packages[],
-
-    // local buffer
-    int buffersize,
-    __local void * buffer    
-    )
+calculateMaps( __global void * self
+             , __constant int memory_segments[]
+             , int m_visibleLandmarks_size
+             , int m_mapSize
+             , __constant calcpackage packages[]
+             , int buffersize
+             , __local void * buffer
+             )
 {
 
     int idx = get_group_id(0);

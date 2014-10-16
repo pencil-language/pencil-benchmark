@@ -14,14 +14,11 @@
 #include <boost/archive/binary_iarchive.hpp>
 
 #include "mlp.hpp"
-#include "mlp_impl.h"
+#include "mlp_impl_pencil.h"
 #include "utility.hpp"
 #include "serialization.hpp"
 
-#ifndef PROCESSED_FRAMES
-#define PROCESSED_FRAMES 100
-#endif
-const int processed_frames = PROCESSED_FRAMES;
+const int processed_frames = 100;
 
 int main()
 {
@@ -29,45 +26,43 @@ int main()
     std::chrono::duration<double> elapsed_time(0);
     int i = 1;
 
-    for ( conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id);
-          ((conductor.id != -1) && (conductor.id != processed_frames));
-          // conductor.id != -1;
-          conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id)
+    for ( conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id)
+        ; (conductor.id != -1) && (conductor.id != processed_frames)
+        ; conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.id)
         )
     {
-        PRINT(conductor.id);
-        conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.hack);
+        carp::hack_t package;
+        conductor.importer >> BOOST_SERIALIZATION_NVP(package);
 
         // here comes the function call
         {
 	    std::cout << i++ << "/" << processed_frames << std::endl;
             // preparing the inputs
-            MatChar alignedImage = carp::convertCVToMatChar(conductor.hack.alignedImage);
-            MatFloat shape = carp::convertCVToMatFloat(conductor.hack.shape);
-            mlp * m_classifiers = carp::convertHackToMlp(conductor.hack);
+            MatChar alignedImage = carp::convertCVToMatChar(package.alignedImage);
+            MatFloat shape = carp::convertCVToMatFloat(package.shape);
+            mlp * m_classifiers = carp::convertHackToMlp(package);
             MatFloat * responseMaps;
-            carp::allocateResponseMaps( conductor.hack.m_mapSize, conductor.hack.m_visibleLandmarks_size, &responseMaps );
+            carp::allocateResponseMaps( package.m_mapSize, package.m_visibleLandmarks_size, &responseMaps );
 
             auto start = std::chrono::high_resolution_clock::now();
-            calculateMaps(
-                conductor.hack.m_visibleLandmarks_size,
-                conductor.hack.m_mapSize,
-                alignedImage,
-                shape,
-                m_classifiers,
-                &responseMaps
-                );
+            calculateMaps( package.m_visibleLandmarks_size
+                         , package.m_mapSize
+                         , alignedImage
+                         , shape
+                         , m_classifiers
+                         , &responseMaps
+                         );
             auto end = std::chrono::high_resolution_clock::now();
             elapsed_time += (end - start);
 
             // releasing the inputs
             freeMatChar(&alignedImage);
             freeMatFloat(&shape);
-            carp::freeClassifiers(&m_classifiers, conductor.hack.m_classifiers.size());
+            carp::freeClassifiers(&m_classifiers, package.m_classifiers.size());
 
             // converting the outputs
             std::vector< cv::Mat_<double> > calculatedResults;
-            for (int q=0; q<conductor.hack.m_visibleLandmarks_size; q++)
+            for (int q=0; q<package.m_visibleLandmarks_size; q++)
             {
                 cv::Mat_<double> nextResult;
                 nextResult = carp::convertMatFloatToCV( responseMaps[q] );
@@ -75,13 +70,13 @@ int main()
             }
 
             // testing the output
-            for (int q=0; q<conductor.hack.m_visibleLandmarks_size; q++)
+            for (int q=0; q<package.m_visibleLandmarks_size; q++)
             {
-                if (cv::norm( conductor.hack.responseMaps[q] - calculatedResults[q] ) > 0.0001) throw std::runtime_error("conductor.hack.responseMaps[q] - calculatedResults[q] ) < 0.0001 failed");
+                if (cv::norm( package.responseMaps[q] - calculatedResults[q] ) > 0.0001) throw std::runtime_error("package.responseMaps[q] - calculatedResults[q] ) < 0.0001 failed");
             }
 
             // releasing the outputs
-            carp::freeResponseMaps( &responseMaps, conductor.hack.m_visibleLandmarks_size );
+            carp::freeResponseMaps( &responseMaps, package.m_visibleLandmarks_size );
 
         }
     }
@@ -90,10 +85,5 @@ int main()
     std::cout << std::setprecision(2) << std::fixed;
     std::cout << "processing speed   = " << processed_frames / elapsed_time.count() << "fps" << std::endl;
 
-    //conductor.importer >> BOOST_SERIALIZATION_NVP(conductor.hack);
-
     return EXIT_SUCCESS;
-} // int main
-
-
-// LuM end of file
+}

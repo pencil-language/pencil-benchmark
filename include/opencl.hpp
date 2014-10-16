@@ -98,21 +98,6 @@ public:
 }; // class buffer
 
 
-class array {
-protected:
-    std::shared_ptr<_cl_mem> cl_ptr;
-    size_t m_size;
-    cl_context cqContext;
-    cl_command_queue cqCommandQueue;
-
-public:
-    array() : cl_ptr(nullptr), m_size(0), cqContext(nullptr), cqCommandQueue(nullptr) {}
-    array ( const array & other ) = delete;
-    virtual cl_mem cl() { assert(cl_ptr); return cl_ptr.get(); }
-    virtual size_t size1() { assert(m_size>0); return m_size; }
-    virtual ~array() { }
-}; // class array
-
 class kernel {
 private:
     std::shared_ptr<_cl_kernel> cqKernel;
@@ -291,9 +276,7 @@ public:
             std::shared_ptr<_cl_kernel> btmp_kernel( tmp_kernel, clReleaseKernel );
             kernels[kernel_name].set( btmp_kernel, cqCommandQueue );
         }
-
-        return;
-    } // compile
+    }
 
     void source_compile( const unsigned char * source,
             const unsigned int source_len,
@@ -333,15 +316,12 @@ public:
             std::shared_ptr<_cl_kernel> btmp_kernel( tmp_kernel, clReleaseKernel );
             kernels[kernel_name].set( btmp_kernel, cqCommandQueue );
         }
-
-
-        return;
-    } // source_compile
+    }
 
 
     kernel & operator [] ( const std::string & kernel_name ) {
         return kernels[kernel_name];
-    } // operator[]
+    }
 
     cl_context get_context() {
         return cxGPUContext.get();
@@ -360,90 +340,34 @@ public:
     }
 }; // class device
 
-
-template <class T0 = uint8_t >
-class array_ : public array {
+template <class T0>
+class array_ {
 private:
+    std::shared_ptr<_cl_mem> cl_ptr;
+    size_t m_size;
+    cl_context cqContext;
+    cl_command_queue cqCommandQueue;
+
     array_( const array_<T0> & ) = delete; // copy constructor forbidden
 
 public:
-
-    array_( const cl_context & cqContext,
-            const cl_command_queue & cqCommandQueue,
-            const size_t & size,
-            cl_mem_flags flags = CL_MEM_READ_WRITE
-    ) {
+    array_( opencl::device & device, size_t size, T0 * ptr ) 
+    {
         this->m_size = size;
-        this->cqContext = cqContext;
-        this->cqCommandQueue = cqCommandQueue;
-        assert( (flags & CL_MEM_USE_HOST_PTR) == 0 );
-        cl_int err;
-        cl_mem tmp;
-        tmp = clCreateBuffer( cqContext, flags, m_size * sizeof(T0), NULL, &err );
-        utility::checkerror( err, __FILE__, __LINE__ );
-        cl_ptr.reset(tmp, clReleaseMemObject);
-    } // array
-
-    array_( const cl_context & cqContext,
-            const cl_command_queue & cqCommandQueue,
-            std::vector<T0> & input,
-            cl_mem_flags flags = CL_MEM_READ_WRITE
-    ) {
-        this->m_size = input.size();
-        this->cqContext = cqContext;
-        this->cqCommandQueue = cqCommandQueue;
-
-        cl_int err;
-        cl_mem tmp;
-        tmp = clCreateBuffer( cqContext, flags | CL_MEM_COPY_HOST_PTR, m_size * sizeof(T0), reinterpret_cast<void*>(input.data()), &err );
-        utility::checkerror( err, __FILE__, __LINE__ );
-        cl_ptr.reset(tmp, clReleaseMemObject);
-    } // array_
-
-    array_( opencl::device & device,
-            std::vector<T0> & input,
-            cl_mem_flags flags = CL_MEM_READ_WRITE
-    ) {
-        this->m_size = input.size();
         this->cqContext = device.get_context();
         this->cqCommandQueue = device.get_queue();
 
         cl_int err;
         cl_mem tmp;
-        tmp = clCreateBuffer( cqContext, flags | CL_MEM_COPY_HOST_PTR, m_size * sizeof(T0), reinterpret_cast<void*>(input.data()), &err );
+        tmp = clCreateBuffer( cqContext, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, size * sizeof(T0), reinterpret_cast<void*>(ptr), &err );
         utility::checkerror( err, __FILE__, __LINE__ );
         cl_ptr.reset(tmp, clReleaseMemObject);
     }
-
-    template <class MT0>
-    array_( opencl::device & device,
-            size_t size,
-            MT0 * ptr,
-            cl_mem_flags flags = CL_MEM_READ_WRITE )
-            {
-        this->m_size = size;
-        this->cqContext = device.get_context();
-        this->cqCommandQueue = device.get_queue();
-
-        cl_int err;
-        cl_mem tmp;
-        tmp = clCreateBuffer( cqContext, flags | CL_MEM_COPY_HOST_PTR, size * sizeof(T0), reinterpret_cast<void*>(ptr), &err );
-        utility::checkerror( err, __FILE__, __LINE__ );
-        cl_ptr.reset(tmp, clReleaseMemObject);
-            }
 
     cl_mem cl() {
         return cl_ptr.get();
-    } // cl
-
-    size_t size() {
-        return m_size;
-    } // size
-
-    size_t size1() {
-        return m_size * sizeof(T0);
     }
-
+    
     std::vector<T0> get( ) {
         std::vector<T0> result(m_size);
         utility::checkerror( clEnqueueReadBuffer( cqCommandQueue, cl_ptr.get(), CL_TRUE, 0, sizeof(T0) * m_size, result.data(), 0, NULL, NULL), __FILE__, __LINE__ );
@@ -452,101 +376,6 @@ public:
     } // extract
 
 }; // class array_
-
-
-template <class T0>
-class image {
-public:
-    typedef T0 value_type;
-
-private:
-    cl_context cqContext;
-    cl_command_queue cqCommandQueue;
-    int m_rows;
-    int m_cols;
-    opencl::array_<value_type> buf;
-
-    image( const image<T0> & ) = delete;
-
-public:
-    image( const cl_context & cqContext, const cl_command_queue & cqCommandQueue, int m_rows, int m_cols )
-    : cqContext(cqContext)
-    , cqCommandQueue(cqCommandQueue)
-    , m_rows(rows)
-    , m_cols(cols)
-    , buf(cqContext, cqCommandQueue, m_rows * m_cols )
-    { }
-
-    image( opencl::device & device, int rows, int cols )
-    : cqContext(device.get_context())
-    , cqCommandQueue(device.get_queue())
-    , m_rows(rows)
-    , m_cols(cols)
-    , buf(cqContext, cqCommandQueue, rows * cols )
-    { }
-
-    image( opencl::device & device, cv::Mat_<T0> input )
-    : cqContext(device.get_context())
-    , cqCommandQueue(device.get_queue())
-    , m_rows(input.rows)
-    , m_cols(input.cols)
-    , buf(cqContext, cqCommandQueue, input.rows * input.cols )
-    {
-        this->set(input);
-    }
-
-    int rows() const { return m_rows; };
-
-    int cols() const { return m_cols; };
-
-    clMat
-    cl() {
-        assert(buf.cl());
-        clMat result = { rows(), cols(), cols(), 0 };
-
-        return result;
-    }; // clMat
-
-    cl_mem
-    ptr() {
-        assert(buf.cl());
-        return buf.cl();
-    } // ptr
-
-
-    cv::Mat_<value_type> get() {
-        cv::Mat_<value_type> result(rows(), cols());
-        assert(result.isContinuous());
-
-        utility::checkerror(
-                clEnqueueReadBuffer( cqCommandQueue, ptr(), CL_TRUE, 0, buf.size() * sizeof(value_type), reinterpret_cast<void*>(&result(0,0)), 0, NULL, NULL ) );
-
-        return result;
-    } // get
-
-    void set( cv::Mat_<value_type> image ) {
-        assert(image.isContinuous());
-
-        utility::checkerror(
-                clEnqueueWriteBuffer(
-                        cqCommandQueue, ptr(), CL_TRUE, 0, buf.size() * sizeof(value_type), reinterpret_cast<void*>(&image(0,0)), 0, NULL, NULL ) );
-
-        return;
-    } // set
-
-    image<T0> & operator= ( cv::Mat_<value_type> & image ) {
-        assert(image.isContinuous());
-
-        utility::checkerror(
-                clEnqueueWriteBuffer(
-                        cqCommandQueue, ptr(), CL_TRUE, 0, buf.size() * sizeof(value_type), reinterpret_cast<void*>(&image(0,0)), 0, NULL, NULL ) );
-
-        return *this;
-    } // operator =
-
-
-}; // class image
-
 
 } // namespace opencl
 

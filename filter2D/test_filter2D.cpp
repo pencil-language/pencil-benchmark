@@ -16,8 +16,6 @@ void time_filter2D( const std::vector<carp::record_t>& pool, int iteration )
 
     for ( int q=0; q<iteration; q++ ) {
         for ( auto & item : pool ) {
-            PRINT(item.path());
-
             cv::Mat cpu_gray;
             cv::cvtColor( item.cpuimg(), cpu_gray, CV_RGB2GRAY );
             cpu_gray.convertTo( cpu_gray, CV_32F, 1.0/255. );
@@ -63,19 +61,12 @@ void time_filter2D( const std::vector<carp::record_t>& pool, int iteration )
             if ( (cv::norm(cpu_result - gpu_result) > 0.01) ||
                  (cv::norm(pen_result - cpu_result) > 0.01) )
             {
-                PRINT(cv::norm(gpu_result - cpu_result));
-                PRINT(cv::norm(pen_result - cpu_result));
-
                 cv::Mat cpu;
                 cv::Mat pencil;
                 cv::Mat gpu;
                 cpu_result.convertTo( cpu, CV_8U, 255. );
                 gpu_result.convertTo( gpu, CV_8U, 255. );
                 pen_result.convertTo( pencil, CV_8U, 255. );
-
-                PRINT(cv::norm(gpu-cpu));
-                PRINT(cv::norm(gpu-pencil));
-                PRINT(cv::norm(cpu-pencil));
 
                 cv::imwrite( "host_convolve.png", cpu );
                 cv::imwrite( "gpu_convolve.png", gpu );

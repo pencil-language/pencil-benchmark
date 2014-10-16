@@ -8,6 +8,8 @@
 
 #include "cltypes.h"
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -50,8 +52,8 @@ extern "C" {
                       , int m_mapSize
                       , MatChar alignedImage
                       , MatFloat shape
-                      , mlp m_classifiers[static const restrict m_visibleLandmarks_size]
-                      , MatFloat * responseMaps[static const restrict m_visibleLandmarks_size]
+                      , mlp m_classifiers[]
+                      , MatFloat * responseMaps[]
                       );
 
 

@@ -9,7 +9,6 @@
 #include "utility.hpp"
 #include "hog.pencil.h"
 #include "HogDescriptor.h"
-#include "hog.clh"
 
 #define NUMBER_OF_CELLS 1
 #define NUMBER_OF_BINS 8

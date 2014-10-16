@@ -29,7 +29,7 @@ carp::convertHackToMlp ( const carp::hack_t & hack )
     } // for q in m_visibleLandmarks_size
 
     return result;
-} // convertHackToMlp
+}
 
 void
 carp::freeClassifiers( mlp * classifiers[], int size )
@@ -40,10 +40,7 @@ carp::freeClassifiers( mlp * classifiers[], int size )
 
     free(*classifiers);
     *classifiers=NULL;
-
-    return;    
-} // freeClassifiers
-
+}
 
 MatChar
 carp::convertCVToMatChar ( const cv::Mat_<uint8_t> & input )
@@ -55,7 +52,7 @@ carp::convertCVToMatChar ( const cv::Mat_<uint8_t> & input )
             result.data[ q * result.step + w + result.start ] = input(q,w);
     
     return result;    
-} // convertCVToMatChar
+}
 
 MatFloat
 carp::convertCVToMatFloat (  const cv::Mat_<double> & input )
@@ -67,7 +64,7 @@ carp::convertCVToMatFloat (  const cv::Mat_<double> & input )
             result.data[ q * result.step + w + result.start ] = input(q,w);
     
     return result;    
-} // convertCVToMatFloat
+}
 
 
 cv::Mat_<double>
@@ -80,7 +77,7 @@ carp::convertMatFloatToCV( MatFloat input )
             result(q,w) = input.data[ q * input.step + w + input.start ];
     
     return result;
-} // convertMatFloatToCV
+}
 
 
 void
@@ -92,8 +89,6 @@ carp::allocateResponseMaps( int mapSize, int size, MatFloat * responseMaps[] )
 
     for ( int q=0; q<size; q++ )
         result[q] = CreateMatFloat( 2 * mapSize + 1, 2 * mapSize + 1 );
-    
-    return;
 }
 
 void
@@ -106,9 +101,4 @@ carp::freeResponseMaps( MatFloat * responseMaps[], int size )
 
     free(result);
     *responseMaps=NULL;
-    return;    
 }
-
-
-// LuM end of file
-

@@ -101,9 +101,7 @@ void boost::serialization::save( T0 & archiver, const cv::Mat_<T1> & matrix, uns
         tmp = reinterpret_cast<const T1*>(matrix.ptr(row));
         archiver << boost::serialization::make_array( const_cast<T1*>(tmp), matrix.cols );
     }
-    return;
-
-} /* save */
+}
 
 template<class T0, class T1>
 void boost::serialization::load( T0 & archiver, cv::Mat_<T1> & matrix, unsigned int )
@@ -143,10 +141,8 @@ void boost::serialization::load( T0 & archiver, cv::Mat_<T1> & matrix, unsigned 
 
     default:
         throw ::exception ( std::string("serialization error: file version (") + std::to_string(gel_xml_export_version) + ") not recognized " );
-    } /* switch */
-
-    return;
-} /* load */
+    }
+}
 
 // splitting the serialization into two functions
 template<class T0, class T1> inline void boost::serialization::serialize( T0 & archiver, cv::Mat_<T1> & matrix, const unsigned int version )
@@ -265,17 +261,6 @@ cv::Mat_<typename gel::MLP<T0>::pixel_type> gel::MLP<T0>::generateResponseMap( c
                              const cv::Point2i& center,
                              int mapSize ) const
 {
-    // static conductor_t conductor;
-    // conductor.hack.center = center;
-    // conductor.hack.mapSize = mapSize;
-    // conductor.hack.m_patchSize = m_patchSize;
-    // conductor.hack.m_currentMapSize = m_currentMapSize;
-    // conductor.hack.postSVDNormalizationMethod = postSVDNormalizationMethod;
-    // conductor.hack.image = image.clone();
-    // conductor.hack.m_wIn = m_wIn.clone();
-    // conductor.hack.m_U = m_U.clone();
-    // conductor.hack.m_wOut = m_wOut.clone();
-
     // make sure that we have the necessary matrices
     // calculated (this is a method; it is NOT thread safe!), but it is called for each classifier once
     update(mapSize);
@@ -289,12 +274,6 @@ cv::Mat_<typename gel::MLP<T0>::pixel_type> gel::MLP<T0>::generateResponseMap( c
     }
 
     cv::Mat_<pixel_type> result = evaluateSamples();
-
-    // conductor.hack.result = result.cv::Mat::reshape(0,m_number_of_patches_per_line).clone();
-
-    // conductor.exporter << BOOST_SERIALIZATION_NVP(conductor.id);
-    // conductor.exporter << BOOST_SERIALIZATION_NVP(conductor.hack);
-    // conductor.id++;
 
     return result.cv::Mat::reshape(0,m_number_of_patches_per_line);
 }
@@ -313,7 +292,7 @@ void gel::MLP<T0>::update(int newMapSize) const
         // extract to the creation
         m_wIn_gemm = m_wIn.colRange(0,m_wIn.cols-1)*m_U.t();
         cv::Mat_<pixel_type> bIn = m_wIn.col(m_wIn.cols-1);
-        m_wOut_gemm = m_wOut.colRange(0,m_wOut.cols-1); ///!!!!!!!!!! NO MORE TRANSPOSE .t();
+        m_wOut_gemm = m_wOut.colRange(0,m_wOut.cols-1);
 
         pixel_type bOut = m_wOut(0,m_wOut.cols-1);
 

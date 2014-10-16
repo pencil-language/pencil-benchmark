@@ -15,7 +15,6 @@ void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<i
     carp::Timing timing("gaussian blur");
 
     for ( auto & size : sizes ) {
-        PRINT(size);
         cv::Size ksize(size, size+4);
 
         double gaussX = 7.;
@@ -70,9 +69,6 @@ void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<i
             if ( (cv::norm( cpu_result - gpu_result ) > 0.01) ||
                  (cv::norm( cpu_result - pen_result) > 0.01) )
             {
-                PRINT(cv::norm(gpu_result - cpu_result));
-                PRINT(cv::norm(pen_result - cpu_result));
-
                 cv::Mat gpu_result8;
                 cv::Mat cpu_result8;
                 cv::Mat pen_result8;

@@ -4,12 +4,12 @@
 // Copyright (c) RealEyes, 2013
 // This is a c-implementation of the PCA->MLP response map calculation
 
+#include "mlp_impl_pencil.h"
+
 #include <assert.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <pencil.h>
-
-#include "mlp_impl.h"
 
 static void copyMatCharToArray(MatChar In, int n, int m, uint8_t Out[][m]) {
     assert(In.rows == n);
@@ -41,7 +41,6 @@ MatFloat CreateMatFloat(int rows, int cols) {
     assert(rows > 0);
     assert(cols > 0);
 
-    result.data = NULL;
     result.data = (float *)malloc(sizeof(float) * rows * cols);
     assert(result.data);
     result.rows = rows;
@@ -57,7 +56,6 @@ MatChar CreateMatChar(int rows, int cols) {
     assert(rows > 0);
     assert(cols > 0);
 
-    result.data = NULL;
     result.data = (uint8_t *)malloc(sizeof(uint8_t) * rows * cols);
     assert(result.data);
     result.rows = rows;
@@ -423,8 +421,14 @@ void calculateRespondMaps(
 /// This function implements the external interface. In its implementation
 /// we transform the input parameters in a way, such that the internal
 /// implementation is as close to PENCIL as possible.
-void calculateMaps(int NumLandMarks, int MapSize, MatChar Image, MatFloat Shape,
-                   mlp Classifiers[], MatFloat *MatResponseMaps[]) {
+void calculateMaps( int NumLandMarks
+                  , int MapSize
+                  , MatChar Image
+                  , MatFloat Shape
+                  , mlp Classifiers[static const restrict NumLandMarks]
+                  , MatFloat *MatResponseMaps[static const restrict NumLandMarks]
+                  )
+{
     int Width = MapSize * 2 + 1;
     float (*ResponseMaps)[Width][Width] =
         malloc(sizeof(float) * NumLandMarks * Width * Width + 1);
