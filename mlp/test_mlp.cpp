@@ -60,19 +60,11 @@ int main()
             freeMatFloat(&shape);
             carp::freeClassifiers(&m_classifiers, package.m_classifiers.size());
 
-            // converting the outputs
-            std::vector< cv::Mat_<double> > calculatedResults;
+            // converting-testing the outputs
             for (int q=0; q<package.m_visibleLandmarks_size; q++)
             {
-                cv::Mat_<double> nextResult;
-                nextResult = carp::convertMatFloatToCV( responseMaps[q] );
-                calculatedResults.push_back(nextResult);
-            }
-
-            // testing the output
-            for (int q=0; q<package.m_visibleLandmarks_size; q++)
-            {
-                if (cv::norm( package.responseMaps[q] - calculatedResults[q] ) > 0.0001) throw std::runtime_error("package.responseMaps[q] - calculatedResults[q] ) < 0.0001 failed");
+                cv::Mat_<double> nextResult = carp::convertMatFloatToCV( responseMaps[q] );
+                if (cv::norm( package.responseMaps[q] - nextResult ) > 0.0001) throw std::runtime_error("package.responseMaps[q] - calculatedResults[q] ) < 0.0001 failed");
             }
 
             // releasing the outputs

@@ -1,11 +1,8 @@
-// UjoImro, 2013
-
 #include <chrono>
 #include <opencv2/core/core.hpp>
 #include <opencv2/ocl/ocl.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include "opencl.hpp"
 #include "utility.hpp"
 #include "dilate.pencil.h"
 

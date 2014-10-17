@@ -5,7 +5,6 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/ocl/ocl.hpp>
 
-#include "opencl.hpp"
 #include "utility.hpp"
 #include "hog.pencil.h"
 #include "HogDescriptor.h"

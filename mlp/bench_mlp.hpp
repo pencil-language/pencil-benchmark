@@ -18,7 +18,6 @@
 #include <boost/archive/binary_iarchive.hpp>
 
 #include "mlp.hpp"
-#include "errors.hpp"
 #include "memory.hpp"
 #include "allocator.hpp"
 #include "serialization.hpp"

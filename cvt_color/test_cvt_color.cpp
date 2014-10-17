@@ -1,10 +1,7 @@
-// UjoImro, 2013
-
 #include <chrono>
 #include <opencv2/core/core.hpp>
 #include <opencv2/ocl/ocl.hpp>
 
-#include "opencl.hpp"
 #include "utility.hpp"
 #include "cvt_color.pencil.h"
 

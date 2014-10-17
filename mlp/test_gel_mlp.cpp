@@ -1,12 +1,4 @@
-
 #include "serialization.hpp"
-
-// UjoImro, 2013
-// Experimental code for the CARP Project
-// Copyright (c) RealEyes, 2013
-// This version tests the responseMap calculation with input dumps
-
-#include "opencl.hpp"
 #include "memory.hpp"
 #include "bench_mlp.hpp"
 
@@ -14,7 +6,6 @@
 #include <tbb/concurrent_vector.h>
 #include <tbb/tbb_thread.h>
 #include <tbb/task_scheduler_init.h>
-
 
 const int processed_frames = 100;
 

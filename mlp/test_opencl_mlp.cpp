@@ -6,13 +6,10 @@
 #include <vector>
 #include <iomanip>
 
-#include "opencl.hpp"
 #include "memory.hpp"
 #include "bench_mlp.hpp"
 
-// OpenCL includes
-#include "mlp_impl.clh"
-
+#define __CL_ENABLE_EXCEPTIONS
 #include <CL/cl.hpp>
 
 const int processed_frames = 100;
@@ -23,8 +20,28 @@ int main()
     std::cout << "MLP benchmark using OpenCL:" << std::endl;
 
     carp::conductor_t conductor; // the class for importing the input from the clm
-    carp::opencl::device device;
-    device.source_compile( mlp_impl_cl, mlp_impl_cl_len, {"calculateMaps"} );
+
+    //Load source
+    std::ifstream source_file{"../mlp/mlp_impl.cl"};
+    std::string source{ std::istreambuf_iterator<char>{source_file}, std::istreambuf_iterator<char>{} };
+
+    //Compile source
+    std::vector<cl::Device> devices;
+    cl::Platform::getDefault().getDevices(CL_DEVICE_TYPE_GPU, &devices);
+    if (devices.size()>1)
+        std::cout << "warning: more then one GPU device detected, only the first will be used." << std::endl;
+    cl::Device device = devices.front();
+    cl::Context context = cl::Context(device);
+    cl::CommandQueue queue = cl::CommandQueue(context, device);
+    cl::Program program(context, source);
+    try {
+        program.build({device});
+    } catch (const cl::Error& err) {
+        std::cerr << err.what() << std::endl;
+        std::cerr << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device) << std::endl;
+        throw;
+    }
+    cl::make_kernel<cl::Buffer, cl::Buffer, int, int, cl::Buffer, int, cl::LocalSpaceArg> calculateMaps(program, "calculateMaps");
 
     int gangsize = 8*32;
     std::chrono::duration<double> elapsed_time(0), elapsed_time_copy(0);
@@ -51,43 +68,39 @@ int main()
 
         // preparing the opencl data
         auto start_copy = std::chrono::high_resolution_clock::now();
-        carp::opencl::array_<char> clSelf( device, groupsize * local_memsize, buffer.data() );
-        carp::opencl::array_<int> clSegments( device, segments.size(), segments.data() );
-        carp::opencl::array_<calcpackage> clCalcpackages( device, calcpackages.size(), calcpackages.data() );
-
+        
+        cl::Buffer clSelf( context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, groupsize * local_memsize * sizeof(char), buffer.data() );
+        cl::Buffer clSegments( context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, segments.size() * sizeof(int), segments.data() );
+        cl::Buffer clCalcpackages( context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, calcpackages.size() * sizeof(calcpackage), calcpackages.data() );
         auto start = std::chrono::high_resolution_clock::now();
-        device["calculateMaps"]( clSelf.cl()
-                , clSegments.cl()
-                , package.m_visibleLandmarks_size
-                , package.m_mapSize
-                , clCalcpackages.cl()
-                , local_memsize
-                , carp::opencl::buffer(local_memsize)
-        ).groupsize( {gangsize}, {gangsize * package.m_visibleLandmarks_size} );
+        cl::EnqueueArgs enqueArgs( queue, cl::NDRange(gangsize * package.m_visibleLandmarks_size), cl::NDRange(gangsize) );
+        calculateMaps( enqueArgs
+                     , clSelf
+                     , clSegments
+                     , package.m_visibleLandmarks_size
+                     , package.m_mapSize
+                     , clCalcpackages
+                     , local_memsize
+                     , cl::LocalSpaceArg{ local_memsize }
+                     );
+        queue.finish();
         auto end = std::chrono::high_resolution_clock::now();
         elapsed_time += (end - start);
 
         // copying the data back to the CPU
-        auto processed = clSelf.get();
+        std::vector<char> processed(groupsize * local_memsize);
+        queue.enqueueReadBuffer(clSelf, true, 0, groupsize*local_memsize, processed.data());
 
         auto end_copy = std::chrono::high_resolution_clock::now();
         elapsed_time_copy += (end_copy - start_copy);
 
-        char * results = reinterpret_cast<char*>(processed.data());
+        char * results = processed.data();
 
-        // converting the outputs
-        std::vector< cv::Mat_<double> > calculatedResults;
+        // converting-checking the outputs
         for (int q=0; q<package.m_visibleLandmarks_size; q++)
         {
-            cv::Mat_<double> nextResult;
-            nextResult = carp::convertMatFloatToCV( results + segments[q], calcpackages[q].output.responseMap );
-            calculatedResults.push_back(nextResult);
-        }
-
-        // testing the output
-        for (int q=0; q<package.m_visibleLandmarks_size; q++)
-        {
-            if (cv::norm( package.responseMaps[q] - calculatedResults[q] ) > 0.0001) throw std::runtime_error("package.responseMaps[q] - calculatedResults[q] ) < 0.0001 failed");
+            cv::Mat_<double> nextResult = carp::convertMatFloatToCV( results + segments[q], calcpackages[q].output.responseMap );
+            if (cv::norm( package.responseMaps[q] - nextResult ) > 0.0001) throw std::runtime_error("package.responseMaps[q] - calculatedResults[q] ) < 0.0001 failed");
         }
     } // packages
     std::cout << "total elapsed time (w/o copy) = " << elapsed_time.count() << " s." << std::endl;

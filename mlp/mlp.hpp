@@ -28,19 +28,6 @@
 
 const int gel_xml_export_version = 1;
 
-class exception : public std::exception {
-private:
-    std::string m_message;
-
-public:
-
-    exception( const std::string & message ) throw() : m_message(message) { }
-
-    const char* what() const throw() {return m_message.c_str(); }
-
-    ~exception() throw() {};
-}; // exception
-
 namespace boost
 {
     namespace serialization
@@ -126,7 +113,7 @@ void boost::serialization::load( T0 & archiver, cv::Mat_<T1> & matrix, unsigned 
         archiver >> BOOST_SERIALIZATION_NVP(type);
 
         if (matrix.type()!=type)
-            throw ::exception( std::string("serialization error: the matrix data type (") + std::to_string(matrix.type()) + ") in the file is different from the class type (" + std::to_string(type) + ")" );
+            throw std::runtime_error( std::string("serialization error: the matrix data type (") + std::to_string(matrix.type()) + ") in the file is different from the class type (" + std::to_string(type) + ")" );
 
         matrix.create(rows, cols);
 
@@ -140,7 +127,7 @@ void boost::serialization::load( T0 & archiver, cv::Mat_<T1> & matrix, unsigned 
         break;
 
     default:
-        throw ::exception ( std::string("serialization error: file version (") + std::to_string(gel_xml_export_version) + ") not recognized " );
+        throw std::runtime_error( std::string("serialization error: file version (") + std::to_string(gel_xml_export_version) + ") not recognized " );
     }
 }
 
@@ -150,16 +137,7 @@ template<class T0, class T1> inline void boost::serialization::serialize( T0 & a
     boost::serialization::split_free( archiver, matrix, version );
 }
 
-#define GEL_EXPORT_VAR( archiver, var )                                 \
-    try                                                                 \
-    {                                                                   \
-        archiver & boost::serialization::make_nvp( BOOST_PP_STRINGIZE(var), var); \
-    }                                                                   \
-    catch (boost::archive::archive_exception exception)                 \
-    {                                                                   \
-        throw ::exception( std::string("error: importing serialization; at member variable '") + BOOST_PP_STRINGIZE(var) + "' (message: " + exception.what() + ")" ); \
-    }
-
+#define GEL_EXPORT_VAR( archiver, var ) archiver & boost::serialization::make_nvp( BOOST_PP_STRINGIZE(var), var);
 
 namespace gel
 {

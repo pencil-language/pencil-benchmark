@@ -1,7 +1,6 @@
 include makefile.in
 
 PPCG_COMPILER=ppcg
-XXD_COMPILER=xxd
 
 BOOST_LIBS=-lboost_filesystem -lboost_serialization -lboost_system
 
@@ -34,16 +33,12 @@ all_ppcg_test: build/ppcg_test_gaussian build/ppcg_test_cvt_color build/ppcg_tes
 all_pencil_source: build/gaussian.pencil_ppcg.c build/cvt_color.pencil_ppcg.c build/filter2D.pencil_ppcg.c build/dilate.pencil_ppcg.c build/warpAffine.pencil_ppcg.c build/resize.pencil_ppcg.c build/mlp_impl.pencil_ppcg.c build/hog.pencil_ppcg.c build/histogram.pencil_ppcg.c
 
 clean: 
-	@-rm -f build/*.cl build/*.clh  build/*.c build/*.o  build/*.h build/*.so build/*.csv build/ppcg_test_* build/test_* build/temp_output_file build/temp_time* build/log
+	@-rm -f build/*.cl build/*.c build/*.o  build/*.h build/*.so build/*.csv build/ppcg_test_* build/test_* build/temp_output_file build/temp_time* build/log
 
 mlp_data: build/pool/response_dumps.xml
 
 build/pool/response_dumps.xml:
 	@cd build/pool/; 7za e -y response_dumps.xml.7z
-
-## OpenCL Sources
-build/mlp_impl.clh: mlp/mlp_impl.cl
-	@(cd mlp && $(XXD_COMPILER) -i mlp_impl.cl ../build/mlp_impl.clh)
 
 ## PENCIL OCL utilites
 build/ocl_utilities.o:
@@ -98,13 +93,13 @@ build/test_histogram: histogram/test_histogram.cpp build/histogram.pencil_as_c.o
 build/test_hog: hog/test_hog.cpp hog/HogDescriptor.cpp build/hog.pencil_as_c.o build/ocl_utilities.o
 	@$(CXX) $(CXXFLAGS) -o build/test_hog hog/test_hog.cpp hog/HogDescriptor.cpp build/hog.pencil_as_c.o build/ocl_utilities.o $(LDFLAGS)
 
-build/test_mlp: build/mlp_impl.clh mlp/test_mlp.cpp mlp/serialization.cpp mlp/allocator.cpp build/mlp_impl.pencil_as_c.o build/ocl_utilities.o
+build/test_mlp: mlp/test_mlp.cpp mlp/serialization.cpp mlp/allocator.cpp build/mlp_impl.pencil_as_c.o build/ocl_utilities.o
 	@$(CXX) $(CXXFLAGS) -o build/test_mlp mlp/test_mlp.cpp mlp/serialization.cpp mlp/allocator.cpp build/mlp_impl.pencil_as_c.o build/ocl_utilities.o $(LDFLAGS)
 
-build/test_opencl_mlp: build/mlp_impl.clh mlp/test_opencl_mlp.cpp mlp/serialization.cpp mlp/allocator.cpp build/mlp_impl.pencil_as_c.o build/ocl_utilities.o
+build/test_opencl_mlp: mlp/test_opencl_mlp.cpp mlp/serialization.cpp mlp/allocator.cpp build/mlp_impl.pencil_as_c.o build/ocl_utilities.o
 	@$(CXX) $(CXXFLAGS) -o build/test_opencl_mlp mlp/test_opencl_mlp.cpp mlp/serialization.cpp mlp/allocator.cpp build/mlp_impl.pencil_as_c.o build/ocl_utilities.o $(LDFLAGS)
 
-build/test_gel_mlp: build/mlp_impl.clh mlp/test_gel_mlp.cpp mlp/serialization.cpp mlp/allocator.cpp build/mlp_impl.pencil_as_c.o build/ocl_utilities.o
+build/test_gel_mlp: mlp/test_gel_mlp.cpp mlp/serialization.cpp mlp/allocator.cpp build/mlp_impl.pencil_as_c.o build/ocl_utilities.o
 	@$(CXX) $(CXXFLAGS) -o build/test_gel_mlp mlp/test_gel_mlp.cpp mlp/serialization.cpp mlp/allocator.cpp build/mlp_impl.pencil_as_c.o build/ocl_utilities.o $(LDFLAGS)
 
 build/test_resize: resize/test_resize.cpp build/resize.pencil_as_c.o build/ocl_utilities.o
@@ -194,13 +189,13 @@ build/ppcg_test_histogram: histogram/test_histogram.cpp build/histogram.pencil_p
 build/ppcg_test_hog: hog/test_hog.cpp hog/HogDescriptor.cpp build/hog.pencil_ppcg.o build/ocl_utilities.o
 	@$(CXX) $(CXXFLAGS) -o build/ppcg_test_hog hog/test_hog.cpp hog/HogDescriptor.cpp build/hog.pencil_ppcg.o build/ocl_utilities.o $(LDFLAGS)
 
-build/ppcg_test_mlp: build/mlp_impl.clh mlp/test_mlp.cpp mlp/serialization.cpp mlp/allocator.cpp build/mlp_impl.pencil_ppcg.o build/ocl_utilities.o
+build/ppcg_test_mlp: mlp/test_mlp.cpp mlp/serialization.cpp mlp/allocator.cpp build/mlp_impl.pencil_ppcg.o build/ocl_utilities.o
 	@$(CXX) $(CXXFLAGS) -o build/ppcg_test_mlp mlp/test_mlp.cpp mlp/serialization.cpp mlp/allocator.cpp build/mlp_impl.pencil_ppcg.o build/ocl_utilities.o $(LDFLAGS)
 
-build/ppcg_test_opencl_mlp: build/mlp_impl.clh mlp/test_opencl_mlp.cpp mlp/serialization.cpp mlp/allocator.cpp build/mlp_impl.pencil_ppcg.o build/ocl_utilities.o
+build/ppcg_test_opencl_mlp: mlp/test_opencl_mlp.cpp mlp/serialization.cpp mlp/allocator.cpp build/mlp_impl.pencil_ppcg.o build/ocl_utilities.o
 	@$(CXX) $(CXXFLAGS) -o build/ppcg_test_opencl_mlp mlp/test_opencl_mlp.cpp mlp/serialization.cpp mlp/allocator.cpp build/mlp_impl.pencil_ppcg.o build/ocl_utilities.o $(LDFLAGS)
 
-build/ppcg_test_gel_mlp: build/mlp_impl.clh mlp/test_gel_mlp.cpp mlp/serialization.cpp mlp/allocator.cpp build/mlp_impl.pencil_ppcg.o build/ocl_utilities.o
+build/ppcg_test_gel_mlp: mlp/test_gel_mlp.cpp mlp/serialization.cpp mlp/allocator.cpp build/mlp_impl.pencil_ppcg.o build/ocl_utilities.o
 	@$(CXX) $(CXXFLAGS) -o build/ppcg_test_gel_mlp mlp/test_gel_mlp.cpp mlp/serialization.cpp mlp/allocator.cpp build/mlp_impl.pencil_ppcg.o build/ocl_utilities.o $(LDFLAGS)
 
 build/ppcg_test_resize: resize/test_resize.cpp build/resize.pencil_ppcg.o build/ocl_utilities.o
