@@ -79,13 +79,29 @@ static void transposeFloat( int InRows, int InCols, float In[InRows][InCols]
 #pragma endscop
 }
 
-static float meanChar(int subImageRows, int subImageCols, int imageRows,
-		      int imageCols, uint8_t image[imageRows][imageCols],
-		      int imageOffsetRow, int imageOffsetCol) {
+inline static float meanChar( int subImageRows
+                     , int subImageCols
+                     , int imageRows
+                     , int imageCols
+                     , uint8_t image[imageRows][imageCols]
+                     , int imageOffsetRow
+                     , int imageOffsetCol
+                     )
+{
 #pragma scop
-    float sum = 0;
+    __pencil_assume(imageRows > 0);
+    __pencil_assume(imageCols > 0);
+    __pencil_assume(subImageRows > 0);
+    __pencil_assume(subImageCols > 0);
+    __pencil_assume(imageOffsetRow >= 0);
+    __pencil_assume(imageOffsetRow >= 0);
+    __pencil_assume(subImageRows + imageOffsetRow < imageRows);
+    __pencil_assume(subImageCols + imageOffsetCol < imageCols);
+    float sum = 0.0f;
 
+    #pragma pencil independent reduction(+: sum)
     for (int i = 0; i < subImageRows; i++) {
+        #pragma pencil independent reduction(+: sum)
         for (int j = 0; j < subImageCols; j++) {
             sum += image[i + imageOffsetRow][j + imageOffsetCol];
         }
@@ -94,28 +110,64 @@ static float meanChar(int subImageRows, int subImageCols, int imageRows,
     return sum / (subImageRows * subImageCols);
 }
 
-static uint8_t minChar(int subImageRows, int subImageCols, int imageRows,
-		       int imageCols, uint8_t image[imageRows][imageCols],
-		       int imageOffsetRow, int imageOffsetCol) {
+inline static uint8_t minChar( int subImageRows
+                      , int subImageCols
+                      , int imageRows
+                      , int imageCols
+                      , uint8_t image[imageRows][imageCols]
+                      , int imageOffsetRow
+                      , int imageOffsetCol
+                      )
+{
 #pragma scop
+    __pencil_assume(imageRows > 0);
+    __pencil_assume(imageCols > 0);
+    __pencil_assume(subImageRows > 0);
+    __pencil_assume(subImageCols > 0);
+    __pencil_assume(imageOffsetRow >= 0);
+    __pencil_assume(imageOffsetRow >= 0);
+    __pencil_assume(subImageRows + imageOffsetRow < imageRows);
+    __pencil_assume(subImageCols + imageOffsetCol < imageCols);
     uint8_t minvalue = 255;
 
-    for (int i = 0; i < subImageRows; i++)
-        for (int j = 0; j < subImageCols; j++)
-            minvalue = min(minvalue, image[i + imageOffsetRow][j+imageOffsetCol]);
+    #pragma pencil independent reduction(min: minvalue)
+    for (int i = 0; i < subImageRows; i++) {
+        #pragma pencil independent reduction(min: minvalue)
+        for (int j = 0; j < subImageCols; j++) {
+            minvalue = ubmin(minvalue, image[i + imageOffsetRow][j + imageOffsetCol]);
+        }
+    }
 #pragma endscop
     return minvalue;
 }
 
-static uint8_t maxChar(int subImageRows, int subImageCols, int imageRows,
-		       int imageCols, uint8_t image[imageRows][imageCols],
-		       int imageOffsetRow, int imageOffsetCol) {
+inline static uint8_t maxChar( int subImageRows
+                      , int subImageCols
+                      , int imageRows
+                      , int imageCols
+                      , uint8_t image[imageRows][imageCols]
+                      , int imageOffsetRow
+                      , int imageOffsetCol
+                      )
+{
 #pragma scop
+    __pencil_assume(imageRows > 0);
+    __pencil_assume(imageCols > 0);
+    __pencil_assume(subImageRows > 0);
+    __pencil_assume(subImageCols > 0);
+    __pencil_assume(imageOffsetRow >= 0);
+    __pencil_assume(imageOffsetRow >= 0);
+    __pencil_assume(subImageRows + imageOffsetRow < imageRows);
+    __pencil_assume(subImageCols + imageOffsetCol < imageCols);
     uint8_t maxvalue = 0;
 
-    for (int i = 0; i < subImageRows; i++)
-        for (int j = 0; j < subImageCols; j++)
-            maxvalue = max(maxvalue, image[i + imageOffsetRow][j+imageOffsetCol]);
+    #pragma pencil independent reduction(max: maxvalue)
+    for (int i = 0; i < subImageRows; i++) {
+        #pragma pencil independent reduction(max: maxvalue)
+        for (int j = 0; j < subImageCols; j++) {
+            maxvalue = ubmax(maxvalue, image[i + imageOffsetRow][j + imageOffsetCol]);
+        }
+    }
 #pragma endscop
     return maxvalue;
 }
@@ -166,7 +218,7 @@ static void gemmFloatArray(int ARows, int ACols, float A[ARows][ACols],
 #pragma endscop
 }
 
-float GetValueFloat(MatFloat self, int row, int col) {
+inline float GetValueFloat(MatFloat self, int row, int col) {
     return self.data[row * self.step + col + self.start];
 }
 
@@ -225,13 +277,11 @@ static float generateResponseMapPatch(
             float xOutArray;
             xOutArray = beta * bInArray[i][j];
             for (int k = 0; k < wInCols; k++) {
-		int index1 = k / imagePatchCols + imageOffsetRow;
-		int index2 = k % imagePatchRows + j + imageOffsetCol;
-                xOutArray += alpha * wInArray[i][k] *
-                    (quotient * Image[index1][index2] +
-                     shift);
+        		int index1 = k / imagePatchCols + imageOffsetRow;
+                int index2 = k % imagePatchRows + j + imageOffsetCol;
+                xOutArray += alpha * wInArray[i][k] * (quotient * Image[index1][index2] + shift);
             }
-            xOutArray = exp(xOutArray);	//This should be expf in C and exp in OpenCL
+            xOutArray = expf(xOutArray);
             xOutArray = xOutArray + 1.0f;
             xOutArray = 2.0f / xOutArray;
             xOutArray = xOutArray + -1.0f;
@@ -241,7 +291,7 @@ static float generateResponseMapPatch(
 
     result = - result;
     result -= bOut;
-    result = 1.0f / (1.0f + exp(result)); //This should be expf in C and exp in OpenCL
+    result = 1.0f / (1.0f + expf(result));
 #pragma endscop
     return result;
 }
