@@ -55,7 +55,7 @@ static void hog_multi( const int NUMBER_OF_CELLS
                 float mdy = image[pointy+1][pointx] - image[temp2][pointx];
                 
                 //calculate the magnitude
-                float magnitude = hypotf(mdx, mdy);   //or = sqrt(mdx*mdx + mdy*mdy);
+                float magnitude = hypotf(mdx, mdy);
 
                 //calculate the orientation
                 float orientation;
