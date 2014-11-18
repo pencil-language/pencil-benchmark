@@ -27,7 +27,7 @@
 #include <string>
 #include <iomanip>
 
-const int processed_frames = 100;
+const int processed_frames = 150;
 
 int main()
 {
