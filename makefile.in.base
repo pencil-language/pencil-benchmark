@@ -1,20 +1,27 @@
-BOOST_INCLUDE_DIR=
-BOOST_LIB_DIR=
+#Boost include and library directories
+BOOST_INCLUDE_DIR=/usr/include/
+BOOST_LIB_DIR=/usr/lib/x86_64-linux-gnu/
 
-OPENCV_PREFIX=
+#OpenCV install directory
+OPENCV_PREFIX=/usr/local/
 
-TBB_INCLUDE_DIR=
-TBB_LIB_DIR=
+#TBB include and library directories
+TBB_INCLUDE_DIR=/usr/include/
+TBB_LIB_DIR=/usr/lib/
 
+#PPCG ocl_utilities.c path
 OCL_UTILITIES=
+#pencil-util/include paths
 PENCIL_HEADERS=
 
+#OpenCL SDK install directory
+#Using AMD APP SDK 2.9.1: /opt/AMDAPPSDK-2.9-1/
 OPENCL_PREFIX=
 
-USER_FLAGS=
-
-USER_LD_FLAGS=
-
+#Compiler for C++ and C
 CXX=g++
 CC=gcc
 
+#Extra, platform-dependent compiler and linker switches:
+USER_FLAGS= -march=native
+USER_LD_FLAGS=

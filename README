@@ -4,21 +4,6 @@ This is a set of benchmarks for using PENCIL in the image processing problem dom
 
 ###################################################################################
 
-## Short copy-paste version for Ubuntu: Run from this directory ##
-  cd ..
-  sudo apt-get install -y libboost-all-dev libtbb-dev build-essential p7zip cmake
-  git clone https://github.com/Itseez/opencv.git
-  cd opencv
-  git checkout 2.4.9.1
-  cd ..
-  mkdir opencv-build
-  cd opencv-build
-  cmake ../opencv -DWITH_TBB=ON -DENABLE_AVX=ON -DENABLE_SSE41=ON -DENABLE_SSE42=ON -DENABLE_SSSE3=ON -DENABLE_SSE3=ON
-  make all -j12
-  sudo make install
-  cd ../CARP-Benchmarks
-  make all -j12
-
 ## Building ##
 
 To build the CARP-Benchmarks, you need:
@@ -35,7 +20,7 @@ To build the CARP-Benchmarks, you need:
 	Tested with 2.4.9.1
 	Download OpenCV
 	    git clone https://github.com/Itseez/opencv.git
-	Checkout 2.4.9.1:
+	Checkout 2.4.9.1 or newer:
 	    cd opencv
 	    git checkout 2.4.9.1
 	    cd ..
@@ -50,11 +35,12 @@ To build the CARP-Benchmarks, you need:
 	    sudo make install
 	
 	Alternatively, you can try newer versions that might have fixed the issue in the patch, but those versions are not tested.
-- Edit required paths in the makefile in CARP-Benchmarks root directory:
-	Change the PPCG path, and OpenCV path, if you have not installed it, or not to the default directory. (Repository path points to the default install dir).
+- Create makefile.in root directory based on makefile.in.base, and add paths to the various libraries
+	ocl_utilities.c, pencil-headers and OpenCL SDK paths needs to be added, Boost, OpenCV and TBB paths needs to be changed if not installed to the default dir (or not using Ubuntu)
+	You can also add extra compiler and linker flags
 - Build benchmark:
-	cd path_to_CARP-Benchmarks
-	make all
+	cd repository_root_path
+	make all -j12
 
 ## Running ##
 
