@@ -71,7 +71,7 @@ static void transposeFloat( int InRows, int InCols, float In[InRows][InCols]
 {
 #pragma scop
     __pencil_assume(InRows == OutCols);
-    __pencil_assume(OutCols == InRows);
+    __pencil_assume(InCols == OutRows);
 
     for (int i = 0; i < InRows; i++)
         for (int j = 0; j < InCols; j++)
@@ -218,9 +218,7 @@ static void gemmFloatArray(int ARows, int ACols, float A[ARows][ACols],
 #pragma endscop
 }
 
-inline float GetValueFloat(MatFloat self, int row, int col) {
-    return self.data[row * self.step + col + self.start];
-}
+#define GetValueFloat(self, row, col) self.data[(row) * self.step + (col) + self.start]
 
 static void copySubArrayFloat(int arrayRows, int arrayCols,
                               float Array[arrayRows][arrayCols],
@@ -277,7 +275,7 @@ static float generateResponseMapPatch(
             float xOutArray;
             xOutArray = beta * bInArray[i][j];
             for (int k = 0; k < wInCols; k++) {
-        		int index1 = k / imagePatchCols + imageOffsetRow;
+                int index1 = k / imagePatchCols + imageOffsetRow;
                 int index2 = k % imagePatchRows + j + imageOffsetCol;
                 xOutArray += alpha * wInArray[i][k] * (quotient * Image[index1][index2] + shift);
             }
@@ -431,10 +429,6 @@ static void generateResponseMap(
 #endif
 }
 
-static int cvRound(float value) {
-    return (int)(value + (value >= 0 ? 0.5 : -0.5));
-}
-
 // Calculate a set of respone maps for a given image.
 //
 // @param Image The image to process
@@ -473,11 +467,10 @@ void calculateRespondMaps(
 
         shape_x = GetValueFloat(shape, 2 * i, 0);
         shape_y = GetValueFloat(shape, 2 * i + 1, 0);
-        center.x = cvRound(shape_x);
-        center.y = cvRound(shape_y);
+        center.x = (int)roundf(shape_x);
+        center.y = (int)roundf(shape_y);
 
-        generateResponseMap(ImageRows, ImageCols, Image, center, MapSize,
-                            m_classifiers[i], ResponseMaps[i]);
+        generateResponseMap(ImageRows, ImageCols, Image, center, MapSize, m_classifiers[i], ResponseMaps[i]);
     }
 
 #pragma endscop
