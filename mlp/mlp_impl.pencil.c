@@ -339,11 +339,13 @@ static void generateResponseMap(
     // Also, the size of this array varies / is data-dependent.
     int m_U_transposeRows = m_UCols;
     int m_U_transposeCols = m_URows;
-    float (*m_U_transposeArray)[m_U_transposeCols] =
-        malloc(sizeof(float) * m_U_transposeRows * m_U_transposeCols);
+#ifdef __PENCIL__
+    float m_U_transposeArray[m_U_transposeRows][m_U_transposeCols];
+#else
+    float (*m_U_transposeArray)[m_U_transposeCols] = malloc(sizeof(float) * m_U_transposeRows * m_U_transposeCols);
+#endif
 
-    transposeFloat(m_URows, m_UCols, m_UArray, m_U_transposeRows,
-                   m_U_transposeCols, m_U_transposeArray);
+    transposeFloat(m_URows, m_UCols, m_UArray, m_U_transposeRows, m_U_transposeCols, m_U_transposeArray);
 
     // A sub array.
     //
@@ -353,9 +355,12 @@ static void generateResponseMap(
     // Also the size of this array is data-dependent
     int wIn_ARows = m_wInRows;
     int wIn_ACols = m_wInCols - 1;
+#ifdef __PENCIL__
+    float wIn_AArray[wIn_ARows][wIn_ACols];
+#else
     float (*wIn_AArray)[wIn_ACols] = malloc(sizeof(float) * wIn_ARows * wIn_ACols);
-    copySubArrayFloat(m_wInRows, m_wInCols, m_wInArray, m_wInRows,
-                      m_wInCols - 1, wIn_AArray, 0, 0);
+#endif
+    copySubArrayFloat(m_wInRows, m_wInCols, m_wInArray, m_wInRows, m_wInCols - 1, wIn_AArray, 0, 0);
 
     // A temporary array.
     //
@@ -364,10 +369,12 @@ static void generateResponseMap(
     // The size of this array seems to be constant for all test cases.
     int wInRows = wIn_ARows;
     int wInCols = m_U_transposeCols;
+#ifdef __PENCIL__
+    float wInArray[wInRows][wInCols];
+#else
     float (*wInArray)[wInCols] = malloc(sizeof(float) * wInRows * wInCols);
-    gemmFloatArray(wIn_ARows, wIn_ACols, wIn_AArray, m_U_transposeRows,
-                   m_U_transposeCols, m_U_transposeArray, 1.0, wInRows, wInCols,
-                   wInArray, 0.0, wInRows, wInCols, wInArray);
+#endif
+    gemmFloatArray(wIn_ARows, wIn_ACols, wIn_AArray, m_U_transposeRows, m_U_transposeCols, m_U_transposeArray, 1.0, wInRows, wInCols, wInArray, 0.0, wInRows, wInCols, wInArray);
 
     // A sub array.
     //
@@ -375,9 +382,12 @@ static void generateResponseMap(
     // could just be told that we only access a subset of this array.
     int bInRows = m_wInRows;
     int bInCols = 1;
+#ifdef __PENCIL__
+    float bInArray[bInRows][bInCols];
+#else
     float (*bInArray)[bInCols] = malloc(sizeof(float) * bInRows * bInCols);
-    copySubArrayFloat(m_wInRows, m_wInCols, m_wInArray, bInRows,
-                      bInCols, bInArray, 0, m_wInCols - 1);
+#endif
+    copySubArrayFloat(m_wInRows, m_wInCols, m_wInArray, bInRows, bInCols, bInArray, 0, m_wInCols - 1);
 
 
     // A sub array.
@@ -386,15 +396,21 @@ static void generateResponseMap(
     // could just be told that we only access a subset of this array.
     int wOut_tmpRows = m_wOutRows;
     int wOut_tmpCols = m_wOutCols - 1;
+#ifdef __PENCIL__
+    float wOut_tmpArray[wOut_tmpRows][wOut_tmpCols];
+#else
     float (*wOut_tmpArray)[wOut_tmpCols] = malloc(sizeof(float) * wOut_tmpRows * wOut_tmpCols);
-    copySubArrayFloat(m_wOutRows, m_wOutCols, m_wOutArray, wOut_tmpRows,
-                      wOut_tmpCols, wOut_tmpArray, 0, 0);
+#endif
+    copySubArrayFloat(m_wOutRows, m_wOutCols, m_wOutArray, wOut_tmpRows, wOut_tmpCols, wOut_tmpArray, 0, 0);
 
     int wOutRows = wOut_tmpCols;
     int wOutCols = wOut_tmpRows;
+#ifdef __PENCIL__
+    float wOutArray[wOutRows][wOutCols];
+#else
     float (*wOutArray)[wOutCols] = malloc(sizeof(float) * wOutRows * wOutCols);
-    transposeFloat(wOut_tmpRows, wOut_tmpCols, wOut_tmpArray, wOutRows, wOutCols,
-                   wOutArray);
+#endif
+    transposeFloat(wOut_tmpRows, wOut_tmpCols, wOut_tmpArray, wOutRows, wOutCols, wOutArray);
 
     float bOut = m_wOutArray[0][m_wOutCols - 1];
 
@@ -406,12 +422,13 @@ static void generateResponseMap(
                 wOutRows, wOutCols, wOutArray, bOut);
         }
     }
-
+#ifndef __PENCIL__
     free(wIn_AArray);
     free(m_U_transposeArray);
     free(wInArray);
     free(wOut_tmpArray);
     free(wOutArray);
+#endif
 }
 
 static int cvRound(float value) {
