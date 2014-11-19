@@ -1,4 +1,10 @@
-## Building CARP-Benchmarks with a working PPCG, copy-paste version for Ubuntu ##
+###################################################################################
+
+This is a set of benchmarks for using PENCIL in the image processing problem domain
+
+###################################################################################
+
+## Short copy-paste version for Ubuntu: Run from this directory ##
   cd ..
   sudo apt-get install -y libboost-all-dev libtbb-dev build-essential p7zip cmake
   git clone https://github.com/Itseez/opencv.git
@@ -57,7 +63,3 @@ To build the CARP-Benchmarks, you need:
 	Each executable runs a different operator with all three (C++, OpenCL, PENCIL) implementations.
 	Results are cross-checked, and if there is no difference (within a small allowed precision error), total times are reported at the end.
 (- the executables test_* run the same code, but using only C compiler; measuring Pencil-as-C compilation performance. Useful to check execution if there is a problem running the PPCG built version.)
-
-## Questions ##
-
-If you have found an error, or have any questions, don't hesitate to connect Robert at robert.david@realeyesit.com!
