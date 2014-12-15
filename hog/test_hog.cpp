@@ -29,6 +29,8 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
 
                 cv::Mat_<float> locations(num_positions, 2);
                 cv::Mat_<float> blocksizes(num_positions, 2);
+                size_t max_blocksize_x = std::ceil(size);
+                size_t max_blocksize_y = std::ceil(size);
                 //fill locations and blocksizes
                 std::uniform_real_distribution<float> genx(size/2+1, cpu_gray.rows-1-size/2-1);
                 std::uniform_real_distribution<float> geny(size/2+1, cpu_gray.cols-1-size/2-1);
@@ -68,7 +70,7 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
                                                            , SIGNED_HOG
                                                            );
                     const auto gpu_start = std::chrono::high_resolution_clock::now();
-                    const auto result = descriptor.compute(cpu_gray, locations, blocksizes, elapsed_time_gpu_nocopy);
+                    const auto result = descriptor.compute(cpu_gray, locations, blocksizes, max_blocksize_x, max_blocksize_y, elapsed_time_gpu_nocopy);
                     const auto gpu_end = std::chrono::high_resolution_clock::now();
 
                     std::copy(result.begin(), result.end(), gpu_result.begin());

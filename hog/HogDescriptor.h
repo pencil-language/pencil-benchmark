@@ -49,9 +49,11 @@ namespace nel {
     public:
         HOGDescriptorOCL(int numberOfCells, int numberOfBins, bool gauss, bool spinterp, bool _signed);
 
-        cv::Mat_<float> compute( const cv::Mat_<uint8_t> &img
-                               , const cv::Mat_<float> &locations
-                               , const cv::Mat_<float> &blocksizes
+        cv::Mat_<float> compute( const cv::Mat_<uint8_t>       &img
+                               , const cv::Mat_<float>         &locations
+                               , const cv::Mat_<float>         &blocksizes
+                               , const size_t                   max_blocksize_x
+                               , const size_t                   max_blocksize_y
                                , std::chrono::duration<double> &elapsed_time_gpu_nocopy
                                ) const;
 
@@ -64,10 +66,18 @@ namespace nel {
         cl::Device device;
         cl::Context context;
         cl::Program program;
-        mutable cl::CommandQueue queue;
+        cl::CommandQueue queue;
 
-        size_t max_work_group_size;
-        size_t suggested_work_group_size;
+        mutable cl::Kernel calc_hog;
+        size_t calc_hog_preferred_multiple;
+        size_t calc_hog_group_size;
+
+#ifndef CL_VERSION_1_2
+        mutable cl::Kernel fill_zeros;
+        size_t fill_zeros_preferred_multiple;
+        size_t fill_zeros_group_size;
+#endif
+        bool is_unified_host_memory;
     };
 }
 

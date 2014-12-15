@@ -248,12 +248,17 @@ nel::HOGDescriptorOCL::HOGDescriptorOCL(int numberOfCells_, int numberOfBins_, b
     //Create queue (apparently it's slow)
     queue = cl::CommandQueue(context, device);
 
-    //Query calc_hist kernel's work group infos
-    cl::Kernel calc_hist(program, "calc_histogram");
+    //Query kernels and work group infos
+    calc_hog  = cl::Kernel(program, "calc_histogram");
+    calc_hog_preferred_multiple = calc_hog.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device);
+    calc_hog_group_size         = calc_hog.getWorkGroupInfo<CL_KERNEL_WORK_GROUP_SIZE>(device);
 
-    //Get the work group size
-    max_work_group_size = calc_hist.getWorkGroupInfo<CL_KERNEL_WORK_GROUP_SIZE>(device);
-    suggested_work_group_size = calc_hist.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device);
+#ifndef CL_VERSION_1_2
+    fill_zeros = cl::Kernel(program, "fill_zeros");
+    fill_zeros_preferred_multiple = fill_zeros.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device);
+    fill_zeros_group_size         = fill_zeros.getWorkGroupInfo<CL_KERNEL_WORK_GROUP_SIZE>(device);
+#endif
+    is_unified_host_memory = (CL_TRUE == device.getInfo<CL_DEVICE_HOST_UNIFIED_MEMORY>());
 }
 
 int nel::HOGDescriptorOCL::getNumberOfBins() const {
@@ -264,9 +269,13 @@ inline size_t round_to_multiple(size_t num, size_t factor) {
     return num + factor - 1 - (num - 1) % factor;
 }
 
+#include <iostream>
+
 cv::Mat_<float> nel::HOGDescriptorOCL::compute( const cv::Mat_<uint8_t> &image
                                               , const cv::Mat_<float>   &locations
                                               , const cv::Mat_<float>   &blocksizes
+                                              , const size_t             max_blocksize_x
+                                              , const size_t             max_blocksize_y
                                               , std::chrono::duration<double> &elapsed_time_gpu_nocopy
                                               ) const
 {
@@ -274,47 +283,88 @@ cv::Mat_<float> nel::HOGDescriptorOCL::compute( const cv::Mat_<uint8_t> &image
     assert(locations.isContinuous());
     assert(2 == blocksizes.cols);
     assert(blocksizes.isContinuous());
-    cv::Mat_<float> descriptors(locations.rows, getNumberOfBins(), 0.0f);
+    int num_localtions = locations.rows;
+    cv::Mat_<float> descriptors(num_localtions, getNumberOfBins());
 
     //OPENCL START
     //Prepare OpenCL buffers
-    size_t image_bytes = image.elemSize()*image.rows*image.step1();
-    size_t locations_bytes = sizeof(cl_float2)*locations.rows;
+    size_t      image_bytes = image.elemSize()*image.rows*image.step1();
+    size_t  locations_bytes = sizeof(cl_float2)*num_localtions;
     size_t blocksizes_bytes = sizeof(cl_float2)*blocksizes.rows;
-    size_t histogram_bytes = sizeof(cl_float)*getNumberOfBins()*locations.rows;
-    cl::Buffer      image_cl(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,      image_bytes,      image.data);
-	cl::Buffer  locations_cl(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,  locations_bytes,  locations.data);
-	cl::Buffer blocksizes_cl(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, blocksizes_bytes, blocksizes.data);
-    cl::Buffer       hist_cl(context, CL_MEM_WRITE_ONLY                      , histogram_bytes);
-	queue.enqueueFillBuffer(hist_cl, 0.0f, 0, histogram_bytes); //Or enqueue fill_zeros
-
-    //Figure out the work group sizes
-    const size_t work_size_x = suggested_work_group_size;
-    const size_t work_size_y = std::max(max_work_group_size / locations.rows / work_size_x, (size_t)1u);    //Integer division!
-    const size_t work_size_z = std::max(max_work_group_size / work_size_y / work_size_x   , (size_t)1u);    //Integer division!
-    cl::NDRange local_work_size(work_size_x, work_size_y, work_size_z);
-    size_t max_x = 0;
-    size_t max_y = 0;
-    for (int i = 0; i < blocksizes.rows; ++i) {
-        max_x = std::max(max_x, (size_t)ceil(blocksizes(i, 0)));
-        max_y = std::max(max_y, (size_t)ceil(blocksizes(i, 1)));
+    size_t descriptor_bytes = sizeof(cl_float)*getNumberOfBins()*num_localtions;
+    cl::Buffer      image_cl;
+    cl::Buffer  locations_cl;
+    cl::Buffer blocksizes_cl;
+    cl::Buffer descriptor_cl;
+    if (is_unified_host_memory) {
+             image_cl = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,      image_bytes,       image.data);
+         locations_cl = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,  locations_bytes,   locations.data);
+        blocksizes_cl = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, blocksizes_bytes,  blocksizes.data);
+        descriptor_cl = cl::Buffer(context, CL_MEM_READ_WRITE| CL_MEM_USE_HOST_PTR, descriptor_bytes, descriptors.data);
+    } else {
+             image_cl = cl::Buffer(context, CL_MEM_READ_ONLY ,      image_bytes);
+         locations_cl = cl::Buffer(context, CL_MEM_READ_ONLY ,  locations_bytes);
+        blocksizes_cl = cl::Buffer(context, CL_MEM_READ_ONLY , blocksizes_bytes);
+        descriptor_cl = cl::Buffer(context, CL_MEM_READ_WRITE, descriptor_bytes);
+        queue.enqueueWriteBuffer(     image_cl, CL_FALSE, 0,      image_bytes,      image.data);
+        queue.enqueueWriteBuffer( locations_cl, CL_FALSE, 0,  locations_bytes,  locations.data);
+        queue.enqueueWriteBuffer(blocksizes_cl, CL_FALSE, 0, blocksizes_bytes, blocksizes.data);
     }
-    max_x = round_to_multiple(max_x, work_size_x);
-    max_y = round_to_multiple(max_y, work_size_y);
-    size_t max_z = round_to_multiple(locations.rows, work_size_z);
-    cl::NDRange global_work_size(max_x, max_y, max_z);
+#ifdef CL_VERSION_1_2
+    	queue.enqueueFillBuffer(descriptor_cl, 0.0f, 0, descriptor_bytes);
+#else
+    {
+        cl::NDRange  local_work_size(fill_zeros_preferred_multiple);
+        cl::NDRange global_work_size( round_to_multiple(getNumberOfBins()*num_localtions, fill_zeros_preferred_multiple) );
+        {
+            //ADD MULTITHREAD LOCK HERE (if needed)
+//            std::cout << getNumberOfBins()*num_localtions << '/' << fill_zeros_preferred_multiple << '/' << fill_zeros_group_size << std::endl;
+            fill_zeros.setArg(0, descriptor_cl());
+            fill_zeros.setArg(1, (cl_int)(getNumberOfBins()*num_localtions));
+            queue.enqueueNDRangeKernel(fill_zeros, cl::NullRange, global_work_size, local_work_size );
+        }
+    }
+#endif
 
-    //Execute the kernel
-    cl::make_kernel<int, int, int, cl::Buffer, int, cl::Buffer, cl::Buffer, cl::Buffer, cl::LocalSpaceArg> calc_hist_functor(program, "calc_histogram");
-    cl::EnqueueArgs eargs(queue, global_work_size, local_work_size);
-    calc_hist_functor(eargs, image.rows, image.cols, image.step1(), image_cl, locations.rows, locations_cl, blocksizes_cl, hist_cl, { sizeof(cl_float) * getNumberOfBins() * locations.rows });
+    {
+        //Figure out the work group sizes
+        const size_t work_size_x = calc_hog_preferred_multiple;
+        const size_t work_size_y = std::max(calc_hog_group_size / num_localtions / work_size_x, (size_t)1u);    //Integer division!
+        const size_t work_size_z = std::max(calc_hog_group_size / work_size_y / work_size_x   , (size_t)1u);    //Integer division!
+        cl::NDRange local_work_size(work_size_x, work_size_y, work_size_z);
 
+        size_t max_x = round_to_multiple(max_blocksize_x, work_size_x);
+        size_t max_y = round_to_multiple(max_blocksize_y, work_size_y);
+        size_t max_z = round_to_multiple(num_localtions, work_size_z);
+        cl::NDRange global_work_size(max_x, max_y, max_z);
+
+        //Execute the kernel
+        {
+            //ADD MULTITHREAD LOCK HERE (if needed)
+            calc_hog.setArg(0, (cl_int)image.rows);
+            calc_hog.setArg(1, (cl_int)image.cols);
+            calc_hog.setArg(2, (cl_int)image.step1());
+            calc_hog.setArg(3, image_cl());
+            calc_hog.setArg(4, (cl_int)num_localtions);
+            calc_hog.setArg(5, locations_cl());
+            calc_hog.setArg(6, blocksizes_cl());
+            calc_hog.setArg(7, descriptor_cl());
+            calc_hog.setArg(8, (size_t)(sizeof(cl_float) * getNumberOfBins() * work_size_z), nullptr);
+            queue.enqueueNDRangeKernel(calc_hog, cl::NullRange, global_work_size, local_work_size );
+        }
+    }
+    
     //Read result
-    queue.enqueueReadBuffer(hist_cl, false, 0, histogram_bytes, descriptors.data);
-    queue.finish();
+    if (is_unified_host_memory) {
+        auto mappedPtr = queue.enqueueMapBuffer(descriptor_cl, CL_TRUE, CL_MAP_READ, 0, descriptor_bytes);
+        assert(mappedPtr == descriptors.data);
+        queue.enqueueUnmapMemObject(descriptor_cl, mappedPtr);    //Buffer was created with CL_MEM_USE_HOST_PTR -> can unmap immediately
+    } else {
+        queue.enqueueReadBuffer(descriptor_cl, CL_TRUE, 0, descriptor_bytes, descriptors.data);
+    }
 
     //Normalize result
-//    for (int n = 0; n < locations.rows; ++n)
+//    for (int n = 0; n < num_localtions; ++n)
 //        normalize(descriptors.row(n), descriptors.row(n), l2hys_thrs);
     return descriptors;
 }
