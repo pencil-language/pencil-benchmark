@@ -1,6 +1,5 @@
-// -*- c -*-
-// UjoImro, 2013
-// Experimental Code for the CARP Project
+#ifndef WARPAFFINE_PENCIL_H
+#define WARPAFFINE_PENCIL_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -13,4 +12,6 @@ void pencil_affine_linear( const int src_rows, const int src_cols, const int src
 
 #ifdef __cplusplus
 } // extern "C"
+#endif
+
 #endif

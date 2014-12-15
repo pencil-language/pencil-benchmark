@@ -1,6 +1,5 @@
-// -*- c -*-
-// UjoImro, 2013
-// Experimental Code for the CARP Project
+#ifndef RESIZE_PENCIL_H
+#define RESIZE_PENCIL_H
 
 #include <stdint.h>
 
@@ -14,4 +13,6 @@ void pencil_resize_LN( const int original_rows,  const int original_cols,  const
 
 #ifdef __cplusplus
 } // extern "C"
+#endif
+
 #endif

@@ -1,3 +1,6 @@
+#ifndef HOG_PENCIL_H
+#define HOG_PENCIL_H
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -24,3 +27,5 @@ void pencil_hog( int NUMBER_OF_CELLS
 #ifdef __cplusplus
 } // extern "C"
 #endif
+
+#endif //HOG_PENCIL_H
