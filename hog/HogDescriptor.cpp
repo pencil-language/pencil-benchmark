@@ -246,7 +246,7 @@ nel::HOGDescriptorOCL::HOGDescriptorOCL(int numberOfCells_, int numberOfBins_, b
     }
 
     //Create queue (apparently it's slow)
-    queue = cl::CommandQueue(context, device);
+    queue = cl::CommandQueue(context, device, CL_QUEUE_PROFILING_ENABLE);
 
     //Query kernels and work group infos
     calc_hog  = cl::Kernel(program, "calc_histogram");
@@ -285,6 +285,9 @@ cv::Mat_<float> nel::HOGDescriptorOCL::compute( const cv::Mat_<uint8_t> &image
     assert(blocksizes.isContinuous());
     int num_localtions = locations.rows;
     cv::Mat_<float> descriptors(num_localtions, getNumberOfBins());
+    
+    //Events to track execution time
+    cl::Event start, end;
 
     //OPENCL START
     //Prepare OpenCL buffers
@@ -311,7 +314,7 @@ cv::Mat_<float> nel::HOGDescriptorOCL::compute( const cv::Mat_<uint8_t> &image
         queue.enqueueWriteBuffer(blocksizes_cl, CL_FALSE, 0, blocksizes_bytes, blocksizes.data);
     }
 #ifdef CL_VERSION_1_2
-    	queue.enqueueFillBuffer(descriptor_cl, 0.0f, 0, descriptor_bytes);
+    queue.enqueueFillBuffer(descriptor_cl, 0.0f, 0, descriptor_bytes, nullptr, &start);
 #else
     {
         cl::NDRange  local_work_size(fill_zeros_preferred_multiple);
@@ -321,7 +324,7 @@ cv::Mat_<float> nel::HOGDescriptorOCL::compute( const cv::Mat_<uint8_t> &image
 //            std::cout << getNumberOfBins()*num_localtions << '/' << fill_zeros_preferred_multiple << '/' << fill_zeros_group_size << std::endl;
             fill_zeros.setArg(0, descriptor_cl());
             fill_zeros.setArg(1, (cl_int)(getNumberOfBins()*num_localtions));
-            queue.enqueueNDRangeKernel(fill_zeros, cl::NullRange, global_work_size, local_work_size );
+            queue.enqueueNDRangeKernel(fill_zeros, cl::NullRange, global_work_size, local_work_size, nullptr, &start );
         }
     }
 #endif
@@ -350,7 +353,7 @@ cv::Mat_<float> nel::HOGDescriptorOCL::compute( const cv::Mat_<uint8_t> &image
             calc_hog.setArg(6, blocksizes_cl());
             calc_hog.setArg(7, descriptor_cl());
             calc_hog.setArg(8, (size_t)(sizeof(cl_float) * getNumberOfBins() * work_size_z), nullptr);
-            queue.enqueueNDRangeKernel(calc_hog, cl::NullRange, global_work_size, local_work_size );
+            queue.enqueueNDRangeKernel(calc_hog, cl::NullRange, global_work_size, local_work_size, nullptr, &end );
         }
     }
     
@@ -362,6 +365,10 @@ cv::Mat_<float> nel::HOGDescriptorOCL::compute( const cv::Mat_<uint8_t> &image
     } else {
         queue.enqueueReadBuffer(descriptor_cl, CL_TRUE, 0, descriptor_bytes, descriptors.data);
     }
+    
+    //Figure out execution time
+    auto time_nanoseconds = end.getProfilingInfo<CL_PROFILING_COMMAND_END>() - start.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+    elapsed_time_gpu_nocopy = std::chrono::nanoseconds(time_nanoseconds);
 
     //Normalize result
 //    for (int n = 0; n < num_localtions; ++n)
