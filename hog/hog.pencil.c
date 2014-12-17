@@ -39,10 +39,10 @@ static void hog_multi( const int NUMBER_OF_CELLS
         float maxx = locationx + blck_sizex / 2.0f;
         float maxy = locationy + blck_sizey / 2.0f;
 
-        int minxi = max((int)ceilf(minx), 1);
-        int minyi = max((int)ceilf(miny), 1);
-        int maxxi = min((int)floorf(maxx), cols - 2);
-        int maxyi = min((int)floorf(maxy), rows - 2);
+        int minxi = imax((int)ceilf(minx), 1);
+        int minyi = imax((int)ceilf(miny), 1);
+        int maxxi = imin((int)floorf(maxx), cols - 2);
+        int maxyi = imin((int)floorf(maxy), rows - 2);
 
         #pragma pencil independent reduction(+:hist[i])
         for (int pointy = minyi; pointy <= maxyi; ++pointy) {
@@ -90,8 +90,8 @@ static void hog_multi( const int NUMBER_OF_CELLS
                 if (spinterp) {
                     float relative_posx = (pointx - minx) * NUMBER_OF_CELLS / blck_sizex - 0.5f;
                     float relative_posy = (pointy - miny) * NUMBER_OF_CELLS / blck_sizey - 0.5f;
-                    int cellxi = floor(relative_posx);
-                    int cellyi = floor(relative_posy);
+                    int cellxi = (int)floorf(relative_posx);
+                    int cellyi = (int)floorf(relative_posy);
 
                     float xscale1 = relative_posx - (float)(cellxi);
                     float yscale1 = relative_posy - (float)(cellyi);
@@ -122,8 +122,8 @@ static void hog_multi( const int NUMBER_OF_CELLS
                     hist[i][0][0][bin0] += bin_weight0;
                     hist[i][0][0][bin1] += bin_weight1;
                 } else {
-                    int cellxi = floor((pointx - minx) * NUMBER_OF_CELLS / blck_sizex);
-                    int cellyi = floor((pointy - miny) * NUMBER_OF_CELLS / blck_sizey);
+                    int cellxi = (int)floorf((pointx - minx) * NUMBER_OF_CELLS / blck_sizex);
+                    int cellyi = (int)floorf((pointy - miny) * NUMBER_OF_CELLS / blck_sizey);
 
                     __pencil_assume(cellxi < NUMBER_OF_CELLS);
                     __pencil_assume(cellyi < NUMBER_OF_CELLS);

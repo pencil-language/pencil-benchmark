@@ -34,14 +34,14 @@ static void affine( const int src_rows, const int src_cols, const int src_step, 
             int coord_11_r = coord_00_r + 1;
             int coord_11_c = coord_00_c + 1;
 
-            coord_00_r = clampi(coord_00_r, 0, src_rows);
-            coord_00_c = clampi(coord_00_c, 0, src_cols);
-            coord_01_r = clampi(coord_01_r, 0, src_rows);
-            coord_01_c = clampi(coord_01_c, 0, src_cols);
-            coord_10_r = clampi(coord_10_r, 0, src_rows);
-            coord_10_c = clampi(coord_10_c, 0, src_cols);
-            coord_11_r = clampi(coord_11_r, 0, src_rows);
-            coord_11_c = clampi(coord_11_c, 0, src_cols);
+            coord_00_r = iclampi(coord_00_r, 0, src_rows);
+            coord_00_c = iclampi(coord_00_c, 0, src_cols);
+            coord_01_r = iclampi(coord_01_r, 0, src_rows);
+            coord_01_c = iclampi(coord_01_c, 0, src_cols);
+            coord_10_r = iclampi(coord_10_r, 0, src_rows);
+            coord_10_c = iclampi(coord_10_c, 0, src_cols);
+            coord_11_r = iclampi(coord_11_r, 0, src_rows);
+            coord_11_c = iclampi(coord_11_c, 0, src_cols);
 
             float A00 = src[coord_00_r][coord_00_c];
             float A10 = src[coord_10_r][coord_10_c];

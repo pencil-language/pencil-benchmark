@@ -41,8 +41,8 @@ static void dilate( const int rows
                 #pragma pencil independent reduction(max: sup)
                 for ( int r = 0; r < se_cols; r++ )
                 {
-                    int candidate_row = clampi(q - anchor_row + e, 0, rows);
-                    int candidate_col = clampi(w - anchor_col + r, 0, cols);
+                    int candidate_row = iclampi(q - anchor_row + e, 0, rows);
+                    int candidate_col = iclampi(w - anchor_col + r, 0, cols);
 
                     sup = (se[e][r]!=0) ? ubmax(sup, cpu_gray[candidate_row][candidate_col]) : sup;
                 }

@@ -31,8 +31,8 @@ static void filter2D( const int rows
                 {
                     for ( int r = 0; r < kernel_cols; r++ )
                     {
-                        int row = clampi( q + e - kernel_rows / 2, 0, rows-1 );
-                        int col = clampi( w + r - kernel_cols / 2, 0, cols-1 );
+                        int row = iclampi( q + e - kernel_rows / 2, 0, rows-1 );
+                        int col = iclampi( w + r - kernel_cols / 2, 0, cols-1 );
                         prod += src[row][col] * kernel_[e][r];
                     }
                 }
