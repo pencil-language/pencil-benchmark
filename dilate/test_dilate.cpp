@@ -56,10 +56,14 @@ void time_dilate( const std::vector<carp::record_t>& pool, const std::vector<int
                 }
                 // Verifying the results
                 if ( (cv::norm(cpu_result - gpu_result) > 0.01) || (cv::norm(cpu_result - pen_result) > 0.01) ) {
-                    cv::imwrite("cpu_dilate.png", cpu_result);
-                    cv::imwrite("gpu_dilate.png", gpu_result );
-                    cv::imwrite("pencil_dilate.png", pen_result );
-                    throw std::runtime_error("The GPU results are not equivalent with the CPU results.");
+                    std::cerr << "ERROR: Results don't match." << std::endl;
+                    std::cerr << "CPU norm:" << cv::norm(cpu_result) << std::endl;
+                    std::cerr << "GPU norm:" << cv::norm(gpu_result) << std::endl;
+                    std::cerr << "PEN norm:" << cv::norm(pen_result) << std::endl;
+                    std::cerr << "GPU-CPU norm:" << cv::norm(gpu_result, cpu_result) << std::endl;
+                    std::cerr << "PEN-CPU norm:" << cv::norm(pen_result, cpu_result) << std::endl;
+
+                    throw std::runtime_error("The OpenCL or PENCIL results are not equivalent with the C++ results.");
                 }
                 timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil );
             }
@@ -69,16 +73,20 @@ void time_dilate( const std::vector<carp::record_t>& pool, const std::vector<int
 
 int main(int argc, char* argv[])
 {
+    try {
+        std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
 
-    std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
-
-    auto pool = carp::get_pool("pool");
+        auto pool = carp::get_pool("pool");
 
 #ifdef RUN_ONLY_ONE_EXPERIMENT
-    time_dilate( pool, { 7 }, 1 );
+        time_dilate( pool, { 7 }, 1 );
 #else
-    time_dilate( pool, { 3, 5, 7, 9 }, 6 );
+        time_dilate( pool, { 3, 5, 7 }, 6 );
 #endif
 
-    return EXIT_SUCCESS;
+        return EXIT_SUCCESS;
+    }catch(const std::exception& e) {
+        std::cout << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
 }
