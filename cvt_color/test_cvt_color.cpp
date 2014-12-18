@@ -44,8 +44,9 @@ void time_cvtColor( const std::vector<carp::record_t>& pool, size_t iterations)
             }
 
             // Verifying the results
+            float opencl_err = cv::norm(gpu_result - cpu_result);
             float pencil_err = cv::norm(pen_result - cpu_result);
-            if ( (cv::norm(gpu_result - cpu_result) > 0.01) || (pencil_err>0.01) ) {
+            if ( opencl_err > 0.01 || pencil_err > 0.01 ) {
                 cv::imwrite( "gpu_img.png", gpu_result );
                 cv::imwrite( "cpu_img.png", cpu_result );
         		cv::imwrite("pencil_dilate.png", pen_result );
