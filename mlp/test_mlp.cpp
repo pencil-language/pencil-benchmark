@@ -57,7 +57,7 @@ int main()
     }
     cl::make_kernel<cl::Buffer, cl::Buffer, int, int, cl::Buffer, int, cl::LocalSpaceArg> calculateMaps_cl(program, "calculateMaps");
 
-    static const int gangsize = 8*32;
+    static const int gangsize = 4*16;
     static const int local_memsize = 21 * 1024;
     // OpenCL implementation initialization end
 
