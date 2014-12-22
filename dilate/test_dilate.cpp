@@ -84,9 +84,9 @@ int main(int argc, char* argv[])
         auto pool = carp::get_pool("pool");
 
 #ifdef RUN_ONLY_ONE_EXPERIMENT
-        time_dilate( pool, { 7 }, 1 );
+        time_dilate( pool, { 5 }, 1 );
 #else
-        time_dilate( pool, { 3, 5, 7 }, 6 );
+        time_dilate( pool, { 3, 5 }, 10 );
 #endif
 
         return EXIT_SUCCESS;
