@@ -30,6 +30,7 @@ inline void atomic_add_float_global(volatile __global float* source, float opera
     } while (atomic_cmpxchg(sourceAsInt, as_int(oldVal), as_int(newVal)) != as_int(oldVal));
 }
 
+#ifndef DISABLE_LOCAL
 inline void atomic_add_float_local(volatile __local float* source, float operand) {
     volatile __local int* sourceAsInt = (volatile __local int*)source;
     float oldVal;
@@ -39,6 +40,7 @@ inline void atomic_add_float_local(volatile __local float* source, float operand
         newVal = oldVal + operand;
     } while (atomic_cmpxchg(sourceAsInt, as_int(oldVal), as_int(newVal)) != as_int(oldVal));
 }
+#endif
 
 // OpenCL 1.1 does not have clEnqueueFillBuffer...
 __kernel void fill_zeros(__global float * restrict arr, int size) {
@@ -52,9 +54,15 @@ __kernel void fill_zeros(__global float * restrict arr, int size) {
 __kernel void calc_histogram( const int rows, const int cols, const int step_, __global const unsigned char * restrict image
                             , const int num_locations, __global const float2 * restrict location_global, __global const float2 * restrict blocksize_global
                             , __global float hist_global[][NUMBER_OF_CELLS][NUMBER_OF_CELLS][NUMBER_OF_BINS]
+#ifndef DISABLE_LOCAL
                             ,  __local float  hist_local[][NUMBER_OF_CELLS][NUMBER_OF_CELLS][NUMBER_OF_BINS]
+#endif
                             )
 {
+#ifdef DISABLE_LOCAL
+    #define atomic_add_float_local atomic_add_float_global
+    #define hist_local hist_global
+#else
     //Clear hist_local
     for(int a = get_local_id(2); a < num_locations; a+=get_local_size(2)) {
         for(int b = get_local_id(1); b < NUMBER_OF_CELLS; b+=get_local_size(1)) {
@@ -67,7 +75,7 @@ __kernel void calc_histogram( const int rows, const int cols, const int step_, _
     }
     
     barrier(CLK_LOCAL_MEM_FENCE);
-
+#endif
     int locationIdx = get_global_id(2);
     if (locationIdx < num_locations) {
         float2 location = location_global[locationIdx];
@@ -147,7 +155,8 @@ __kernel void calc_histogram( const int rows, const int cols, const int step_, _
             atomic_add_float_local( &(hist_local[locationIdx][celli.y][celli.x][bin1]), bin_weight1);
 #endif
         }
-    }    
+    }
+#ifndef DISABLE_LOCAL
     barrier(CLK_LOCAL_MEM_FENCE);
     
     //Add local version to global
@@ -160,4 +169,5 @@ __kernel void calc_histogram( const int rows, const int cols, const int step_, _
             }
         }
     }
+#endif
 }

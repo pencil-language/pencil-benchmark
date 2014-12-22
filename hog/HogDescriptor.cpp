@@ -17,6 +17,7 @@
 #include <cassert>
 #include <array>
 #include <fstream>
+#include <iostream>
 
 #include <tbb/parallel_for.h>
 #include <tbb/blocked_range.h>
@@ -207,6 +208,16 @@ cv::Mat_<float> nel::HOGDescriptorCPP::compute( const cv::Mat_<uint8_t>  &image
         }
         cv::Mat_<float> destRow = descriptors.row(n);
         hist.reshape(0,1).copyTo(destRow);
+          //Normalize result
+//        hist = hist.reshape(0,1);
+//        float scale = static_cast<float>(cv::norm(hist, cv::NORM_L2));
+//        if (scale < std::numeric_limits<float>::epsilon())
+//            descriptors.row(n)= 0.0f;
+//        else {
+//            hist = hist/scale;
+//            hist = cv::min(hist, 0.3f);
+//            cv::normalize(hist, descriptors.row(n));
+//        }
     }});
     return descriptors;
 }
@@ -221,6 +232,8 @@ nel::HOGDescriptorOCL::HOGDescriptorOCL(int numberOfCells_, int numberOfBins_, b
     std::vector<cl::Device> devices;
     cl::Platform::getDefault().getDevices(CL_DEVICE_TYPE_GPU, &devices);
     device = devices.at(0);
+    
+    has_local_memory = (CL_LOCAL == device.getInfo<CL_DEVICE_LOCAL_MEM_TYPE>());
 
     //Create context
     context = cl::Context(device);
@@ -238,14 +251,17 @@ nel::HOGDescriptorOCL::HOGDescriptorOCL(int numberOfCells_, int numberOfBins_, b
     //-cl-fast-relaxed-math gives totally wrong results
     build_opts << "-cl-single-precision-constant -cl-denorms-are-zero -cl-no-signed-zeros -cl-finite-math-only";
     build_opts << " -D NUMBER_OF_CELLS=" << std::to_string(numberOfCells);
-    build_opts << " -D NUMBER_OF_BINS=" << std::to_string(numberOfBins);
+    build_opts << " -D NUMBER_OF_BINS="  << std::to_string(numberOfBins);
     build_opts << " -D GAUSSIAN_WEIGHTS=" << (gauss    ? "1" : "0");
     build_opts << " -D SPARTIAL_WEIGHTS=" << (spinterp ? "1" : "0");
     build_opts << " -D SIGNED_HOG="       << (_signed  ? "1" : "0");
+    if (!has_local_memory)
+        build_opts << " -D DISABLE_LOCAL";
     try {
         program.build(build_opts.str().c_str());
     } catch (const cl::Error&) {
         auto buildlog = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
+        std::cerr << buildlog << std::endl;
         throw;
     }
 
@@ -352,7 +368,8 @@ cv::Mat_<float> nel::HOGDescriptorOCL::compute( const cv::Mat_<uint8_t> &image
             calc_hog.setArg(5, locations_cl());
             calc_hog.setArg(6, blocksizes_cl());
             calc_hog.setArg(7, descriptor_cl());
-            calc_hog.setArg(8, (size_t)(sizeof(cl_float) * getNumberOfBins() * work_size_z), nullptr);
+            if (has_local_memory)
+                calc_hog.setArg(8, (size_t)(sizeof(cl_float) * getNumberOfBins() * work_size_z), nullptr);
             queue.enqueueNDRangeKernel(calc_hog, cl::NullRange, global_work_size, local_work_size, nullptr, &end );
         }
     }
@@ -371,7 +388,15 @@ cv::Mat_<float> nel::HOGDescriptorOCL::compute( const cv::Mat_<uint8_t> &image
     elapsed_time_gpu_nocopy = std::chrono::nanoseconds(time_nanoseconds);
 
     //Normalize result
-//    for (int n = 0; n < num_locations; ++n)
-//        normalize(descriptors.row(n), descriptors.row(n), l2hys_thrs);
+//    for (int n = 0; n < num_locations; ++n) {
+//        float scale = static_cast<float>(cv::norm(descriptors.row(n), cv::NORM_L2));
+//        if (scale < std::numeric_limits<float>::epsilon())
+//            descriptors.row(n)= 0.0f;
+//        else {
+//            auto scaled = descriptors.row(n)/scale;
+//            scaled = cv::min(scaled, 0.3f);
+//            cv::normalize(scaled, descriptors.row(n));
+//        }
+//    }
     return descriptors;
 }

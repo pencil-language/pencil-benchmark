@@ -78,6 +78,7 @@ namespace nel {
         size_t fill_zeros_group_size;
 #endif
         bool is_unified_host_memory;
+        bool has_local_memory;
     };
 }
 
