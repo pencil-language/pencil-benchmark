@@ -33,6 +33,10 @@ namespace {
         static_assert(std::is_floating_point<T>::value, "fast_ceil: Parameter must be floating point.");
         return static_cast<int>(f)+(f > T(0));
     }
+
+    inline size_t round_to_multiple(size_t num, size_t factor) {
+        return num + factor - 1 - (num - 1) % factor;
+    }
 }
 
 nel::HOGDescriptorCPP::HOGDescriptorCPP(int numberOfCells_, int numberOfBins_, bool gauss_, bool spinterp_, bool _signed_)
@@ -77,8 +81,8 @@ cv::Mat_<float> nel::HOGDescriptorCPP::compute( const cv::Mat_<uint8_t>  &image
 
         const float &blocksizeX = blocksizes(n,0);
         const float &blocksizeY = blocksizes(n,1);
-        const float centerx = static_cast<float>(locations(n, 0));
-        const float centery = static_cast<float>(locations(n, 1));
+        const float centerx = locations(n, 0);
+        const float centery = locations(n, 1);
 
         const float cellsizeX = blocksizeX / numberOfCells;
         const float cellsizeY = blocksizeY / numberOfCells;
@@ -235,9 +239,9 @@ nel::HOGDescriptorOCL::HOGDescriptorOCL(int numberOfCells_, int numberOfBins_, b
     build_opts << "-cl-single-precision-constant -cl-denorms-are-zero -cl-no-signed-zeros -cl-finite-math-only";
     build_opts << " -D NUMBER_OF_CELLS=" << std::to_string(numberOfCells);
     build_opts << " -D NUMBER_OF_BINS=" << std::to_string(numberOfBins);
-    build_opts << " -D GAUSSIAN_WEIGHTS=" << (gauss ? "1" : "0");
+    build_opts << " -D GAUSSIAN_WEIGHTS=" << (gauss    ? "1" : "0");
     build_opts << " -D SPARTIAL_WEIGHTS=" << (spinterp ? "1" : "0");
-    build_opts << " -D SIGNED_HOG=" << (_signed ? "1" : "0");
+    build_opts << " -D SIGNED_HOG="       << (_signed  ? "1" : "0");
     try {
         program.build(build_opts.str().c_str());
     } catch (const cl::Error&) {
@@ -245,7 +249,7 @@ nel::HOGDescriptorOCL::HOGDescriptorOCL(int numberOfCells_, int numberOfBins_, b
         throw;
     }
 
-    //Create queue (apparently it's slow)
+    //Create queue
     queue = cl::CommandQueue(context, device, CL_QUEUE_PROFILING_ENABLE);
 
     //Query kernels and work group infos
@@ -265,12 +269,6 @@ int nel::HOGDescriptorOCL::getNumberOfBins() const {
     return numberOfCells * numberOfCells * numberOfBins;
 }
 
-inline size_t round_to_multiple(size_t num, size_t factor) {
-    return num + factor - 1 - (num - 1) % factor;
-}
-
-#include <iostream>
-
 cv::Mat_<float> nel::HOGDescriptorOCL::compute( const cv::Mat_<uint8_t> &image
                                               , const cv::Mat_<float>   &locations
                                               , const cv::Mat_<float>   &blocksizes
@@ -283,8 +281,11 @@ cv::Mat_<float> nel::HOGDescriptorOCL::compute( const cv::Mat_<uint8_t> &image
     assert(locations.isContinuous());
     assert(2 == blocksizes.cols);
     assert(blocksizes.isContinuous());
-    int num_localtions = locations.rows;
-    cv::Mat_<float> descriptors(num_localtions, getNumberOfBins());
+    assert(locations.rows == blocksizes.rows);
+
+    int num_locations = locations.rows;
+    cv::Mat_<float> descriptors(num_locations, getNumberOfBins());
+    assert(descriptors.isContinuous());
     
     //Events to track execution time
     cl::Event start, end;
@@ -292,9 +293,9 @@ cv::Mat_<float> nel::HOGDescriptorOCL::compute( const cv::Mat_<uint8_t> &image
     //OPENCL START
     //Prepare OpenCL buffers
     size_t      image_bytes = image.elemSize()*image.rows*image.step1();
-    size_t  locations_bytes = sizeof(cl_float2)*num_localtions;
+    size_t  locations_bytes = sizeof(cl_float2)*num_locations;
     size_t blocksizes_bytes = sizeof(cl_float2)*blocksizes.rows;
-    size_t descriptor_bytes = sizeof(cl_float)*getNumberOfBins()*num_localtions;
+    size_t descriptor_bytes = sizeof(cl_float)*getNumberOfBins()*num_locations;
     cl::Buffer      image_cl;
     cl::Buffer  locations_cl;
     cl::Buffer blocksizes_cl;
@@ -318,12 +319,11 @@ cv::Mat_<float> nel::HOGDescriptorOCL::compute( const cv::Mat_<uint8_t> &image
 #else
     {
         cl::NDRange  local_work_size(fill_zeros_preferred_multiple);
-        cl::NDRange global_work_size( round_to_multiple(getNumberOfBins()*num_localtions, fill_zeros_preferred_multiple) );
+        cl::NDRange global_work_size( round_to_multiple(getNumberOfBins()*num_locations, fill_zeros_preferred_multiple) );
         {
             //ADD MULTITHREAD LOCK HERE (if needed)
-//            std::cout << getNumberOfBins()*num_localtions << '/' << fill_zeros_preferred_multiple << '/' << fill_zeros_group_size << std::endl;
             fill_zeros.setArg(0, descriptor_cl());
-            fill_zeros.setArg(1, (cl_int)(getNumberOfBins()*num_localtions));
+            fill_zeros.setArg(1, (cl_int)(getNumberOfBins()*num_locations));
             queue.enqueueNDRangeKernel(fill_zeros, cl::NullRange, global_work_size, local_work_size, nullptr, &start );
         }
     }
@@ -332,13 +332,13 @@ cv::Mat_<float> nel::HOGDescriptorOCL::compute( const cv::Mat_<uint8_t> &image
     {
         //Figure out the work group sizes
         const size_t work_size_x = calc_hog_preferred_multiple;
-        const size_t work_size_y = std::max(calc_hog_group_size / num_localtions / work_size_x, (size_t)1u);    //Integer division!
+        const size_t work_size_y = std::max(calc_hog_group_size / num_locations / work_size_x, (size_t)1u);    //Integer division!
         const size_t work_size_z = std::max(calc_hog_group_size / work_size_y / work_size_x   , (size_t)1u);    //Integer division!
         cl::NDRange local_work_size(work_size_x, work_size_y, work_size_z);
 
         size_t max_x = round_to_multiple(max_blocksize_x, work_size_x);
         size_t max_y = round_to_multiple(max_blocksize_y, work_size_y);
-        size_t max_z = round_to_multiple(num_localtions, work_size_z);
+        size_t max_z = round_to_multiple(num_locations, work_size_z);
         cl::NDRange global_work_size(max_x, max_y, max_z);
 
         //Execute the kernel
@@ -348,7 +348,7 @@ cv::Mat_<float> nel::HOGDescriptorOCL::compute( const cv::Mat_<uint8_t> &image
             calc_hog.setArg(1, (cl_int)image.cols);
             calc_hog.setArg(2, (cl_int)image.step1());
             calc_hog.setArg(3, image_cl());
-            calc_hog.setArg(4, (cl_int)num_localtions);
+            calc_hog.setArg(4, (cl_int)num_locations);
             calc_hog.setArg(5, locations_cl());
             calc_hog.setArg(6, blocksizes_cl());
             calc_hog.setArg(7, descriptor_cl());
@@ -371,7 +371,7 @@ cv::Mat_<float> nel::HOGDescriptorOCL::compute( const cv::Mat_<uint8_t> &image
     elapsed_time_gpu_nocopy = std::chrono::nanoseconds(time_nanoseconds);
 
     //Normalize result
-//    for (int n = 0; n < num_localtions; ++n)
+//    for (int n = 0; n < num_locations; ++n)
 //        normalize(descriptors.row(n), descriptors.row(n), l2hys_thrs);
     return descriptors;
 }

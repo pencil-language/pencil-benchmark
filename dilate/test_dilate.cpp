@@ -56,13 +56,18 @@ void time_dilate( const std::vector<carp::record_t>& pool, const std::vector<int
                 }
                 // Verifying the results
                 if ( (cv::norm(cpu_result - gpu_result) > 0.01) || (cv::norm(cpu_result - pen_result) > 0.01) ) {
-                    std::cerr << "ERROR: Results don't match." << std::endl;
+                    std::cerr << "ERROR: Results don't match. Writing calculated images." << std::endl;
                     std::cerr << "CPU norm:" << cv::norm(cpu_result) << std::endl;
                     std::cerr << "GPU norm:" << cv::norm(gpu_result) << std::endl;
                     std::cerr << "PEN norm:" << cv::norm(pen_result) << std::endl;
                     std::cerr << "GPU-CPU norm:" << cv::norm(gpu_result, cpu_result) << std::endl;
                     std::cerr << "PEN-CPU norm:" << cv::norm(pen_result, cpu_result) << std::endl;
 
+                    cv::imwrite( "dilate_cpu.png", cpu_result );
+                    cv::imwrite( "dilate_gpu.png", gpu_result );
+                    cv::imwrite( "dilate_pen.png", pen_result );
+                    cv::imwrite( "dilate_cpugpu.png", cv::abs(cpu_result-gpu_result) );
+                    cv::imwrite( "dilate_cpupen.png", cv::abs(cpu_result-pen_result) );
                     throw std::runtime_error("The OpenCL or PENCIL results are not equivalent with the C++ results.");
                 }
                 timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil );
