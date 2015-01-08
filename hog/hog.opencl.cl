@@ -22,23 +22,25 @@
 
 inline void atomic_add_float_global(volatile __global float* source, float operand) {
     volatile __global int* sourceAsInt = (volatile __global int*)source;
-    float oldVal;
-    float newVal;
+    int oldVal;
+    int oldVal_2 = atomic_add(sourceAsInt, 0);
     do {
-        oldVal = *source;
-        newVal = oldVal + operand;
-    } while (atomic_cmpxchg(sourceAsInt, as_int(oldVal), as_int(newVal)) != as_int(oldVal));
+        oldVal = oldVal_2;
+        float newVal = as_float(oldVal) + operand;
+        oldVal_2 = atomic_cmpxchg(sourceAsInt, oldVal, as_int(newVal));
+    } while (oldVal_2 != oldVal);
 }
 
 #ifndef DISABLE_LOCAL
 inline void atomic_add_float_local(volatile __local float* source, float operand) {
     volatile __local int* sourceAsInt = (volatile __local int*)source;
-    float oldVal;
-    float newVal;
+    int oldVal;
+    int oldVal_2 = atomic_add(sourceAsInt, 0);
     do {
-        oldVal = *source;
-        newVal = oldVal + operand;
-    } while (atomic_cmpxchg(sourceAsInt, as_int(oldVal), as_int(newVal)) != as_int(oldVal));
+        oldVal = oldVal_2;
+        float newVal = as_float(oldVal) + operand;
+        oldVal_2 = atomic_cmpxchg(sourceAsInt, oldVal, as_int(newVal));
+    } while (oldVal_2 != oldVal);
 }
 #endif
 
