@@ -18,6 +18,12 @@ static void filter2D( const int rows
     __pencil_assume(kernel_cols <=  8);
     __pencil_assume(kernel_rows >=  3);
     __pencil_assume(kernel_cols >=  3);
+    __pencil_assume(   1 <= rows);
+    __pencil_assume(   1 <= cols);
+    __pencil_assume(cols <= step);
+    __pencil_assume(   1 <= kernel_rows);
+    __pencil_assume(   1 <= kernel_cols);
+    __pencil_assume(cols <= kernel_step);
     {
         #pragma pencil independent
         for ( int q = 0; q < rows; q++ )
