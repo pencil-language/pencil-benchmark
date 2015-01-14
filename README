@@ -8,14 +8,15 @@ This is a set of benchmarks for using PENCIL in the image processing problem dom
 
 To build the CARP-Benchmarks, you need:
 - A working OpenCL driver.
-- PPCG compiler
-	Refer to PPCG readme how to build.
 - The following packages needs to be installed (at least on Ubuntu 13.10):
 	libboost-filesystem-dev libboost-serialization-dev libboost-system-dev (or, full Boost: libboost-all-dev)
 	libtbb-dev
 	build-essential
 	p7zip
 	cmake
+- PPCG compiler
+        Refer to PPCG readme how to build and install.
+        Requires a version that also installs the PENCIL runtime.
 - An OpenCV build:
 	Tested with 2.4.9.1
 	Download OpenCV
@@ -35,9 +36,14 @@ To build the CARP-Benchmarks, you need:
 	    sudo make install
 	
 	Alternatively, you can try newer versions that might have fixed the issue in the patch, but those versions are not tested.
-- Create makefile.in root directory based on makefile.in.base, and add paths to the various libraries
-	ocl_utilities.c, pencil-headers and OpenCL SDK paths needs to be added, Boost, OpenCV and TBB paths needs to be changed if not installed to the default dir (or not using Ubuntu)
-	You can also add extra compiler and linker flags
+- Compile benchmark:
+        Crate a directory for out-of-source build, and run cmake. OPENCL_LIBRARY is a required parameter (For ARM Mali, add libOpenCL.so and libmali.so).
+            mkdir pencil-benchmarks-imageproc-build
+            cd pencil-benchmarks-imageproc-build
+            cmake -DOPENCL_LIBRARY=/path/to/libOpenCL.so path/to/pencil-benchmarks-imageproc-repo
+        If something is not installed at the standard paths (/usr, /usr/local), then run cmake-gui and edit the variables (should be straight-forward)
+        Run make:
+            make all -j12
 - Build benchmark:
 	cd repository_root_path
 	make all -j12
@@ -45,7 +51,6 @@ To build the CARP-Benchmarks, you need:
 ## Running ##
 
 - Change to the build directory.
-- Run ppcg_test_*
+- Run test_*
 	Each executable runs a different operator with all three (C++, OpenCL, PENCIL) implementations.
 	Results are cross-checked, and if there is no difference (within a small allowed precision error), total times are reported at the end.
-(- the executables test_* run the same code, but using only C compiler; measuring Pencil-as-C compilation performance. Useful to check execution if there is a problem running the PPCG built version.)
