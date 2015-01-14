@@ -47,9 +47,9 @@ void time_cvtColor( const std::vector<carp::record_t>& pool, size_t iterations)
             float opencl_err = cv::norm(gpu_result - cpu_result);
             float pencil_err = cv::norm(pen_result - cpu_result);
             if ( opencl_err > 0.01 || pencil_err > 0.01 ) {
-                cv::imwrite( "gpu_img.png", gpu_result );
-                cv::imwrite( "cpu_img.png", cpu_result );
-        		cv::imwrite("pencil_dilate.png", pen_result );
+                cv::imwrite( "cpu_cvtcolor.png", cpu_result );
+                cv::imwrite( "gpu_cvtcolor.png", gpu_result );
+                cv::imwrite( "pen_cvtcolor.png", pen_result );
                 throw std::runtime_error("The GPU results are not equivalent with the CPU results.");
             }
             timing.print(elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil);
