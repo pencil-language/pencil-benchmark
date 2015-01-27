@@ -37,17 +37,35 @@ To build the CARP-Benchmarks, you need:
 	
 	Alternatively, you can try newer versions that might have fixed the issue in the patch, but those versions are not tested.
 - Compile benchmark:
-        Crate a directory for out-of-source build, and run cmake. OPENCL_LIBRARY is a required parameter (For ARM Mali, add libOpenCL.so and libmali.so).
+        Crate a directory for out-of-source build, run cmake and make:
+        -> OPENCL_LIBRARY is a required parameter (For ARM Mali, add libOpenCL.so and libmali.so).
+        -> Based on your OpenCL device, it is recommended to set up PENCIL_FLAGS:
+            PENCIL_FLAGS_1D_BLOCKSIZE and PENCIL_FLAGS_2D_BLOCKSIZE should be set to the maximum workgroup sizes (for 1D and 2D kernels). For instance, AMD Radeon cards should use 256 and 16,16
+            PENCIL_FLAGS_LOCAL_MEMORY_SIZE is the amount of used __local memory (set to "Max local memory:" reported by clinfo). Alternatively set to 0 to disable __local memory (For instance, ARM Mali)
+        -> Optionally, as performance tuning try turning PENCIL_FLAGS_MAXFUSE, PENCIL_FLAGS_SEPARATE_COMP, PENCIL_FLAGS_DISABLE_PRIVATE flags ON or OFF.
+        -> CMake can be configured from a GUI windows using cmake-gui (it lists all known parameters).
+        -> If something is not installed at the standard paths (/usr, /usr/local), then run cmake-gui and edit the variables (should be straight-forward)
+
             mkdir pencil-benchmarks-imageproc-build
             cd pencil-benchmarks-imageproc-build
-            cmake -DOPENCL_LIBRARY=/path/to/libOpenCL.so path/to/pencil-benchmarks-imageproc-repo
-        If something is not installed at the standard paths (/usr, /usr/local), then run cmake-gui and edit the variables (should be straight-forward)
-        Run make:
+            cmake -DCMAKE_BUILD_TYPE=Release -DOPENCL_LIBRARY=/path/to/libOpenCL.so -DPENCIL_FLAGS_1D_BLOCKSIZE=A -DPENCIL_FLAGS_1D_BLOCKSIZE="B,C" -DPENCIL_FLAGS_LOCAL_MEMORY_SIZE=D path/to/pencil-benchmarks-imageproc-repo
             make all -j12
 - Build benchmark:
 	cd repository_root_path
 	make all -j12
+	
+## Tested hardware parameters ##
+AMD Radeon R9 290
+  -DPENCIL_FLAGS_1D_BLOCKSIZE=256 -DPENCIL_FLAGS_1D_BLOCKSIZE="16,16" -DPENCIL_FLAGS_LOCAL_MEMORY_SIZE=32768 -DPENCIL_FLAGS_MAXFUSE=ON -DPENCIL_FLAGS_SEPARATE_COMP=OFF -DPENCIL_FLAGS_DISABLE_PRIVATE=OFF
 
+Intel HD Graphics 4000
+  -DPENCIL_FLAGS_1D_BLOCKSIZE=512 -DPENCIL_FLAGS_1D_BLOCKSIZE="32,16" -DPENCIL_FLAGS_LOCAL_MEMORY_SIZE=??? -DPENCIL_FLAGS_MAXFUSE=??? -DPENCIL_FLAGS_SEPARATE_COMP=??? -DPENCIL_FLAGS_DISABLE_PRIVATE=???
+
+ARM Mali T628
+  -DPENCIL_FLAGS_1D_BLOCKSIZE=64 -DPENCIL_FLAGS_1D_BLOCKSIZE="8,8" -DPENCIL_FLAGS_LOCAL_MEMORY_SIZE=0 -DPENCIL_FLAGS_MAXFUSE=??? -DPENCIL_FLAGS_SEPARATE_COMP=??? -DPENCIL_FLAGS_DISABLE_PRIVATE=???
+
+Please, share the parameters to your device here
+  
 ## Running ##
 
 - Change to the build directory.
