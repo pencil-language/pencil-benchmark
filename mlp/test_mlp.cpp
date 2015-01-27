@@ -38,7 +38,7 @@ int main()
     
     // OpenCL implementation initialization
     //Load source
-    std::ifstream source_file{"../mlp/mlp_impl.cl"};
+    std::ifstream source_file{"kernels/mlp_impl.cl"};
     std::string source{ std::istreambuf_iterator<char>{source_file}, std::istreambuf_iterator<char>{} };
 
     //Compile source

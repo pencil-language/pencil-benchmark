@@ -239,7 +239,7 @@ nel::HOGDescriptorOCL::HOGDescriptorOCL(int numberOfCells_, int numberOfBins_, b
     context = cl::Context(device);
        
     //Load source
-    std::ifstream source_file{"../hog/hog.opencl.cl"};
+    std::ifstream source_file{"kernels/hog.opencl.cl"};
     std::string source{ std::istreambuf_iterator<char>{source_file}, std::istreambuf_iterator<char>{} };
 
     //Create program
