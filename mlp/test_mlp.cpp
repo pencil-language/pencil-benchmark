@@ -11,7 +11,6 @@
 #include "bench_mlp.hpp"
 
 #include <tbb/parallel_for.h>
-#include <tbb/concurrent_vector.h>
 
 #include <opencv2/core/core.hpp>
 
@@ -23,6 +22,7 @@
 #define __CL_ENABLE_EXCEPTIONS
 #include <CL/cl.hpp>
 
+#include <pencil_runtime.h>
 #include <chrono>
 #include <string>
 #include <iomanip>
@@ -31,6 +31,8 @@ const int processed_frames = 150;
 
 int main()
 {
+    pencil_init();
+
     carp::conductor_t conductor;
     carp::Timing timing("MLP");
     
@@ -76,7 +78,7 @@ int main()
         // CPU implementation
         {
             gel::MLP<double> mlp;
-            tbb::concurrent_vector< cv::Mat_<double> > calculatedResults(package.m_visibleLandmarks_size);
+            std::vector< cv::Mat_<double> > calculatedResults(package.m_visibleLandmarks_size);
             auto start = std::chrono::high_resolution_clock::now();
             tbb::parallel_for(0,package.m_visibleLandmarks_size,[&](int q) {
                 const cv::Point2i center(cvRound(package.shape(2*q,0)),cvRound(package.shape(2*q+1,0)));
@@ -181,5 +183,7 @@ int main()
         }
         timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil );
     }
+    pencil_shutdown();
+
     return EXIT_SUCCESS;
 }

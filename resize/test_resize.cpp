@@ -1,10 +1,12 @@
-#include <chrono>
+#include "utility.hpp"
+#include "resize.pencil.h"
+
 #include <opencv2/core/core.hpp>
 #include <opencv2/ocl/ocl.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include "utility.hpp"
-#include "resize.pencil.h"
+#include <pencil_runtime.h>
+#include <chrono>
 
 void time_resize( const std::vector<carp::record_t>& pool, const std::vector<cv::Size>& sizes, int iteration )
 {
@@ -69,6 +71,7 @@ void time_resize( const std::vector<carp::record_t>& pool, const std::vector<cv:
 
 int main(int argc, char* argv[])
 {
+    pencil_init();
 
     std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
 
@@ -83,5 +86,7 @@ int main(int argc, char* argv[])
 #endif
 
     time_resize( pool, sizes, iteration );
+
+    pencil_shutdown();
     return EXIT_SUCCESS;
 }

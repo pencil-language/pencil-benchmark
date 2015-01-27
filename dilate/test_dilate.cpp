@@ -1,10 +1,12 @@
-#include <chrono>
+#include "utility.hpp"
+#include "dilate.pencil.h"
+
 #include <opencv2/core/core.hpp>
 #include <opencv2/ocl/ocl.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include "utility.hpp"
-#include "dilate.pencil.h"
+#include <pencil_runtime.h>
+#include <chrono>
 
 void time_dilate( const std::vector<carp::record_t>& pool, const std::vector<int>& elemsizes, int iteration )
 {
@@ -78,6 +80,7 @@ void time_dilate( const std::vector<carp::record_t>& pool, const std::vector<int
 
 int main(int argc, char* argv[])
 {
+    pencil_init();
     try {
         std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
 
@@ -89,9 +92,12 @@ int main(int argc, char* argv[])
         time_dilate( pool, { 3, 5 }, 10 );
 #endif
 
+        pencil_shutdown();
         return EXIT_SUCCESS;
     }catch(const std::exception& e) {
         std::cout << e.what() << std::endl;
+
+        pencil_shutdown();
         return EXIT_FAILURE;
     }
 }

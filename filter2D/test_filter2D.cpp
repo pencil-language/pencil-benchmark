@@ -1,10 +1,12 @@
-#include <chrono>
+#include "utility.hpp"
+#include "filter2D.pencil.h"
+
 #include <opencv2/core/core.hpp>
 #include <opencv2/ocl/ocl.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include "utility.hpp"
-#include "filter2D.pencil.h"
+#include <pencil_runtime.h>
+#include <chrono>
 
 void time_filter2D( const std::vector<carp::record_t>& pool, int iteration )
 {
@@ -79,6 +81,7 @@ void time_filter2D( const std::vector<carp::record_t>& pool, int iteration )
 
 int main(int argc, char* argv[])
 {
+    pencil_init();
 
     std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
 
@@ -90,5 +93,6 @@ int main(int argc, char* argv[])
     time_filter2D( pool, 35 );
 #endif
 
+    pencil_shutdown();
     return EXIT_SUCCESS;
 } // main

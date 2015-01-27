@@ -1,13 +1,14 @@
-#include <chrono>
-#include <random>
-#include <array>
+#include "utility.hpp"
+#include "hog.pencil.h"
+#include "HogDescriptor.h"
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/ocl/ocl.hpp>
 
-#include "utility.hpp"
-#include "hog.pencil.h"
-#include "HogDescriptor.h"
+#include <pencil_runtime.h>
+#include <chrono>
+#include <random>
+#include <array>
 
 #define NUMBER_OF_CELLS 1
 #define NUMBER_OF_BINS 8
@@ -128,6 +129,7 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
 int main(int argc, char* argv[])
 {
     try {
+        pencil_init();
         std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
 
         auto pool = carp::get_pool("pool");
@@ -137,9 +139,12 @@ int main(int argc, char* argv[])
         time_hog( pool, {16, 32, 64, 128, 192}, 50, 10 );
 #endif
 
+        pencil_shutdown();
         return EXIT_SUCCESS;
     }catch(const std::exception& e) {
         std::cout << e.what() << std::endl;
+
+        pencil_shutdown();
         return EXIT_FAILURE;
     }
 } // main

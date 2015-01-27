@@ -1,9 +1,11 @@
-#include <chrono>
-#include <opencv2/opencv.hpp>
-#include <opencv2/ocl/ocl.hpp>
-
 #include "utility.hpp"
 #include "histogram.pencil.h"
+
+#include <opencv2/core/core.hpp>
+#include <opencv2/ocl/ocl.hpp>
+
+#include <pencil_runtime.h>
+#include <chrono>
 
 void time_histogram( const std::vector<carp::record_t>& pool, size_t iterations)
 {
@@ -69,6 +71,7 @@ void time_histogram( const std::vector<carp::record_t>& pool, size_t iterations)
 
 int main(int argc, char* argv[])
 {
+    pencil_init();
 
     std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
 
@@ -81,5 +84,6 @@ int main(int argc, char* argv[])
 
     time_histogram( pool, num_iterations );
 
+    pencil_shutdown();
     return EXIT_SUCCESS;
 }

@@ -1,10 +1,12 @@
-#include <chrono>
+#include "utility.hpp"
+#include "gaussian.pencil.h"
+
 #include <opencv2/core/core.hpp>
 #include <opencv2/ocl/ocl.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include "utility.hpp"
-#include "gaussian.pencil.h"
+#include <pencil_runtime.h>
+#include <chrono>
 
 void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<int>& sizes )
 {
@@ -91,6 +93,7 @@ void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<i
 
 int main(int argc, char* argv[])
 {
+    pencil_init();
 
     std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
 
@@ -101,5 +104,6 @@ int main(int argc, char* argv[])
     time_gaussian( pool, {5, 15, 25, 35, 45} );
 #endif
 
+    pencil_shutdown();
     return EXIT_SUCCESS;
 } // main
