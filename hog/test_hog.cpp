@@ -136,7 +136,7 @@ int main(int argc, char* argv[])
 #ifdef RUN_ONLY_ONE_EXPERIMENT
         time_hog( pool, {64}, 50, 1 );
 #else
-        time_hog( pool, {16, 32, 64, 128, 192}, 50, 10 );
+        time_hog( pool, {16, 32, 64, 128, 192}, 50, 6 );
 #endif
 
         pencil_shutdown();
