@@ -98,10 +98,10 @@ static void hog_multi( const int NUMBER_OF_CELLS
                     float xscale0 = 1.0f - xscale1;
                     float yscale0 = 1.0f - yscale1;
 
-                    __pencil_assume(cellxi < NUMBER_OF_CELLS);
-                    __pencil_assume(cellyi < NUMBER_OF_CELLS);
-                    __pencil_assume(cellxi >= 0);
-                    __pencil_assume(cellyi >= 0);
+//                    __pencil_assume(cellxi < NUMBER_OF_CELLS);
+  //                  __pencil_assume(cellyi < NUMBER_OF_CELLS);
+    //                __pencil_assume(cellxi >= 0);
+      //              __pencil_assume(cellyi >= 0);
                     if (cellyi >= 0 && cellxi >= 0) {
                         hist[i][cellyi  ][cellxi  ][bin0] += yscale0 * xscale0 * bin_weight0;
                         hist[i][cellyi  ][cellxi  ][bin1] += yscale0 * xscale0 * bin_weight1;
@@ -125,10 +125,10 @@ static void hog_multi( const int NUMBER_OF_CELLS
                     int cellxi = (int)floorf((pointx - minx) * NUMBER_OF_CELLS / blck_sizex);
                     int cellyi = (int)floorf((pointy - miny) * NUMBER_OF_CELLS / blck_sizey);
 
-                    __pencil_assume(cellxi < NUMBER_OF_CELLS);
-                    __pencil_assume(cellyi < NUMBER_OF_CELLS);
-                    __pencil_assume(cellxi >= 0);
-                    __pencil_assume(cellyi >= 0);
+        //            __pencil_assume(cellxi < NUMBER_OF_CELLS);
+          //          __pencil_assume(cellyi < NUMBER_OF_CELLS);
+            //        __pencil_assume(cellxi >= 0);
+              //      __pencil_assume(cellyi >= 0);
                     hist[i][cellyi][cellxi][bin0] += bin_weight0;
                     hist[i][cellyi][cellxi][bin1] += bin_weight1;
                 }
