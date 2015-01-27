@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
 #ifdef RUN_ONLY_ONE_EXPERIMENT
         time_dilate( pool, { 5 }, 1 );
 #else
-        time_dilate( pool, { 3, 5 }, 10 );
+        time_dilate( pool, { 3, 5 }, 25 );
 #endif
 
         pencil_shutdown();

@@ -109,7 +109,7 @@ int main(int argc, char* argv[])
 #ifdef RUN_ONLY_ONE_EXPERIMENT
     time_affine( pool,  1 );
 #else
-    time_affine( pool, 45 );
+    time_affine( pool, 20 );
 #endif
 
     pencil_shutdown();

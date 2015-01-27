@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
     int iteration = 1;
 #else
     std::vector<cv::Size> sizes{ {320, 240}, {640, 480}, {1024, 768}, {1200, 900}, {1600, 1200} };
-    int iteration = 35;
+    int iteration = 25;
 #endif
 
     time_resize( pool, sizes, iteration );
