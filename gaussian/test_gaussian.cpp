@@ -64,27 +64,22 @@ void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<i
                 //Free up resources
             }
             // Verifying the results
-            if ( (cv::norm( cpu_result - gpu_result ) > 0.01) ||
-                 (cv::norm( cpu_result - pen_result) > 0.01) )
-            {
-                cv::Mat gpu_result8;
-                cv::Mat cpu_result8;
-                cv::Mat pen_result8;
-                cv::Mat diff8;
+            if ( (cv::norm(cpu_result - gpu_result) > 0.01) || (cv::norm(cpu_result - pen_result) > 0.01) ) {
+                std::cerr << "ERROR: Results don't match. Writing calculated images." << std::endl;
+                std::cerr << "CPU norm:" << cv::norm(cpu_result) << std::endl;
+                std::cerr << "GPU norm:" << cv::norm(gpu_result) << std::endl;
+                std::cerr << "PEN norm:" << cv::norm(pen_result) << std::endl;
+                std::cerr << "GPU-CPU norm:" << cv::norm(gpu_result, cpu_result) << std::endl;
+                std::cerr << "PEN-CPU norm:" << cv::norm(pen_result, cpu_result) << std::endl;
 
-                gpu_result.convertTo( gpu_result8, CV_8UC1, 255. );
-                cpu_result.convertTo( cpu_result8, CV_8UC1, 255. );
-                pen_result.convertTo( pen_result8, CV_8UC1, 255. );
-                cv::Mat absdiff = cv::abs(pen_result - cpu_result);
-                absdiff.convertTo( diff8, CV_8UC1, 255. );
-
-                cv::imwrite( "gpu_gaussian.png", gpu_result8 );
-                cv::imwrite( "cpu_gaussian.png", cpu_result8 );
-                cv::imwrite( "pencil_gaussian.png", pen_result8 );
-                cv::imwrite( "diff_gaussian.png", diff8 );
-
-                throw std::runtime_error("The GPU results are not equivalent with the CPU results.");
+                cv::imwrite( "gaussian_cpu.png", cpu_result );
+                cv::imwrite( "gaussian_gpu.png", gpu_result );
+                cv::imwrite( "gaussian_pen.png", pen_result );
+                cv::imwrite( "gaussian_cpugpu.png", cv::abs(cpu_result-gpu_result) );
+                cv::imwrite( "gaussian_cpupen.png", cv::abs(cpu_result-pen_result) );
+                throw std::runtime_error("The OpenCL or PENCIL results are not equivalent with the C++ results.");
             }
+
 
             timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil );
         }
@@ -94,16 +89,21 @@ void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<i
 int main(int argc, char* argv[])
 {
     pencil_init();
+    try {
+        std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
 
-    std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
-
-    auto pool = carp::get_pool("pool");
+        auto pool = carp::get_pool("pool");
 #ifdef RUN_ONLY_ONE_EXPERIMENT
-    time_gaussian( pool, {25} );
+        time_gaussian( pool, {25} );
 #else
-    time_gaussian( pool, {5, 15, 25, 35, 45} );
+        time_gaussian( pool, {5, 15, 25, 35, 45} );
 #endif
+        pencil_shutdown();
+        return EXIT_SUCCESS;
+    } catch(const std::exception& e) {
+        std::cout << e.what() << std::endl;
 
-    pencil_shutdown();
-    return EXIT_SUCCESS;
-} // main
+        pencil_shutdown();
+        return EXIT_FAILURE;
+    }
+}
