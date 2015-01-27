@@ -13,6 +13,8 @@ static void calcHist( const int rows
     __pencil_assume(cols >  0);
     __pencil_assume(step >= cols);
 
+    __pencil_kill(hist);
+
     #pragma pencil independent
     for(int b = 0; b < HISTOGRAM_BINS; ++b)
         hist[b] = 0;

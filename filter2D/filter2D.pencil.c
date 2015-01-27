@@ -24,6 +24,8 @@ static void filter2D( const int rows
     __pencil_assume(   1 <= kernel_rows);
     __pencil_assume(   1 <= kernel_cols);
     __pencil_assume(cols <= kernel_step);
+
+    __pencil_kill(conv);
     {
         #pragma pencil independent
         for ( int q = 0; q < rows; q++ )

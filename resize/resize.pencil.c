@@ -18,6 +18,8 @@ static void resize( const int original_rows
     __pencil_assume(resampled_rows >  0);
     __pencil_assume(resampled_cols >  0);
     __pencil_assume(resampled_step >= resampled_cols);
+
+    __pencil_kill(resampled);
     {
         int o_h = original_rows;
         int o_w = original_cols;

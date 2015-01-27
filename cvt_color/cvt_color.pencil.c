@@ -23,6 +23,8 @@ static void RGB2Gray( const int rows
     __pencil_assume(cols     >  0);
     __pencil_assume(src_step >= cols);
     __pencil_assume(dst_step >= cols);
+
+    __pencil_kill(dst);
     #pragma pencil independent
     for ( int q = 0; q < rows; q++ )
     {

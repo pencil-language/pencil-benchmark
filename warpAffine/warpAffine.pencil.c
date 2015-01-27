@@ -13,6 +13,9 @@ static void affine( const int src_rows, const int src_cols, const int src_step, 
     __pencil_assume(dst_rows >  0);
     __pencil_assume(dst_cols >  0);
     __pencil_assume(dst_step >= dst_cols);
+
+    __pencil_kill(dst);
+
     #pragma pencil independent
     for ( int n_r=0; n_r<dst_rows; n_r++ )
     {

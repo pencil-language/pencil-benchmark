@@ -28,6 +28,9 @@ static void dilate( const int rows
     __pencil_assume(anchor_row < se_rows);
     __pencil_assume(anchor_col >= 0);
     __pencil_assume(anchor_col < se_cols);
+
+    __pencil_kill(dilate);
+
     #pragma pencil independent
     for ( int q = 0; q < rows; q++ )
     {

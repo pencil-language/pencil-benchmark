@@ -28,6 +28,14 @@ static void hog_multi( const int NUMBER_OF_CELLS
     __pencil_assume(spinterp >= 0);
     __pencil_assume(_signed  >= 0);
 
+    __pencil_kill(hist);
+
+    for (int i = 0; i < num_locations; ++i)
+        for (int j = 0; j < NUMBER_OF_CELLS; ++j)
+            for(int k = 0; k < NUMBER_OF_CELLS; ++k)
+                for(int l = 0; l < NUMBER_OF_BINS; ++l)
+                    hist[i][j][k][l] = 0;
+
     #pragma pencil independent
     for (int i = 0; i < num_locations; ++i) {
         float locationx = location[i][0];
@@ -151,11 +159,8 @@ void pencil_hog( const int NUMBER_OF_CELLS
                , const float location[][2]
                , const float blck_size[][2]
                , float hist[]    //out
-               ) {
-
-   for (int ii = 0; ii < num_locations*NUMBER_OF_CELLS*NUMBER_OF_CELLS*NUMBER_OF_BINS; ++ii)
-       hist[ii] = 0;
-
+               )
+{
     hog_multi( NUMBER_OF_CELLS, NUMBER_OF_BINS, gauss, spinterp, _signed
              , rows, cols, step, (const uint8_t(*)[step])image
              , num_locations, (const float(*)[2])location

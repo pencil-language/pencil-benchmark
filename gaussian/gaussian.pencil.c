@@ -22,9 +22,11 @@ static void gaussian( const int rows
     __pencil_assume(cols         >  0);
     __pencil_assume(step         >= cols);
     __pencil_assume(kernelX_length >  0);
-    __pencil_assume(kernelX_length <= 128);
+    __pencil_assume(kernelX_length <= 64);
     __pencil_assume(kernelY_length >  0);
-    __pencil_assume(kernelY_length <= 128);
+    __pencil_assume(kernelY_length <= 64);
+    
+    __pencil_kill(conv);
     {
 #if __PENCIL__
         float temp[rows][step];
