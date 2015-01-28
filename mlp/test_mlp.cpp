@@ -31,7 +31,7 @@ const int processed_frames = 200;
 
 int main()
 {
-    pencil_init();
+    pencil_init(PENCIL_TARGET_DEVICE_DYNAMIC);
 
     carp::conductor_t conductor;
     carp::Timing timing("MLP");

@@ -80,7 +80,7 @@ void time_dilate( const std::vector<carp::record_t>& pool, const std::vector<int
 
 int main(int argc, char* argv[])
 {
-    pencil_init();
+    pencil_init(PENCIL_TARGET_DEVICE_DYNAMIC);
     try {
         std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
 

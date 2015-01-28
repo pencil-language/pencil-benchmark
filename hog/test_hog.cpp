@@ -129,7 +129,7 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
 int main(int argc, char* argv[])
 {
     try {
-        pencil_init();
+        pencil_init(PENCIL_TARGET_DEVICE_DYNAMIC);
         std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
 
         auto pool = carp::get_pool("pool");
