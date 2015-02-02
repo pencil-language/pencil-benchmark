@@ -18,20 +18,21 @@ To build the CARP-Benchmarks, you need:
         Refer to PPCG readme how to build and install.
         Requires a version that also installs the PENCIL runtime.
 - An OpenCV build:
-	Tested with 2.4.9.1
+	Tested with 2.4.9.1 and 2.4.10.1
 	Download OpenCV
 	    git clone https://github.com/Itseez/opencv.git
 	Checkout 2.4.9.1 or newer:
 	    cd opencv
-	    git checkout 2.4.9.1
+	    git checkout 2.4.10.1
 	    cd ..
 	Configure build with CMake:
 	    mkdir opencv-build
 	    cd opencv-build
 	    cmake ../opencv -DWITH_TBB=ON -DENABLE_AVX=ON -DENABLE_SSE41=ON -DENABLE_SSE42=ON  -DENABLE_SSSE3=ON -DENABLE_SSE3=ON
-	  (Warning, if your CPU or OS does not support AVX/SSEx instruction sets, do not add the corresponding compile switches)
+	  Warning, if your CPU or OS does not support AVX/SSEx instruction sets, do not add the corresponding compile switches.
+          Make sure the necessary modules are to be built - CMake should print a (long) status with a "To be built:" list, it should contain core, ocl and highgui (plus their dependencies)
+        Build OpenCV
 	    make all -j12
-	Make sure the necessary modules are to be built - CMake should print a (long) status with a "To be built:" list, it should contain core, ocl and highgui (plus their dependencies)
 	Optionally, install it as a system library:
 	    sudo make install
 	
@@ -56,13 +57,16 @@ To build the CARP-Benchmarks, you need:
 	
 ## Tested hardware parameters ##
 AMD Radeon R9 290
-  -DPENCIL_FLAGS_1D_BLOCKSIZE=256 -DPENCIL_FLAGS_1D_BLOCKSIZE="16,16" -DPENCIL_FLAGS_LOCAL_MEMORY_SIZE=32768 -DPENCIL_FLAGS_MAXFUSE=OFF -DPENCIL_FLAGS_NO_SEPARATE_COMP=OFF -DPENCIL_FLAGS_DISABLE_PRIVATE=OFF
+  -DPENCIL_FLAGS_1D_BLOCKSIZE=256 -DPENCIL_FLAGS_1D_BLOCKSIZE="16,16" -DPENCIL_FLAGS_LOCAL_MEMORY_SIZE=32768 -DPENCIL_FLAGS_MAXFUSE=ON -DPENCIL_FLAGS_NO_SEPARATE_COMP=ON -DPENCIL_FLAGS_DISABLE_PRIVATE=OFF
+
+nVidia Tesla M2050
+  -DPENCIL_FLAGS_1D_BLOCKSIZE=1024 -DPENCIL_FLAGS_1D_BLOCKSIZE="32,32" -DPENCIL_FLAGS_LOCAL_MEMORY_SIZE=49152 -DPENCIL_FLAGS_MAXFUSE=ON -DPENCIL_FLAGS_NO_SEPARATE_COMP=ON -DPENCIL_FLAGS_DISABLE_PRIVATE=OFF
 
 Intel HD Graphics 4000
   -DPENCIL_FLAGS_1D_BLOCKSIZE=512 -DPENCIL_FLAGS_1D_BLOCKSIZE="32,16" -DPENCIL_FLAGS_LOCAL_MEMORY_SIZE=??? -DPENCIL_FLAGS_MAXFUSE=??? -DPENCIL_FLAGS_NO_SEPARATE_COMP=??? -DPENCIL_FLAGS_DISABLE_PRIVATE=???
 
 ARM Mali T628
-  -DPENCIL_FLAGS_1D_BLOCKSIZE=64 -DPENCIL_FLAGS_1D_BLOCKSIZE="8,8" -DPENCIL_FLAGS_LOCAL_MEMORY_SIZE=0 -DPENCIL_FLAGS_MAXFUSE=??? -DPENCIL_FLAGS_NO_SEPARATE_COMP=??? -DPENCIL_FLAGS_DISABLE_PRIVATE=???
+  -DPENCIL_FLAGS_1D_BLOCKSIZE=64 -DPENCIL_FLAGS_1D_BLOCKSIZE="8,8" -DPENCIL_FLAGS_LOCAL_MEMORY_SIZE=0 -DPENCIL_FLAGS_MAXFUSE=ON -DPENCIL_FLAGS_NO_SEPARATE_COMP=ON -DPENCIL_FLAGS_DISABLE_PRIVATE=OFF
 
 Please, share the parameters to your device here
   
