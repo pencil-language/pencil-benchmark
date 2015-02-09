@@ -15,8 +15,8 @@ if (CMAKE_SYSTEM_PROCESSOR MATCHES "arm.*|ARM.*")
 else()
     add_compile_options(-mavx)
 endif()
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11" CACHE STRING "C compilation flags" FORCE)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x" CACHE STRING "C++ compilation flags" FORCE)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 
 ########################## Dependencies ##########################
 #directories: change in GUI if needed
