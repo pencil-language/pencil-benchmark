@@ -119,7 +119,6 @@ cv::Mat_<float> nel::HOGDescriptorCPP::compute( const cv::Mat_<uint8_t>  &image
             #pragma GCC diagnostic push
             #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
             int cellyi;
-            #pragma GCC diagnostic pop
             float yscale0;
             float yscale1;
             if (spinterp) {
@@ -148,10 +147,7 @@ cv::Mat_<float> nel::HOGDescriptorCPP::compute( const cv::Mat_<uint8_t>  &image
                 if (gauss) {
                     float dx = pointx - centerx;
                     float dx2 = dx*dx;
-                    #pragma GCC diagnostic push
-                    #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
                     float B = std::exp(dx2 * m1p2sigmaX2 + dy2 * m1p2sigmaY2);
-                    #pragma GCC diagnostic pop
                     magnitude *= B;
                 }
 
@@ -205,6 +201,7 @@ cv::Mat_<float> nel::HOGDescriptorCPP::compute( const cv::Mat_<uint8_t>  &image
                     }
                 }
             }
+            #pragma GCC diagnostic pop
         }
         cv::Mat_<float> destRow = descriptors.row(n);
         hist.reshape(0,1).copyTo(destRow);
@@ -232,14 +229,16 @@ nel::HOGDescriptorOCL::HOGDescriptorOCL(int numberOfCells_, int numberOfBins_, b
     std::vector<cl::Device> devices;
     cl::Platform::getDefault().getDevices(CL_DEVICE_TYPE_GPU, &devices);
     device = devices.at(0);
-    
-    has_local_memory = (CL_LOCAL == device.getInfo<CL_DEVICE_LOCAL_MEM_TYPE>());
 
     //Create context
     context = cl::Context(device);
-       
+
+    has_local_memory       = (CL_LOCAL == device.getInfo<CL_DEVICE_LOCAL_MEM_TYPE>());
+    is_unified_host_memory = (CL_TRUE  == device.getInfo<CL_DEVICE_HOST_UNIFIED_MEMORY>());
+
     //Load source
-    std::ifstream source_file{"kernels/hog.opencl.cl"};
+    std::string source_file_name{ "kernels/hog.opencl.cl" };
+    std::ifstream source_file{ source_file_name };
     std::string source{ std::istreambuf_iterator<char>{source_file}, std::istreambuf_iterator<char>{} };
 
     //Create program
@@ -247,11 +246,15 @@ nel::HOGDescriptorOCL::HOGDescriptorOCL(int numberOfCells_, int numberOfBins_, b
 
     //Build program
     std::stringstream build_opts;
-    //-cl-unsafe-math-optimizations might work, but increases HOG 2x2 error over 1e-6 by a bit.
-    //-cl-fast-relaxed-math gives totally wrong results
-    build_opts << "-cl-single-precision-constant -cl-denorms-are-zero -cl-no-signed-zeros -cl-finite-math-only";
-    build_opts << " -D NUMBER_OF_CELLS=" << std::to_string(numberOfCells);
-    build_opts << " -D NUMBER_OF_BINS="  << std::to_string(numberOfBins);
+    build_opts << " -cl-single-precision-constant";
+    build_opts << " -cl-denorms-are-zero";
+    build_opts << " -cl-no-signed-zeros";
+    build_opts << " -cl-finite-math-only";
+//    build_opts << " -cl-unsafe-math-optimizations"; //might work, but increases HOG 2x2 error over 1e-6 by a bit.
+//    build_opts << " -cl-fast-relaxed-math";   //Does not work with Intel HD4000
+    build_opts << " -Werror";
+    build_opts << " -D NUMBER_OF_CELLS=" << numberOfCells;
+    build_opts << " -D NUMBER_OF_BINS="  << numberOfBins;
     build_opts << " -D GAUSSIAN_WEIGHTS=" << (gauss    ? "1" : "0");
     build_opts << " -D SPARTIAL_WEIGHTS=" << (spinterp ? "1" : "0");
     build_opts << " -D SIGNED_HOG="       << (_signed  ? "1" : "0");
@@ -261,7 +264,7 @@ nel::HOGDescriptorOCL::HOGDescriptorOCL(int numberOfCells_, int numberOfBins_, b
         program.build(build_opts.str().c_str());
     } catch (const cl::Error&) {
         auto buildlog = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
-        std::cerr << buildlog << std::endl;
+        std::cerr << "OpenCL compilation error: " << buildlog << std::endl;
         throw;
     }
 
@@ -269,7 +272,7 @@ nel::HOGDescriptorOCL::HOGDescriptorOCL(int numberOfCells_, int numberOfBins_, b
     queue = cl::CommandQueue(context, device, CL_QUEUE_PROFILING_ENABLE);
 
     //Query kernels and work group infos
-    calc_hog  = cl::Kernel(program, "calc_histogram");
+    calc_hog  = cl::Kernel(program, "calc_hog");
     calc_hog_preferred_multiple = calc_hog.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device);
     calc_hog_group_size         = calc_hog.getWorkGroupInfo<CL_KERNEL_WORK_GROUP_SIZE>(device);
 
@@ -278,7 +281,6 @@ nel::HOGDescriptorOCL::HOGDescriptorOCL(int numberOfCells_, int numberOfBins_, b
     fill_zeros_preferred_multiple = fill_zeros.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device);
     fill_zeros_group_size         = fill_zeros.getWorkGroupInfo<CL_KERNEL_WORK_GROUP_SIZE>(device);
 #endif
-    is_unified_host_memory = (CL_TRUE == device.getInfo<CL_DEVICE_HOST_UNIFIED_MEMORY>());
 }
 
 int nel::HOGDescriptorOCL::getNumberOfBins() const {

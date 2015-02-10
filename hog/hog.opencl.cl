@@ -44,6 +44,7 @@ inline void atomic_add_float_local(volatile __local float* source, float operand
 }
 #endif
 
+#if __OPENCL_C_VERSION__ < 120
 // OpenCL 1.1 does not have clEnqueueFillBuffer...
 __kernel void fill_zeros(__global float * restrict arr, int size) {
     int i = get_global_id(0);
@@ -51,37 +52,40 @@ __kernel void fill_zeros(__global float * restrict arr, int size) {
         arr[i] = 0.0f;
     }
 }
-
-//Calculates the intermediate data
-__kernel void calc_histogram( const int rows, const int cols, const int step_, __global const unsigned char * restrict image
-                            , const int num_locations, __global const float2 * restrict location_global, __global const float2 * restrict blocksize_global
-                            , __global float hist_global[][NUMBER_OF_CELLS][NUMBER_OF_CELLS][NUMBER_OF_BINS]
-#ifndef DISABLE_LOCAL
-                            ,  __local float  hist_local[][NUMBER_OF_CELLS][NUMBER_OF_CELLS][NUMBER_OF_BINS]
 #endif
-                            )
+
+__kernel void calc_hog( const int rows, const int cols, const int step_, __global const unsigned char * restrict image
+                      , const int num_locations, __global const float2 * restrict location_global, __global const float2 * restrict blocksize_global
+                      , __global float hist_global[][NUMBER_OF_CELLS][NUMBER_OF_CELLS][NUMBER_OF_BINS]
+#ifndef DISABLE_LOCAL
+                      ,  __local float  hist_local[][NUMBER_OF_CELLS][NUMBER_OF_CELLS][NUMBER_OF_BINS]
+#endif
+                      )
 {
+    size_t location_global_idx = get_global_id(2);
 #ifdef DISABLE_LOCAL
     #define atomic_add_float_local atomic_add_float_global
-    #define hist_local hist_global
+    #define hist_local             hist_global
+    #define location_local_idx     location_global_idx
 #else
     //Clear hist_local
-    for(int a = get_local_id(2); a < num_locations; a+=get_local_size(2)) {
-        for(int b = get_local_id(1); b < NUMBER_OF_CELLS; b+=get_local_size(1)) {
-            for(int c = get_local_id(0); c < NUMBER_OF_CELLS; c+=get_local_size(0)) {
-                for(int n = 0; n < NUMBER_OF_BINS ; ++n) {
-                    hist_local[a][b][c][n] = 0.0f;
-                }
+    size_t location_local_idx = get_local_id(2);
+
+    //Clear hist_local
+    for(int celly = get_local_id(1); celly < NUMBER_OF_CELLS; celly+=get_local_size(1)) {
+        for(int cellx = get_local_id(0); cellx < NUMBER_OF_CELLS; cellx+=get_local_size(0)) {
+            for(int bin = 0; bin < NUMBER_OF_BINS ; ++bin) {
+                hist_local[location_local_idx][celly][cellx][bin] = 0.0f;
             }
         }
     }
     
     barrier(CLK_LOCAL_MEM_FENCE);
 #endif
-    int locationIdx = get_global_id(2);
-    if (locationIdx < num_locations) {
-        float2 location = location_global[locationIdx];
-        float2 blck_size = blocksize_global[locationIdx];
+    
+    if (location_global_idx < num_locations) {
+        float2 location = location_global[location_global_idx];
+        float2 blck_size = blocksize_global[location_global_idx];
         int2 img_size = (int2)(cols, rows);
 
         float2 minloc = location - blck_size * 0.5f;
@@ -109,6 +113,7 @@ __kernel void calc_histogram( const int rows, const int cols, const int step_, _
 
 #if GAUSSIAN_WEIGHTS
             {
+                //Code before optimization:
                 //float2 sigma = blck_size / 2.0f;
                 //float2 sigmaSq = sigma*sigma;
                 //float2 m1p2sigmaSq = -1.0f / (2.0f * sigmaSq);
@@ -130,8 +135,8 @@ __kernel void calc_histogram( const int rows, const int cols, const int step_, _
             float2 bin_weight = magnitude * (float2)(bin_weight0, bin_weight1);
 
 #if NUMBER_OF_CELLS == 1
-            atomic_add_float_local( &(hist_local[locationIdx][0][0][bin.s0]), bin_weight.s0);
-            atomic_add_float_local( &(hist_local[locationIdx][0][0][bin.s1]), bin_weight.s1);
+            atomic_add_float_local( &(hist_local[location_local_idx][0][0][bin.s0]), bin_weight.s0);
+            atomic_add_float_local( &(hist_local[location_local_idx][0][0][bin.s1]), bin_weight.s1);
 #elif SPARTIAL_WEIGHTS
             float2 relative_pos = (convert_float2(point) - minloc) * NUMBER_OF_CELLS / blck_size - 0.5f;
             int2 celli = convert_int2_rtn(relative_pos);
@@ -140,26 +145,26 @@ __kernel void calc_histogram( const int rows, const int cols, const int step_, _
             float2 scale0 = 1.0f - scale1;
 
             if (celli.y >= 0 && celli.x >= 0) {
-                atomic_add_float_local( &(hist_local[locationIdx][celli.y  ][celli.x  ][bin.s0]), scale0.y * scale0.x * bin_weight.s0);
-                atomic_add_float_local( &(hist_local[locationIdx][celli.y  ][celli.x  ][bin.s1]), scale0.y * scale0.x * bin_weight.s1);
+                atomic_add_float_local( &(hist_local[location_local_idx][celli.y  ][celli.x  ][bin.s0]), scale0.y * scale0.x * bin_weight.s0);
+                atomic_add_float_local( &(hist_local[location_local_idx][celli.y  ][celli.x  ][bin.s1]), scale0.y * scale0.x * bin_weight.s1);
             }
             if (celli.y >= 0 && celli.x < NUMBER_OF_CELLS - 1) {
-                atomic_add_float_local( &(hist_local[locationIdx][celli.y  ][celli.x+1][bin.s0]), scale0.y * scale1.x * bin_weight.s0);
-                atomic_add_float_local( &(hist_local[locationIdx][celli.y  ][celli.x+1][bin.s1]), scale0.y * scale1.x * bin_weight.s1);
+                atomic_add_float_local( &(hist_local[location_local_idx][celli.y  ][celli.x+1][bin.s0]), scale0.y * scale1.x * bin_weight.s0);
+                atomic_add_float_local( &(hist_local[location_local_idx][celli.y  ][celli.x+1][bin.s1]), scale0.y * scale1.x * bin_weight.s1);
             }
             if (celli.y < NUMBER_OF_CELLS - 1 && celli.x >= 0) {
-                atomic_add_float_local( &(hist_local[locationIdx][celli.y+1][celli.x  ][bin.s0]), scale1.y * scale0.x * bin_weight.s0);
-                atomic_add_float_local( &(hist_local[locationIdx][celli.y+1][celli.x  ][bin.s1]), scale1.y * scale0.x * bin_weight.s1);
+                atomic_add_float_local( &(hist_local[location_local_idx][celli.y+1][celli.x  ][bin.s0]), scale1.y * scale0.x * bin_weight.s0);
+                atomic_add_float_local( &(hist_local[location_local_idx][celli.y+1][celli.x  ][bin.s1]), scale1.y * scale0.x * bin_weight.s1);
             }
             if (celli.y < NUMBER_OF_CELLS - 1 && celli.x < NUMBER_OF_CELLS - 1) {
-                atomic_add_float_local( &(hist_local[locationIdx][celli.y+1][celli.x+1][bin.s0]), scale1.y * scale1.x * bin_weight.s0);
-                atomic_add_float_local( &(hist_local[locationIdx][celli.y+1][celli.x+1][bin.s1]), scale1.y * scale1.x * bin_weight.s1);
+                atomic_add_float_local( &(hist_local[location_local_idx][celli.y+1][celli.x+1][bin.s0]), scale1.y * scale1.x * bin_weight.s0);
+                atomic_add_float_local( &(hist_local[location_local_idx][celli.y+1][celli.x+1][bin.s1]), scale1.y * scale1.x * bin_weight.s1);
             }
 #else
             int2 celli = convert_int2_rtn((convert_float2(point) - minloc) * NUMBER_OF_CELLS / blck_size);
 
-            atomic_add_float_local( &(hist_local[locationIdx][celli.y][celli.x][bin.s0]), bin_weight.s0);
-            atomic_add_float_local( &(hist_local[locationIdx][celli.y][celli.x][bin.s1]), bin_weight.s1);
+            atomic_add_float_local( &(hist_local[location_local_idx][celli.y][celli.x][bin.s0]), bin_weight.s0);
+            atomic_add_float_local( &(hist_local[location_local_idx][celli.y][celli.x][bin.s1]), bin_weight.s1);
 #endif
         }
     }
@@ -167,12 +172,10 @@ __kernel void calc_histogram( const int rows, const int cols, const int step_, _
     barrier(CLK_LOCAL_MEM_FENCE);
     
     //Add local version to global
-    for(int a = get_local_id(2); a < num_locations; a+=get_local_size(2)) {
-        for(int b = get_local_id(1); b < NUMBER_OF_CELLS; b+=get_local_size(1)) {
-            for(int c = get_local_id(0); c < NUMBER_OF_CELLS; c+=get_local_size(0)) {
-                for(int n = 0; n < NUMBER_OF_BINS ; ++n) {
-                    atomic_add_float_global( &(hist_global[a][b][c][n]), hist_local[a][b][c][n] );
-                }
+    for(int celly = get_local_id(1); celly < NUMBER_OF_CELLS; celly+=get_local_size(1)) {
+        for(int cellx = get_local_id(0); cellx < NUMBER_OF_CELLS; cellx+=get_local_size(0)) {
+            for(int bin = 0; bin < NUMBER_OF_BINS ; ++bin) {
+                atomic_add_float_global( &(hist_global[location_global_idx][celly][cellx][bin]), hist_local[location_local_idx][celly][cellx][bin] );
             }
         }
     }
