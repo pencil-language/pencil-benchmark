@@ -84,8 +84,8 @@ __kernel void calc_histogram( const int rows, const int cols, const int step_, _
         float2 blck_size = blocksize_global[locationIdx];
         int2 img_size = (int2)(cols, rows);
 
-        float2 minloc = location - blck_size / 2.0f;
-        float2 maxloc = location + blck_size / 2.0f;
+        float2 minloc = location - blck_size * 0.5f;
+        float2 maxloc = location + blck_size * 0.5f;
 
         int2 mini = max(convert_int2_rtp(minloc), 1);
         int2 maxi = min(convert_int2_rtn(maxloc), img_size - 2);
@@ -102,31 +102,36 @@ __kernel void calc_histogram( const int rows, const int cols, const int step_, _
 
             //calculate the orientation
 #if SIGNED_HOG
-            float orientation = atan2pi(mdy, mdx) / 2.0f;
+            float orientation = atan2pi(mdy, mdx) * 0.5f;
 #else
             float orientation = atan2pi(mdy, mdx) + 0.5f;
 #endif
 
 #if GAUSSIAN_WEIGHTS
             {
-                float2 sigma = blck_size / 2.0f;
-                float2 sigmaSq = sigma*sigma;
-                float2 m1p2sigmaSq = -1.0f / (2.0f * sigmaSq);
-                float2 distanceSq = pown(convert_float2(point) - location, 2);
+                //float2 sigma = blck_size / 2.0f;
+                //float2 sigmaSq = sigma*sigma;
+                //float2 m1p2sigmaSq = -1.0f / (2.0f * sigmaSq);
+                float2 m1p2sigmaSq = -2.0f / (blck_size * blck_size);
+                float2 distance = convert_float2(point) - location;
+                float2 distanceSq = distance*distance;
                 magnitude *= exp(dot(distanceSq, m1p2sigmaSq));
             }
 #endif
             float relative_orientation = orientation * NUMBER_OF_BINS - 0.5f;
-            int bin1 = convert_int_rtp(relative_orientation);
-            int bin0 = bin1 - 1;
-            float bin_weight0 = magnitude * (convert_float(bin1) - relative_orientation);
-            float bin_weight1 = magnitude * (relative_orientation - convert_float(bin0));
-            bin0 = (bin0 + NUMBER_OF_BINS) % NUMBER_OF_BINS;
-            bin1 = (bin1 + NUMBER_OF_BINS) % NUMBER_OF_BINS;
+            
+            int   bin0        = convert_int_rtn(relative_orientation);
+            float bin_weight1 = relative_orientation - convert_float(bin0);
+            
+            int   bin1        = 1    + bin0;
+            float bin_weight0 = 1.0f - bin_weight1;
+            
+            int2   bin        = ((int2)(bin0, bin1) + NUMBER_OF_BINS) % NUMBER_OF_BINS;
+            float2 bin_weight = magnitude * (float2)(bin_weight0, bin_weight1);
 
 #if NUMBER_OF_CELLS == 1
-            atomic_add_float_local( &(hist_local[locationIdx][0][0][bin0]), bin_weight0);
-            atomic_add_float_local( &(hist_local[locationIdx][0][0][bin1]), bin_weight1);
+            atomic_add_float_local( &(hist_local[locationIdx][0][0][bin.s0]), bin_weight.s0);
+            atomic_add_float_local( &(hist_local[locationIdx][0][0][bin.s1]), bin_weight.s1);
 #elif SPARTIAL_WEIGHTS
             float2 relative_pos = (convert_float2(point) - minloc) * NUMBER_OF_CELLS / blck_size - 0.5f;
             int2 celli = convert_int2_rtn(relative_pos);
@@ -135,26 +140,26 @@ __kernel void calc_histogram( const int rows, const int cols, const int step_, _
             float2 scale0 = 1.0f - scale1;
 
             if (celli.y >= 0 && celli.x >= 0) {
-                atomic_add_float_local( &(hist_local[locationIdx][celli.y  ][celli.x  ][bin0]), scale0.y * scale0.x * bin_weight0);
-                atomic_add_float_local( &(hist_local[locationIdx][celli.y  ][celli.x  ][bin1]), scale0.y * scale0.x * bin_weight1);
+                atomic_add_float_local( &(hist_local[locationIdx][celli.y  ][celli.x  ][bin.s0]), scale0.y * scale0.x * bin_weight.s0);
+                atomic_add_float_local( &(hist_local[locationIdx][celli.y  ][celli.x  ][bin.s1]), scale0.y * scale0.x * bin_weight.s1);
             }
             if (celli.y >= 0 && celli.x < NUMBER_OF_CELLS - 1) {
-                atomic_add_float_local( &(hist_local[locationIdx][celli.y  ][celli.x+1][bin0]), scale0.y * scale1.x * bin_weight0);
-                atomic_add_float_local( &(hist_local[locationIdx][celli.y  ][celli.x+1][bin1]), scale0.y * scale1.x * bin_weight1);
+                atomic_add_float_local( &(hist_local[locationIdx][celli.y  ][celli.x+1][bin.s0]), scale0.y * scale1.x * bin_weight.s0);
+                atomic_add_float_local( &(hist_local[locationIdx][celli.y  ][celli.x+1][bin.s1]), scale0.y * scale1.x * bin_weight.s1);
             }
             if (celli.y < NUMBER_OF_CELLS - 1 && celli.x >= 0) {
-                atomic_add_float_local( &(hist_local[locationIdx][celli.y+1][celli.x  ][bin0]), scale1.y * scale0.x * bin_weight0);
-                atomic_add_float_local( &(hist_local[locationIdx][celli.y+1][celli.x  ][bin1]), scale1.y * scale0.x * bin_weight1);
+                atomic_add_float_local( &(hist_local[locationIdx][celli.y+1][celli.x  ][bin.s0]), scale1.y * scale0.x * bin_weight.s0);
+                atomic_add_float_local( &(hist_local[locationIdx][celli.y+1][celli.x  ][bin.s1]), scale1.y * scale0.x * bin_weight.s1);
             }
             if (celli.y < NUMBER_OF_CELLS - 1 && celli.x < NUMBER_OF_CELLS - 1) {
-                atomic_add_float_local( &(hist_local[locationIdx][celli.y+1][celli.x+1][bin0]), scale1.y * scale1.x * bin_weight0);
-                atomic_add_float_local( &(hist_local[locationIdx][celli.y+1][celli.x+1][bin1]), scale1.y * scale1.x * bin_weight1);
+                atomic_add_float_local( &(hist_local[locationIdx][celli.y+1][celli.x+1][bin.s0]), scale1.y * scale1.x * bin_weight.s0);
+                atomic_add_float_local( &(hist_local[locationIdx][celli.y+1][celli.x+1][bin.s1]), scale1.y * scale1.x * bin_weight.s1);
             }
 #else
             int2 celli = convert_int2_rtn((convert_float2(point) - minloc) * NUMBER_OF_CELLS / blck_size);
 
-            atomic_add_float_local( &(hist_local[locationIdx][celli.y][celli.x][bin0]), bin_weight0);
-            atomic_add_float_local( &(hist_local[locationIdx][celli.y][celli.x][bin1]), bin_weight1);
+            atomic_add_float_local( &(hist_local[locationIdx][celli.y][celli.x][bin.s0]), bin_weight.s0);
+            atomic_add_float_local( &(hist_local[locationIdx][celli.y][celli.x][bin.s1]), bin_weight.s1);
 #endif
         }
     }
