@@ -23,8 +23,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 
 find_package(OpenCV REQUIRED core imgproc highgui ocl)
 find_package(TBB REQUIRED)
-
-set(OPENCL_LIBRARY "/opt/AMDAPPSDK-2.9-1/lib/x86_64/libOpenCL.so.1" CACHE PATH "OpenCL runtime library")    #broken in FindOpenCL.cmake (upgrade to CMake 3.1,. or use -DOPENCL_LIBRARY=...) - Add libmali.so for Mali as well!
 find_package(OpenCL REQUIRED)
 
 set(Boost_USE_STATIC_LIBS       OFF)
