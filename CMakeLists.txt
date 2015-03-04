@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.8.12)
+cmake_minimum_required (VERSION 2.8.7)
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 set(CMAKE_DEBUG_POSTFIX d)
@@ -8,15 +8,15 @@ include(PENCIL.cmake)
 project(PENCIL_improc_benchmark)
 
 ######################### Compiler switches ##########################
-add_compile_options(-march=native -flto -Wall -Wno-unknown-pragmas)
+set(COMMON_COMPILE_FLAGS "-march=native -flto -Wall -Wno-unknown-pragmas")
 
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "arm.*|ARM.*")
-    add_compile_options(-mfpu=vfpv4)
+    set(COMMON_COMPILE_FLAGS "${COMMON_COMPILE_FLAGS} -mfpu=vfpv4")
 else()
-    add_compile_options(-mavx)
+    set(COMMON_COMPILE_FLAGS "${COMMON_COMPILE_FLAGS} -mavx")
 endif()
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COMMON_COMPILE_FLAGS} -std=c11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_COMPILE_FLAGS} -std=c++11")
 
 ########################## Dependencies ##########################
 #directories: change in GUI if needed
