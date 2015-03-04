@@ -143,6 +143,8 @@ static void hog_multi( const int NUMBER_OF_CELLS
             }
         }
     }
+    __pencil_kill(location);
+    __pencil_kill(image);
 #pragma endscop
 }
 

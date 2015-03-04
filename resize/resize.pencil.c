@@ -59,6 +59,7 @@ static void resize( const int original_rows
             }
         }
     }
+    __pencil_kill(original);
 #pragma endscop
 }
 

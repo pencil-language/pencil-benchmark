@@ -34,6 +34,7 @@ static void RGB2Gray( const int rows
             dst[q][w] = CV_DESCALE( (src[q][w][2] * B2Y + src[q][w][1] * G2Y + src[q][w][0] * R2Y ), yuv_shift );
         }
     }
+    __pencil_kill(src);
 #pragma endscop
 }
 

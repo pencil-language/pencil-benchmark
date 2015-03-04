@@ -54,6 +54,7 @@ static void affine( const int src_rows, const int src_cols, const int src_step, 
             dst[n_r][n_c] = mixf( mixf(A00, A10, r), mixf(A01, A11, r), c);
         }
     }
+    __pencil_kill(src);
 #pragma endscop
 }
 

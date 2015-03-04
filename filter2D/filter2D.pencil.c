@@ -48,6 +48,8 @@ static void filter2D( const int rows
             }
         }
     }
+    __pencil_kill(src);
+    __pencil_kill(kernel_);
 #pragma endscop
 }
 
