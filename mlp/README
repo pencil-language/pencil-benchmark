@@ -1,6 +1,0 @@
-For compiling and running the test You are going to need OpenCV
-(tested with 2.4.2) and boost.
-
-The file with the input data is commited compressed as
-'response_dumps.bin.7z'. You have to decompress it, but be carefull
-it's 1.6GiB when uncompressed.
