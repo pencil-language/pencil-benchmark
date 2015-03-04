@@ -41,7 +41,7 @@ function(pencil_wrap)
   endif()
   foreach(pencil_file ${COMPILE_PENCIL_FILES})
     get_filename_component(PENCIL_FILE_NAME ${pencil_file} NAME_WE)
-    get_filename_component(PENCIL_FILE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${pencil_file} DIRECTORY)
+    get_filename_component(PENCIL_FILE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${pencil_file} PATH)
     list(APPEND ${COMPILE_PENCIL_DEST_INCLUDE_DIRS} ${PENCIL_FILE_DIRECTORY})
     add_custom_command(OUTPUT ${PENCIL_FILE_NAME}.ppcg.c ${PENCIL_FILE_NAME}.ppcg_kernel.cl
                        COMMAND ${PENCIL_COMPILER}
