@@ -22,7 +22,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_COMPILE_FLAGS} -std=c++11")
 #directories: change in GUI if needed
 
 find_package(OpenCV REQUIRED core imgproc highgui ocl)
-find_package(TBB REQUIRED)
 find_package(OpenCL REQUIRED)
 
 set(Boost_USE_STATIC_LIBS       OFF)
@@ -30,18 +29,23 @@ set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME    OFF)
 find_package(Boost REQUIRED filesystem system)
 
+######################### Optional dependencies ##########################
+
+find_package(TBB)
+if (TBB_LIBRARY)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_TBB")
+endif()
+
 ######################### Add project files ##########################
 
 set( COMMON_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include
                          ${OpenCV_INCLUDE_DIRS}
                          ${Boost_INCLUDE_DIRS}
-                         ${TBB_INCLUDE_DIRS}
                          ${OPENCL_INCLUDE_DIRS}
                          ${PENCIL_INCLUDE_DIRS}
                          )
 set( COMMON_LINK_LIBRARIES ${OpenCV_LIBRARIES}
                            ${Boost_LIBRARIES}
-                           ${TBB_LIBRARIES}
                            ${PENCIL_LIBRARIES}
                            ${OPENCL_LIBRARIES}
                            )
@@ -91,7 +95,7 @@ target_include_directories( test_dilate     PRIVATE ${COMMON_INCLUDE_DIRS} ${CMA
 target_include_directories( test_filter2D   PRIVATE ${COMMON_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/filter2D   ${filter2D_GEN_INCLUDE_DIRS}   )
 target_include_directories( test_gaussian   PRIVATE ${COMMON_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/gaussian   ${gaussian_GEN_INCLUDE_DIRS}   )
 target_include_directories( test_histogram  PRIVATE ${COMMON_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/histogram  ${histogram_GEN_INCLUDE_DIRS}  )
-target_include_directories( test_hog        PRIVATE ${COMMON_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/hog        ${hog_GEN_INCLUDE_DIRS}        )
+target_include_directories( test_hog        PRIVATE ${COMMON_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/hog        ${hog_GEN_INCLUDE_DIRS}        ${TBB_LIBRARIES})
 target_include_directories( test_resize     PRIVATE ${COMMON_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/resize     ${resize_GEN_INCLUDE_DIRS}     )
 target_include_directories( test_warpAffine PRIVATE ${COMMON_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/warpAffine ${warpAffine_GEN_INCLUDE_DIRS} )
 
@@ -100,7 +104,7 @@ target_link_libraries( test_dilate     ${COMMON_LINK_LIBRARIES} )
 target_link_libraries( test_filter2D   ${COMMON_LINK_LIBRARIES} )
 target_link_libraries( test_gaussian   ${COMMON_LINK_LIBRARIES} )
 target_link_libraries( test_histogram  ${COMMON_LINK_LIBRARIES} )
-target_link_libraries( test_hog        ${COMMON_LINK_LIBRARIES} )
+target_link_libraries( test_hog        ${COMMON_LINK_LIBRARIES} ${TBB_LIBRARIES})
 target_link_libraries( test_resize     ${COMMON_LINK_LIBRARIES} )
 target_link_libraries( test_warpAffine ${COMMON_LINK_LIBRARIES} )
 

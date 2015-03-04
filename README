@@ -10,7 +10,6 @@ To build the CARP-Benchmarks, you need:
 - A working OpenCL driver.
 - The following packages needs to be installed (at least on Ubuntu 13.10):
     libboost-filesystem-dev libboost-system-dev (or, full Boost: libboost-all-dev)
-    libtbb-dev
     build-essential
     cmake
 - A polyhedral compiler
@@ -27,9 +26,10 @@ To build the CARP-Benchmarks, you need:
     Configure build with CMake:
         mkdir opencv-build
         cd opencv-build
-        cmake ../opencv -DWITH_TBB=ON -DENABLE_AVX=ON -DENABLE_SSE41=ON -DENABLE_SSE42=ON -DENABLE_SSSE3=ON -DENABLE_SSE3=ON
+        cmake ../opencv -DENABLE_AVX=ON -DENABLE_SSE41=ON -DENABLE_SSE42=ON -DENABLE_SSSE3=ON -DENABLE_SSE3=ON
       If your CPU or OS does not support AVX/SSEx instruction sets, do not add the corresponding compile switches. If your CPU is ARM, set the appropriate NEON/VFP switches.
-          Make sure the necessary modules are to be built - CMake should print a (long) status with a "To be built:" list, it should contain core, ocl and highgui (plus their dependencies)
+      Optional: Add TBB usage with -DWITH_TBB=ON (requires libtbb-dev package)
+      Make sure the necessary modules are to be built - CMake should print a (long) status with a "To be built:" list, it should contain core, ocl and highgui (plus their dependencies)
         Build OpenCV
         make all -j12
     Optionally, install it as a system library:

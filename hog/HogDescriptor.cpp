@@ -19,8 +19,10 @@
 #include <fstream>
 #include <iostream>
 
+#ifdef WITH_TBB
 #include <tbb/parallel_for.h>
 #include <tbb/blocked_range.h>
+#endif
 
 namespace {
     template<typename T>
@@ -77,8 +79,12 @@ cv::Mat_<float> nel::HOGDescriptorCPP::compute( const cv::Mat_<uint8_t>  &image
     assert(2 == blocksizes.cols);
     cv::Mat_<float> descriptors(locations.rows, getNumberOfBins(), 0.0f);
 
+#ifdef WITH_TBB
     tbb::parallel_for(tbb::blocked_range<size_t>(0, locations.rows, 5), [&](const tbb::blocked_range<size_t> range) {
     for (size_t n = range.begin(); n != range.end(); ++n) {
+#else
+    for (size_t n = 0; n < locations.rows; ++n) {
+#endif
 
         const float &blocksizeX = blocksizes(n,0);
         const float &blocksizeY = blocksizes(n,1);
@@ -205,17 +211,10 @@ cv::Mat_<float> nel::HOGDescriptorCPP::compute( const cv::Mat_<uint8_t>  &image
         }
         cv::Mat_<float> destRow = descriptors.row(n);
         hist.reshape(0,1).copyTo(destRow);
-          //Normalize result
-//        hist = hist.reshape(0,1);
-//        float scale = static_cast<float>(cv::norm(hist, cv::NORM_L2));
-//        if (scale < std::numeric_limits<float>::epsilon())
-//            descriptors.row(n)= 0.0f;
-//        else {
-//            hist = hist/scale;
-//            hist = cv::min(hist, 0.3f);
-//            cv::normalize(hist, descriptors.row(n));
-//        }
-    }});
+    }
+#ifdef WITH_TBB
+    });
+#endif
     return descriptors;
 }
 
