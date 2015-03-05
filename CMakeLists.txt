@@ -15,8 +15,8 @@ if (CMAKE_SYSTEM_PROCESSOR MATCHES "arm.*|ARM.*")
 else()
     set(COMMON_COMPILE_FLAGS "${COMMON_COMPILE_FLAGS} -mavx")
 endif()
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COMMON_COMPILE_FLAGS} -std=c11")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_COMPILE_FLAGS} -std=c++11")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COMMON_COMPILE_FLAGS} -std=c99")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_COMPILE_FLAGS} -std=c++0x")
 
 ########################## Dependencies ##########################
 #directories: change in GUI if needed
