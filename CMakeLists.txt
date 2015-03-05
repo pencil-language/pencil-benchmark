@@ -90,14 +90,27 @@ add_executable(test_hog        ${hog_SOURCES}        ${hog_GEN_SOURCES}        )
 add_executable(test_resize     ${resize_SOURCES}     ${resize_GEN_SOURCES}     )
 add_executable(test_warpAffine ${warpAffine_SOURCES} ${warpAffine_GEN_SOURCES} )
 
-target_include_directories( test_cvt_color  PRIVATE ${COMMON_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/cvt_color  ${cvt_color_GEN_INCLUDE_DIRS}  )
-target_include_directories( test_dilate     PRIVATE ${COMMON_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/dilate     ${dilate_GEN_INCLUDE_DIRS}     )
-target_include_directories( test_filter2D   PRIVATE ${COMMON_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/filter2D   ${filter2D_GEN_INCLUDE_DIRS}   )
-target_include_directories( test_gaussian   PRIVATE ${COMMON_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/gaussian   ${gaussian_GEN_INCLUDE_DIRS}   )
-target_include_directories( test_histogram  PRIVATE ${COMMON_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/histogram  ${histogram_GEN_INCLUDE_DIRS}  )
-target_include_directories( test_hog        PRIVATE ${COMMON_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/hog        ${hog_GEN_INCLUDE_DIRS}        ${TBB_LIBRARIES})
-target_include_directories( test_resize     PRIVATE ${COMMON_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/resize     ${resize_GEN_INCLUDE_DIRS}     )
-target_include_directories( test_warpAffine PRIVATE ${COMMON_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/warpAffine ${warpAffine_GEN_INCLUDE_DIRS} )
+if(${CMAKE_VERSION} VERSION_LESS 2.8.11)
+    include_directories( ${COMMON_INCLUDE_DIRS}
+                         ${CMAKE_CURRENT_SOURCE_DIR}/cvt_color  ${cvt_color_GEN_INCLUDE_DIRS}
+                         ${CMAKE_CURRENT_SOURCE_DIR}/dilate     ${dilate_GEN_INCLUDE_DIRS}
+                         ${CMAKE_CURRENT_SOURCE_DIR}/filter2D   ${filter2D_GEN_INCLUDE_DIRS}
+                         ${CMAKE_CURRENT_SOURCE_DIR}/gaussian   ${gaussian_GEN_INCLUDE_DIRS}
+                         ${CMAKE_CURRENT_SOURCE_DIR}/histogram  ${histogram_GEN_INCLUDE_DIRS}
+                         ${CMAKE_CURRENT_SOURCE_DIR}/hog        ${hog_GEN_INCLUDE_DIRS}        ${TBB_INCLUDE_DIRS}
+                         ${CMAKE_CURRENT_SOURCE_DIR}/resize     ${resize_GEN_INCLUDE_DIRS}
+                         ${CMAKE_CURRENT_SOURCE_DIR}/warpAffine ${warpAffine_GEN_INCLUDE_DIRS}
+                       )
+else()
+    target_include_directories( test_cvt_color  PRIVATE ${COMMON_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/cvt_color  ${cvt_color_GEN_INCLUDE_DIRS}  )
+    target_include_directories( test_dilate     PRIVATE ${COMMON_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/dilate     ${dilate_GEN_INCLUDE_DIRS}     )
+    target_include_directories( test_filter2D   PRIVATE ${COMMON_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/filter2D   ${filter2D_GEN_INCLUDE_DIRS}   )
+    target_include_directories( test_gaussian   PRIVATE ${COMMON_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/gaussian   ${gaussian_GEN_INCLUDE_DIRS}   )
+    target_include_directories( test_histogram  PRIVATE ${COMMON_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/histogram  ${histogram_GEN_INCLUDE_DIRS}  )
+    target_include_directories( test_hog        PRIVATE ${COMMON_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/hog        ${hog_GEN_INCLUDE_DIRS}        ${TBB_INCLUDE_DIRS})
+    target_include_directories( test_resize     PRIVATE ${COMMON_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/resize     ${resize_GEN_INCLUDE_DIRS}     )
+    target_include_directories( test_warpAffine PRIVATE ${COMMON_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/warpAffine ${warpAffine_GEN_INCLUDE_DIRS} )
+endif()
 
 target_link_libraries( test_cvt_color  ${COMMON_LINK_LIBRARIES} )
 target_link_libraries( test_dilate     ${COMMON_LINK_LIBRARIES} )
