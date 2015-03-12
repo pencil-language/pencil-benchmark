@@ -23,6 +23,12 @@ To build the CARP-Benchmarks, you need:
         cd opencv
         git checkout 2.4.10.1
         cd ..
+    If you are running the benchmark on ARM Mali GPU you need to apply the patch
+    0001-Make-image-filtering-erode-dilate-work-with-ARM-Mali.patch
+    provided with the benchmark to OpenCV. This patch changes the workgroup sizes to smaller ones so that OpenCV kernels can run on Mali (which only accepts small workgroups).
+        cd opencv
+        git apply ../pencil-benchmarks-imageproc/0001-Make-image-filtering-erode-dilate-work-with-ARM-Mali.patch
+        cd ..
     Configure build with CMake:
         mkdir opencv-build
         cd opencv-build
