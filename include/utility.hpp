@@ -24,11 +24,12 @@ class Timing
 public:
     Timing(const std::string & name) {
         std::cout << "Measuring performance of " << name << std::endl;
-        std::cout << " CPU Time -  GPU+copy -  GPU Time" << std::endl;
     }
 
     void print( const std::chrono::duration<double,std::milli> &cpu, const std::chrono::duration<double,std::milli> &gpu_p_copy, const std::chrono::duration<double,std::milli> &gpu_nocopy ) {
         std::cout << std::fixed << std::setprecision(6);
+        std::cout << std::endl << "OpenCV time measurements for an individual experiment:" << std::endl;
+        std::cout << "CPU Time    - GPU+copy    - GPU Time" << std::endl;
         std::cout << std::setw(8) << cpu       .count() << " ms - ";
         std::cout << std::setw(8) << gpu_p_copy.count() << " ms - ";
         std::cout << std::setw(8) << gpu_nocopy.count() << " ms" << std::endl;
@@ -39,9 +40,10 @@ public:
     }
 
     ~Timing() {
-        std::cout << "  [RealEyes] Total CPU time           : " << std::accumulate(cpu_timings       .begin(),cpu_timings       .end(),0.0) << "\n";
-        std::cout << "  [RealEyes] Total GPU time (inc copy): " << std::accumulate(gpu_p_copy_timings.begin(),gpu_p_copy_timings.end(),0.0) << "\n";
-        std::cout << "  [RealEyes] Total GPU time (w/o copy): " << std::accumulate(gpu_nocopy_timings.begin(),gpu_nocopy_timings.end(),0.0) << "\n";
+        std::cout << std::endl << "OpenCV accumulated time measurements for all the experiments (in ms):" << std::endl;
+        std::cout<<"[RealEyes] Accumulate CPU time           : "<< std::accumulate(cpu_timings       .begin(),cpu_timings       .end(),0.0) << "\n";
+        std::cout<<"[RealEyes] Accumulate GPU time (inc copy): "<< std::accumulate(gpu_p_copy_timings.begin(),gpu_p_copy_timings.end(),0.0) << "\n";
+        std::cout<<"[RealEyes] Accumulate GPU time (w/o copy): "<< std::accumulate(gpu_nocopy_timings.begin(),gpu_nocopy_timings.end(),0.0) << "\n";
     }
 };
 
