@@ -27,11 +27,11 @@ public:
         std::cout << " CPU Time -  GPU+copy -  GPU Time" << std::endl;
     }
 
-    void print( const std::chrono::duration<double> &cpu, const std::chrono::duration<double> &gpu_p_copy, const std::chrono::duration<double> &gpu_nocopy ) {
+    void print( const std::chrono::duration<double,std::milli> &cpu, const std::chrono::duration<double,std::milli> &gpu_p_copy, const std::chrono::duration<double,std::milli> &gpu_nocopy ) {
         std::cout << std::fixed << std::setprecision(6);
-        std::cout << std::setw(8) << cpu       .count() << "s - ";
-        std::cout << std::setw(8) << gpu_p_copy.count() << "s - ";
-        std::cout << std::setw(8) << gpu_nocopy.count() << "s" << std::endl;
+        std::cout << std::setw(8) << cpu       .count() << "ms - ";
+        std::cout << std::setw(8) << gpu_p_copy.count() << "ms - ";
+        std::cout << std::setw(8) << gpu_nocopy.count() << "ms" << std::endl;
 
         cpu_timings       .push_back(cpu       .count());
         gpu_p_copy_timings.push_back(gpu_p_copy.count());
