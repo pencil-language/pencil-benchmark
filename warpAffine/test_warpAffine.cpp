@@ -5,7 +5,7 @@
 #include <opencv2/ocl/ocl.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include <pencil_runtime.h>
+#include <prl.h>
 #include <chrono>
 
 namespace
@@ -43,7 +43,7 @@ void time_affine( const std::vector<carp::record_t>& pool, int iteration )
             cv::Mat transform( 2, 3, CV_32F, transform_data.data() );
 
             cv::Mat cpu_result, gpu_result, pen_result;
-            std::chrono::duration<double> elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil;
+            std::chrono::duration<double> elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy;
 
             {
                 const auto cpu_start = std::chrono::high_resolution_clock::now();
@@ -68,13 +68,12 @@ void time_affine( const std::vector<carp::record_t>& pool, int iteration )
                 pen_result.create( cpu_gray.size(), CV_32F );
                 convert_coeffs(reinterpret_cast<float*>(transform.data));
 
-                const auto pencil_start = std::chrono::high_resolution_clock::now();
+                prl_timings_start();
                 pencil_affine_linear( cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<float>()
                                     , pen_result.rows, pen_result.cols, pen_result.step1(), pen_result.ptr<float>(),
                         transform.at<float>(0,0), transform.at<float>(0,1), transform.at<float>(1,0), transform.at<float>(1,1),
                         transform.at<float>(1,2), transform.at<float>(0,2) );
-                const auto pencil_end = std::chrono::high_resolution_clock::now();
-                elapsed_time_pencil = pencil_end - pencil_start;
+                prl_timings_stop();
             }
             // Verifying the results
             if ( (cv::norm(cv::abs(cpu_result - gpu_result), cv::NORM_INF ) > 1 ) || (cv::norm(cv::abs(cpu_result - pen_result), cv::NORM_INF ) > 1 ) )
@@ -93,15 +92,17 @@ void time_affine( const std::vector<carp::record_t>& pool, int iteration )
 
                 throw std::runtime_error("The GPU results are not equivalent with the CPU results.");
             }
-
-            timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil );
+            // Dump execution times for OpenCV calls.
+            timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy );
         }
     }
+    // Dump execution times for PENCIL code.
+    prl_timings_dump();
 }
 
 int main(int argc, char* argv[])
 {
-    pencil_init(PENCIL_TARGET_DEVICE_DYNAMIC);
+    prl_init(PRL_TARGET_DEVICE_DYNAMIC);
 
     std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
 
@@ -112,6 +113,6 @@ int main(int argc, char* argv[])
     time_affine( pool, 20 );
 #endif
 
-    pencil_shutdown();
+    prl_shutdown();
     return EXIT_SUCCESS;
 }

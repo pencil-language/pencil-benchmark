@@ -5,7 +5,7 @@
 #include <opencv2/ocl/ocl.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include <pencil_runtime.h>
+#include <prl.h>
 #include <chrono>
 
 void time_resize( const std::vector<carp::record_t>& pool, const std::vector<cv::Size>& sizes, int iteration )
@@ -19,7 +19,7 @@ void time_resize( const std::vector<carp::record_t>& pool, const std::vector<cv:
                 cv::cvtColor( item.cpuimg(), cpu_gray, CV_RGB2GRAY );
 
                 cv::Mat cpu_result, gpu_result, pen_result;
-                std::chrono::duration<double> elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil;
+                std::chrono::duration<double> elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy;
 
                 {
                     const auto cpu_start = std::chrono::high_resolution_clock::now();
@@ -43,10 +43,9 @@ void time_resize( const std::vector<carp::record_t>& pool, const std::vector<cv:
                     // pencil verification
                     pen_result.create(size, CV_8UC1);
 
-                    const auto pencil_start = std::chrono::high_resolution_clock::now();
+                    prl_timings_start();
                     pencil_resize_LN(cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr(), pen_result.rows, pen_result.cols, pen_result.step1(), pen_result.ptr() );
-                    const auto pencil_end = std::chrono::high_resolution_clock::now();
-                    elapsed_time_pencil = pencil_end - pencil_start;
+                    prl_timings_stop();
                 }
                 // Verifying the results - TODO - Something fishy is happening at borders
 #define REMOVE_BORDER(img) img(cv::Range(1, size.height-1), cv::Range(1, size.width-1))
@@ -62,16 +61,18 @@ void time_resize( const std::vector<carp::record_t>& pool, const std::vector<cv:
 
                     throw std::runtime_error("The GPU results are not equivalent with the CPU or Pencil results.");
                 }
-
-                timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil );
+                // Dump execution times for OpenCV calls.
+                timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy );
             } // for pool
         }
     }
+    // Dump execution times for PENCIL code.
+    prl_timings_dump();
 }
 
 int main(int argc, char* argv[])
 {
-    pencil_init(PENCIL_TARGET_DEVICE_DYNAMIC);
+    prl_init(PRL_TARGET_DEVICE_DYNAMIC);
 
     std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
 
@@ -87,6 +88,6 @@ int main(int argc, char* argv[])
 
     time_resize( pool, sizes, iteration );
 
-    pencil_shutdown();
+    prl_shutdown();
     return EXIT_SUCCESS;
 }

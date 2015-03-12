@@ -5,7 +5,7 @@
 #include <opencv2/ocl/ocl.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include <pencil_runtime.h>
+#include <prl.h>
 #include <chrono>
 
 void time_dilate( const std::vector<carp::record_t>& pool, const std::vector<int>& elemsizes, int iteration )
@@ -24,7 +24,7 @@ void time_dilate( const std::vector<carp::record_t>& pool, const std::vector<int
                 cv::Mat structuring_element = cv::getStructuringElement( cv::MORPH_ELLIPSE, ksize, anchor );
 
                 cv::Mat cpu_result, gpu_result, pen_result;
-                std::chrono::duration<double> elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil;
+                std::chrono::duration<double> elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy;
 
                 {
                     const auto cpu_start = std::chrono::high_resolution_clock::now();
@@ -47,14 +47,13 @@ void time_dilate( const std::vector<carp::record_t>& pool, const std::vector<int
                 {
                     pen_result = cv::Mat(cpu_gray.size(), CV_8U);
 
-                    const auto pencil_start = std::chrono::high_resolution_clock::now();
+                    prl_timings_start();
                     pencil_dilate( cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr()
                                  , pen_result.step1(), pen_result.ptr()
                                  , structuring_element.rows, structuring_element.cols, structuring_element.step1(), structuring_element.ptr()
                                  , anchor.x, anchor.y
                                  );
-                    const auto pencil_end = std::chrono::high_resolution_clock::now();
-                    elapsed_time_pencil = pencil_end - pencil_start;
+                    prl_timings_stop();
                 }
                 // Verifying the results
                 if ( (cv::norm(cpu_result - gpu_result) > 0.01) || (cv::norm(cpu_result - pen_result) > 0.01) ) {
@@ -72,15 +71,19 @@ void time_dilate( const std::vector<carp::record_t>& pool, const std::vector<int
                     cv::imwrite( "dilate_cpupen.png", cv::abs(cpu_result-pen_result) );
                     throw std::runtime_error("The OpenCL or PENCIL results are not equivalent with the C++ results.");
                 }
-                timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil );
+                // Dump execution times for OpenCV calls.
+                timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy );
             }
         }
     }
+    // Dump execution times for PENCIL code.
+    prl_timings_dump();
 }
 
 int main(int argc, char* argv[])
 {
-    pencil_init(PENCIL_TARGET_DEVICE_DYNAMIC);
+    prl_init(PRL_TARGET_DEVICE_DYNAMIC);
+
     try {
         std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
 
@@ -92,12 +95,12 @@ int main(int argc, char* argv[])
         time_dilate( pool, { 3, 5 }, 25 );
 #endif
 
-        pencil_shutdown();
+        prl_shutdown();
         return EXIT_SUCCESS;
     }catch(const std::exception& e) {
         std::cout << e.what() << std::endl;
 
-        pencil_shutdown();
+        prl_shutdown();
         return EXIT_FAILURE;
     }
 }

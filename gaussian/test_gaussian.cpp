@@ -5,7 +5,7 @@
 #include <opencv2/ocl/ocl.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include <pencil_runtime.h>
+#include <prl.h>
 #include <chrono>
 
 void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<int>& sizes )
@@ -25,7 +25,7 @@ void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<i
             cpu_gray.convertTo( cpu_gray, CV_32F, 1.0/255. );
 
             cv::Mat cpu_result, gpu_result, pen_result;
-            std::chrono::duration<double> elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil;
+            std::chrono::duration<double> elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy;
 
             {
                 const auto cpu_start = std::chrono::high_resolution_clock::now();
@@ -53,14 +53,13 @@ void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<i
 
                 pen_result.create( cpu_gray.size(), CV_32F );
 
-                const auto pencil_start = std::chrono::high_resolution_clock::now();
+                prl_timings_start();
                 pencil_gaussian( cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<float>()
                                , kernel_x.rows, kernel_x.ptr<float>()
                                , kernel_y.rows, kernel_y.ptr<float>()
                                , pen_result.ptr<float>()
                                );
-                const auto pencil_end = std::chrono::high_resolution_clock::now();
-                elapsed_time_pencil = pencil_end - pencil_start;
+                prl_timings_stop();
                 //Free up resources
             }
             // Verifying the results
@@ -80,15 +79,17 @@ void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<i
                 throw std::runtime_error("The OpenCL or PENCIL results are not equivalent with the C++ results.");
             }
 
-
-            timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil );
+            // Dump execution times for OpenCV calls.
+            timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy );
         }
     }
+    // Dump execution times for PENCIL code.
+    prl_timings_dump();
 }
 
 int main(int argc, char* argv[])
 {
-    pencil_init(PENCIL_TARGET_DEVICE_DYNAMIC);
+    prl_init(PRL_TARGET_DEVICE_DYNAMIC);
     try {
         std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
 
@@ -98,12 +99,12 @@ int main(int argc, char* argv[])
 #else
         time_gaussian( pool, {5, 15, 25, 35, 45} );
 #endif
-        pencil_shutdown();
+        prl_shutdown();
         return EXIT_SUCCESS;
     } catch(const std::exception& e) {
         std::cout << e.what() << std::endl;
 
-        pencil_shutdown();
+        prl_shutdown();
         return EXIT_FAILURE;
     }
 }

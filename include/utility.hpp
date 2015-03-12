@@ -21,31 +21,27 @@ class Timing
     std::vector<double> cpu_timings;
     std::vector<double> gpu_p_copy_timings;
     std::vector<double> gpu_nocopy_timings;
-    std::vector<double> pen_timings;
 public:
     Timing(const std::string & name) {
         std::cout << "Measuring performance of " << name << std::endl;
-        std::cout << " CPU Time -  GPU+copy -  GPU Time -  PEN Time" << std::endl;
+        std::cout << " CPU Time -  GPU+copy -  GPU Time" << std::endl;
     }
 
-    void print( const std::chrono::duration<double> &cpu, const std::chrono::duration<double> &gpu_p_copy, const std::chrono::duration<double> &gpu_nocopy, const std::chrono::duration<double> &pen ) {
+    void print( const std::chrono::duration<double> &cpu, const std::chrono::duration<double> &gpu_p_copy, const std::chrono::duration<double> &gpu_nocopy ) {
         std::cout << std::fixed << std::setprecision(6);
         std::cout << std::setw(8) << cpu       .count() << "s - ";
         std::cout << std::setw(8) << gpu_p_copy.count() << "s - ";
-        std::cout << std::setw(8) << gpu_nocopy.count() << "s - ";
-        std::cout << std::setw(8) << pen       .count() << "s" << std::endl;
+        std::cout << std::setw(8) << gpu_nocopy.count() << "s" << std::endl;
 
         cpu_timings       .push_back(cpu       .count());
         gpu_p_copy_timings.push_back(gpu_p_copy.count());
         gpu_nocopy_timings.push_back(gpu_nocopy.count());
-        pen_timings       .push_back(pen       .count());
     }
 
     ~Timing() {
         std::cout << "  [RealEyes] Total CPU time           : " << std::accumulate(cpu_timings       .begin(),cpu_timings       .end(),0.0) << "\n";
         std::cout << "  [RealEyes] Total GPU time (inc copy): " << std::accumulate(gpu_p_copy_timings.begin(),gpu_p_copy_timings.end(),0.0) << "\n";
         std::cout << "  [RealEyes] Total GPU time (w/o copy): " << std::accumulate(gpu_nocopy_timings.begin(),gpu_nocopy_timings.end(),0.0) << "\n";
-        std::cout << "  [RealEyes] Total Pen time           : " << std::accumulate(pen_timings       .begin(),pen_timings       .end(),0.0) << "\n";
     }
 };
 
