@@ -1,77 +1,160 @@
-###################################################################################
+#################################
+PENCIL Image Processing Benchmark
+#################################
 
-This is a set of benchmarks for using PENCIL in the image processing problem domain
+# Prerequisites
+################
+- An OpenCL driver, header files and libraries.
+- The following packages:
+	* build-essential
+	* cmake
+- A PENCIL compiler (PPCG for example).
+- The PRL runtime library (included in PPCG).
+- The PENCIL header files (included in PPCG).
 
-###################################################################################
-
-## Building ##
-
-To build the CARP-Benchmarks, you need:
-- A working OpenCL driver.
-- The following packages needs to be installed (at least on Ubuntu 13.10):
-    libboost-filesystem-dev libboost-system-dev (or, full Boost: libboost-all-dev)
-    build-essential
-    cmake
-- A polyhedral compiler
-        Refer to the compiler's readme how to build and install.
-        This Benchmark requires a compiler version that also installs the PENCIL runtime.
-- An OpenCV build:
-    Tested with 2.4.9.1 and 2.4.10.1
-    Download OpenCV
+- OpenCV (2.4.9.1 or above):
+    * Tested with 2.4.9.1 and 2.4.10.1
+    * You can install the OpenCV packages (not tested)
+      or download and compile the sources (as described below).
+    * Download OpenCV
         git clone https://github.com/Itseez/opencv.git
-    Checkout 2.4.9.1 or newer:
+    * Checkout 2.4.9.1 or newer:
         cd opencv
         git checkout 2.4.10.1
         cd ..
-    If you are running the benchmark on ARM Mali GPU you need to apply the patch
-    0001-Make-image-filtering-erode-dilate-work-with-ARM-Mali.patch
-    provided with the benchmark to OpenCV. This patch changes the workgroup sizes to smaller ones so that OpenCV kernels can run on Mali (which only accepts small workgroups).
+    * If you are running the benchmark on ARM Mali GPU you need to apply the patch
+      0001-Make-image-filtering-erode-dilate-work-with-ARM-Mali.patch
+      provided with the benchmark to OpenCV. This patch changes the workgroup sizes to smaller ones so that OpenCV kernels can run on Mali (which only accepts small workgroups).
         cd opencv
         git apply ../pencil-benchmarks-imageproc/0001-Make-image-filtering-erode-dilate-work-with-ARM-Mali.patch
         cd ..
-    Configure build with CMake:
+    * Configure build with CMake:
         mkdir opencv-build
         cd opencv-build
-        cmake ../opencv -DENABLE_AVX=ON -DENABLE_SSE41=ON -DENABLE_SSE42=ON -DENABLE_SSSE3=ON -DENABLE_SSE3=ON
-      If your CPU or OS does not support AVX/SSEx instruction sets, do not add the corresponding compile switches. If your CPU is ARM, set the appropriate NEON/VFP switches.
-      Optional: Add TBB usage with -DWITH_TBB=ON (requires libtbb-dev package)
-      Make sure the necessary modules are to be built - CMake should print a (long) status with a "To be built:" list, it should contain core, ocl and highgui (plus their dependencies)
-        Build OpenCV
+        cmake ../opencv
+      * Details:
+        - If your CPU supports AVX/SSEx instruction sets, you can add the following to the "cmake ../opencv" command:
+            -DENABLE_AVX=ON -DENABLE_SSE41=ON -DENABLE_SSE42=ON -DENABLE_SSSE3=ON -DENABLE_SSE3=ON
+        - If your CPU is ARM, set the appropriate NEON/VFP switches.
+        - Optional: add TBB usage with -DWITH_TBB=ON (requires libtbb-dev package).
+        - Make sure the necessary modules are to be built - CMake should print a (long) status with a "To be built:" list, it should contain core, ocl and highgui (plus their dependencies).
+    * Build OpenCV
         make all -j12
-    Optionally, install it as a system library:
+      * Details: You can replace the number 12 with the number of threads of your processor(s)
+    * Optionally, install OpenCV as a system library:
         sudo make install
-    
-    Alternatively, you can try newer versions that might have fixed the issue in the patch, but those versions are not tested.
+
+############
+# Building
+############
+Two methods are possible.  You can either use bash scripts (in scripts/) or
+use CMake.
+
+# Building Using Bash Scripts (recommended):
+##############################################
+We recommend this method as you can use the same scripts to perform auto-tuning
+which is not possible with the Cmake method.
+
+- Set the variables in scripts/scripts_config.conf to define the paths of the
+  libraries, headers and tools used in the benchmark.
+
+  PENCIL_COMPILER_BINARY: the full path of the PENCIL compiler binary
+  PENCIL_INCLUDE_DIR: path of the directory containing "pencil.h"
+  PRL_LIB_DIR: path of the directory containing the PRL library (libprl.so)
+  OPENCL_LIB_DIR: path of the directory containing the OpenCL library
+  OPENCL_INCLUDE_DIR: path of the OpenCL header files
+  OPENCV_INCLUDE_DIR: path of the OpenCV header files
+  OPENCV_LIB_DIR: path of the OpenCV library files
+
+  LIST_OF_KERNELS: defines a blank separated list of the kernels that
+  should be compiled or autotuned.
+
+- You can use two scripts to build and autotune the benchmark:
+  
+  ./scripts/compile_and_run_kernels.sh
+
+  This will compile the kernels indicated using $LIST_OF_KERNELS
+  using the default PPCG options.
+  The script will generate the file build/output_time.csv that
+  contains the timings for each kernel.
+  In the generated timings file, the total_execution_time_reference
+  column indicates the total execution time for the OpenCV calls, it
+  includes the data copy time and the kernel execution time but does
+  not include kernel compilation time (the OpenCV kernel is precompiled
+  by being run once before taking time measurements).
+  The total_execution_time_optimized column indicates the total execution
+  time for the PPCG generated code, it includes the data copy times, the
+  kernel execution time, the time spent by any host code generated by the
+  PENCIL compiler but does not include kernel compilation time (kernels are
+  precompiled also by being run once before taking time measurements).
+  kernel_only_execution_time_optimized column indicates kernel execution
+  time measured using OpenCL profiling (does not include data copies and
+  kernel compilation).
+
+  A log is also generated in build/benchmark_building_log.txt
+
+  ./scripts/compile_and_run_kernels.sh <ppcg_options_file>
+
+  The previous command compiles and runs the kernels using the options
+  defined in <ppcg_options_file> (for example
+  scripts/ppcg_preset_options/best_optimizations_log.Nvidia_GTX470.sh)
+  such options can be obtained using autotuning (explained later).
+  <ppcg_options_file> contains the list of optimization options
+  for the kernels.  The option that corresponds to the i'th kernel
+  in the variable $LIST_OF_KERNELS is stored in best_optimization_options[$i].
+
+  ./scripts/ppcg_tuning.sh
+
+  This script is designed to perform autotuning for the PPCG PENCIL
+  compiler.  The script will generate many PPCG options internally, and will
+  launch PPCG with each one of these options, then will compile each
+  output of PPCG and will execute it.
+  The execution times for each PPCG options for
+  a given kernel are reported in build/output_time.$KERNEL_NAME.csv.
+  The best execution times for each kernel are reported in
+  build/$OUTPUT_TIME_FILE.csv 
+  The best PPCG options obtained through tuning are reported in
+  the file build/best_optimizations_log.sh
+
+
+# Building Using CMake :
+#########################
+
+To build the benchmark, you need:
 - Compile benchmark:
     Crate a directory for out-of-source build, run cmake and make:
-    -> CMake can be configured from a GUI window using cmake-gui. (recommended: list all parameters that can be changed)
-    -> OpenCL might not be found by the CMake script. In this case, set OPENCL_LIBRARY manually. It is a required parameter for ARM Mali: list BOTH libOpenCL.so and libmali.so.
-    -> Based on your OpenCL device, it is recommended to set up PENCIL_DEFAULT_FLAGS_* variables:
+    - CMake can be configured from a GUI window using cmake-gui. (recommended: list all parameters that can be change)
+    - OpenCL might not be found by the CMake script. In this case, set OPENCL_LIBRARY manually. It is a required parameter for ARM Mali: list BOTH libOpenCL.so and libmali.so.
+    - Based on your OpenCL device, it is recommended to set up PENCIL_DEFAULT_FLAGS_* variables:
         The default values are set to be the common denominator to allow it to work everywhere, but the performance is not optimal.
         PENCIL_DEFAULT_FLAGS_BLOCKSIZE should be set to the maximum workgroup sizes. For instance, AMD Radeon cards should use "16,16" (256 threads total)
         PENCIL_DEFAULT_FLAGS_LOCAL_MEMORY_SIZE is the amount of used __local memory. Alternatively set to 0 to disable __local memory usage (useful for ARM Mali).
         These parameters are reported by the tool clinfo: First is "Max work items[x]:" (individually) and "Max work group size:" (the multiply of values); second is "Max local memory:"
-    -> Optionally, as performance tuning try turning PENCIL_DEFAULT_FLAGS_MAXFUSE, PENCIL_DEFAULT_FLAGS_NO_SEPARATE_COMP, PENCIL_DEFAULT_FLAGS_DISABLE_PRIVATE flags ON or OFF.
-    -> If something is not installed at the standard paths (/usr, /usr/local), then run cmake-gui and edit the variables (should be straight-forward)
-    -> Set CMAKE_BUILD_TYPE to Release for optimized build, set to Debug to build without optimizations and with debug info.
-
+    - Optionally, as performance tuning try turning
+        PENCIL_DEFAULT_FLAGS_MAXFUSE,
+        PENCIL_DEFAULT_FLAGS_NO_SEPARATE_COMP,
+        PENCIL_DEFAULT_FLAGS_DISABLE_PRIVATE
+      flags ON or OFF.
+    - If something is not installed at the standard paths (/usr, /usr/local), then run cmake-gui and edit the variables (should be straight-forward)
+    - Set CMAKE_BUILD_TYPE to Release for optimized build, set to Debug to build without optimizations and with debug info.
         mkdir pencil-benchmarks-imageproc-build
         cd pencil-benchmarks-imageproc-build
         cmake -DCMAKE_BUILD_TYPE=Release -DOPENCL_LIBRARY=/path/to/libOpenCL.so -DPENCIL_DEFAULT_FLAGS_BLOCKSIZE="A,B" -DPENCIL_DEFAULT_FLAGS_LOCAL_MEMORY_SIZE=C path/to/pencil-benchmarks-imageproc-repo
         make all -j12
-    -> The CMake cache is persistent between builds, you only need to supply a parameter when you want to override it.
+    The CMake cache is persistent between builds, you only need to supply a parameter when you want to override it.
+
 - (Optional) Tune per-kernel parameters:
-    Because a polyhedral compiler can decide with different scheduling, it is impossible to know the optimal parameters in advance.
-    Most importantly, we usually need to support separate tile-grid-block sizes for different kernels, and allows access to advanced parameters of the polyhedral compiler.
+    We usually need to support separate tile-grid-block sizes for different kernels, and allows access to advanced parameters of the polyhedral compiler.
     You can supply these parameters using a corresponding PENCIL_FLAGS_* parameter, separate for every benchmark item. If this is not supplied, the default flags are used.
-    -> Warning: Due to CMake restrictions, some characters (quotes, backslash) needs escaping. Also, the semicolon character cannot be used in these strings.
-        instead of: --sizes={kernel[i]->tile[8,8];kernel[i]->grid[8,8];kernel[i]->block[8,8]}
-        use:        --sizes=\"{kernel[i]->tile[8,8]}\" --sizes=\"{kernel[i]->grid[8,8]}\" --sizes=\"{kernel[i]->block[8,8]}\"
+    - Warning: Due to CMake restrictions, some characters (quotes, backslash) needs escaping. Also, the semicolon character cannot be used in these strings.
+      instead of: --sizes={kernel[i]->tile[8,8];kernel[i]->grid[8,8];kernel[i]->block[8,8]}
+      use:        --sizes=\"{kernel[i]->tile[8,8]}\" --sizes=\"{kernel[i]->grid[8,8]}\" --sizes=\"{kernel[i]->block[8,8]}\"
+
 - Build benchmark:
     cd repository_root_path
     make all -j12
 
-## Tested hardware parameters ##
+- Examples of tested hardware parameters (to use with CMake)
 AMD Radeon R9 290
   -DPENCIL_DEFAULT_FLAGS_BLOCKSIZE="16,16" -DPENCIL_DEFAULT_FLAGS_LOCAL_MEMORY_SIZE=32768 -DPENCIL_DEFAULT_FLAGS_MAXFUSE=ON -DPENCIL_DEFAULT_FLAGS_NO_SEPARATE_COMP=ON -DPENCIL_DEFAULT_FLAGS_DISABLE_PRIVATE=OFF
 
@@ -86,9 +169,15 @@ ARM Mali T628
 
 Please, share the parameters to your device here
   
-## Running ##
+# Running
+###########
 
-- Change to the build directory.
-- Run test_* (you need to provide an image as an argument): ./test_KERNEL_NAME ../images/M104_ngc4594_sombrero_galaxy_hi-res.jpg
-    Each executable runs a different operator with all three (C++, OpenCL, PENCIL) implementations.
-    Results are cross-checked, and if there is no difference (within a small allowed precision error), total times are reported at the end.
+cd build/
+./ppcg_test_KERNEL_NAME <path_to_image>
+
+Details:
+  - Example images are in images/
+  - If you use CMake, it will also produce a test_* files.
+  - These binaries call the original PENCIL code not the code generated by the PENCIL compiler.
+  - Each executable runs a different operator with all three (C++, OpenCL, PENCIL) implementations.
+  - Results are cross-checked, and if there is no difference (within a small allowed precision error), total times are reported at the end.
