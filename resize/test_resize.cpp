@@ -60,9 +60,12 @@ void time_resize( const std::vector<carp::record_t>& pool, const std::vector<cv:
                         first_execution_pencil = false;
                     }
 
+                    prl_timings_reset();
                     prl_timings_start();
                     pencil_resize_LN(cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr(), pen_result.rows, pen_result.cols, pen_result.step1(), pen_result.ptr() );
                     prl_timings_stop();
+                    // Dump execution times for PENCIL code.
+                    prl_timings_dump();
                 }
                 // Verifying the results - TODO - Something fishy is happening at borders
 #define REMOVE_BORDER(img) img(cv::Range(1, size.height-1), cv::Range(1, size.width-1))
@@ -83,8 +86,6 @@ void time_resize( const std::vector<carp::record_t>& pool, const std::vector<cv:
             } // for pool
         }
     }
-    // Dump execution times for PENCIL code.
-    prl_timings_dump();
 }
 
 int main(int argc, char* argv[])

@@ -85,12 +85,15 @@ void time_affine( const std::vector<carp::record_t>& pool, int iteration )
                     first_execution_pencil = false;
                 }
 
+                prl_timings_reset();
                 prl_timings_start();
                 pencil_affine_linear( cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<float>()
                                     , pen_result.rows, pen_result.cols, pen_result.step1(), pen_result.ptr<float>(),
                         transform.at<float>(0,0), transform.at<float>(0,1), transform.at<float>(1,0), transform.at<float>(1,1),
                         transform.at<float>(1,2), transform.at<float>(0,2) );
                 prl_timings_stop();
+                // Dump execution times for PENCIL code.
+                prl_timings_dump();
             }
             // Verifying the results
             if ( (cv::norm(cv::abs(cpu_result - gpu_result), cv::NORM_INF ) > 1 ) || (cv::norm(cv::abs(cpu_result - pen_result), cv::NORM_INF ) > 1 ) )
@@ -113,8 +116,6 @@ void time_affine( const std::vector<carp::record_t>& pool, int iteration )
             timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy );
         }
     }
-    // Dump execution times for PENCIL code.
-    prl_timings_dump();
 }
 
 int main(int argc, char* argv[])

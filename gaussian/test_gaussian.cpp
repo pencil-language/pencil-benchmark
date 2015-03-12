@@ -70,6 +70,7 @@ void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<i
                     first_execution_pencil = false;
                 }
 
+                prl_timings_reset();
                 prl_timings_start();
                 pencil_gaussian( cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<float>()
                                , kernel_x.rows, kernel_x.ptr<float>()
@@ -77,6 +78,8 @@ void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<i
                                , pen_result.ptr<float>()
                                );
                 prl_timings_stop();
+                // Dump execution times for PENCIL code.
+                prl_timings_dump();
                 //Free up resources
             }
             // Verifying the results
@@ -100,8 +103,6 @@ void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<i
             timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy );
         }
     }
-    // Dump execution times for PENCIL code.
-    prl_timings_dump();
 }
 
 int main(int argc, char* argv[])

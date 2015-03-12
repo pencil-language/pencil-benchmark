@@ -64,6 +64,7 @@ void time_dilate( const std::vector<carp::record_t>& pool, const std::vector<int
                         first_execution_pencil = false;
                     }
 
+                    prl_timings_reset();
                     prl_timings_start();
                     pencil_dilate( cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr()
                                  , pen_result.step1(), pen_result.ptr()
@@ -71,6 +72,8 @@ void time_dilate( const std::vector<carp::record_t>& pool, const std::vector<int
                                  , anchor.x, anchor.y
                                  );
                     prl_timings_stop();
+                    // Dump execution times for PENCIL code.
+                    prl_timings_dump();
                 }
                 // Verifying the results
                 if ( (cv::norm(cpu_result - gpu_result) > 0.01) || (cv::norm(cpu_result - pen_result) > 0.01) ) {
@@ -93,8 +96,6 @@ void time_dilate( const std::vector<carp::record_t>& pool, const std::vector<int
             }
         }
     }
-    // Dump execution times for PENCIL code.
-    prl_timings_dump();
 }
 
 int main(int argc, char* argv[])

@@ -66,11 +66,14 @@ void time_filter2D( const std::vector<carp::record_t>& pool, int iteration )
                     first_execution_pencil = false;
                 }
 
+                prl_timings_reset();
                 prl_timings_start();
                 pencil_filter2D( cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<float>(),
                                  kernel.rows, kernel.cols, kernel.step1(), kernel.ptr<float>(),
                                  pen_result.ptr<float>() );
                 prl_timings_stop();
+                // Dump execution times for PENCIL code.
+                prl_timings_dump();
             }
             // Verifying the results
             if ( (cv::norm(cpu_result - gpu_result) > 0.01) ||
@@ -94,8 +97,6 @@ void time_filter2D( const std::vector<carp::record_t>& pool, int iteration )
             timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy );
         }
     }
-    // Dump execution times for PENCIL code.
-    prl_timings_dump();
 }
 
 int main(int argc, char* argv[])

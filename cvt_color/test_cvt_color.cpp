@@ -54,11 +54,14 @@ void time_cvtColor( const std::vector<carp::record_t>& pool, size_t iterations)
                     first_execution_pencil = false;
                 }
 
+                prl_timings_reset();
                 prl_timings_start();
                 pencil_RGB2Gray( cpuimg.rows, cpuimg.cols, cpuimg.step1()/cpuimg.channels(), pen_result.step1()
                                , cpuimg.data, pen_result.data
                                );
                 prl_timings_stop();
+                // Dump execution times for PENCIL code.
+                prl_timings_dump();
             }
 
             // Verifying the results
@@ -74,8 +77,6 @@ void time_cvtColor( const std::vector<carp::record_t>& pool, size_t iterations)
             timing.print(elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy);
         }
     }
-    // Dump execution times for PENCIL code.
-    prl_timings_dump();
 }
 
 int main(int argc, char* argv[])
