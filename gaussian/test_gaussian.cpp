@@ -10,6 +10,8 @@
 
 void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<int>& sizes )
 {
+    bool first_execution_opencv = true, first_execution_pencil = true;
+
     carp::Timing timing("gaussian blur");
 
     for ( auto & size : sizes ) {
@@ -35,6 +37,15 @@ void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<i
                 //Free up resources
             }
             {
+                // Execute the kernel at least once before starting to take time measurements so that the OpenCV kernel gets compiled. The following run is not included in time measurements.
+                if (first_execution_opencv)
+                {
+                    cv::ocl::oclMat src(cpu_gray);
+                    cv::ocl::oclMat dst;
+                    cv::ocl::GaussianBlur( src, dst, ksize, gaussX, gaussY, cv::BORDER_REPLICATE );
+                    first_execution_opencv = false;
+                }
+
                 const auto gpu_copy_start = std::chrono::high_resolution_clock::now();
                 cv::ocl::oclMat src(cpu_gray);
                 cv::ocl::oclMat dst;
@@ -52,6 +63,12 @@ void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<i
                 cv::Mat kernel_y = cv::getGaussianKernel(ksize.height, gaussY, CV_32F);
 
                 pen_result.create( cpu_gray.size(), CV_32F );
+
+                if (first_execution_pencil)
+                {
+                    pencil_gaussian( cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<float>(), kernel_x.rows, kernel_x.ptr<float>(), kernel_y.rows, kernel_y.ptr<float>(), pen_result.ptr<float>());
+                    first_execution_pencil = false;
+                }
 
                 prl_timings_start();
                 pencil_gaussian( cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<float>()

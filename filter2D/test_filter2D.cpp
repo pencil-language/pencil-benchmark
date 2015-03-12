@@ -10,6 +10,8 @@
 
 void time_filter2D( const std::vector<carp::record_t>& pool, int iteration )
 {
+    bool first_execution_opencv = true, first_execution_pencil = true;
+
     carp::Timing timing("2D filter");
 
     for ( int q=0; q<iteration; q++ ) {
@@ -34,6 +36,15 @@ void time_filter2D( const std::vector<carp::record_t>& pool, int iteration )
                 elapsed_time_cpu = cpu_end - cpu_start;
             }
             {
+                // Execute the kernel at least once before starting to take time measurements so that the OpenCV kernel gets compiled. The following run is not included in time measurements.
+                if (first_execution_opencv)
+                {
+                    cv::ocl::oclMat gpu_gray(cpu_gray);
+                    cv::ocl::oclMat gpu_convolve;
+                    cv::ocl::filter2D( gpu_gray, gpu_convolve, -1, kernel, cv::Point(-1, -1), 0.0, cv::BORDER_REPLICATE );
+                    first_execution_opencv = false;
+                }
+
                 const auto gpu_start_copy = std::chrono::high_resolution_clock::now();
                 cv::ocl::oclMat gpu_gray(cpu_gray);
                 cv::ocl::oclMat gpu_convolve;
@@ -48,6 +59,12 @@ void time_filter2D( const std::vector<carp::record_t>& pool, int iteration )
             {
                 // pencil test:
                 pen_result = cv::Mat(cpu_gray.size(), CV_32F);
+
+                if (first_execution_pencil)
+                {
+                    pencil_filter2D( cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<float>(), kernel.rows, kernel.cols, kernel.step1(), kernel.ptr<float>(), pen_result.ptr<float>() );
+                    first_execution_pencil = false;
+                }
 
                 prl_timings_start();
                 pencil_filter2D( cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<float>(),

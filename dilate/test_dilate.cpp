@@ -10,6 +10,8 @@
 
 void time_dilate( const std::vector<carp::record_t>& pool, const std::vector<int>& elemsizes, int iteration )
 {
+    bool first_execution_opencv = true, first_execution_pencil = true;
+
     carp::Timing timing("dilate image");
 
     for ( int q=0; q<iteration; q++ ) {
@@ -33,6 +35,15 @@ void time_dilate( const std::vector<carp::record_t>& pool, const std::vector<int
                     elapsed_time_cpu = cpu_end - cpu_start;
                 }
                 {
+                    // Execute the kernel at least once before starting to take time measurements so that the OpenCV kernel gets compiled. The following run is not included in time measurements.
+                    if (first_execution_opencv)
+                    {
+                        cv::ocl::oclMat gpu_gray(cpu_gray);
+                        cv::ocl::oclMat result;
+                        cv::ocl::dilate( gpu_gray, result, structuring_element, anchor, 1, cv::BORDER_CONSTANT );
+                        first_execution_opencv = false;
+                    }
+
                     const auto gpu_start_copy = std::chrono::high_resolution_clock::now();
                     cv::ocl::oclMat gpu_gray(cpu_gray);
                     cv::ocl::oclMat result;
@@ -46,6 +57,12 @@ void time_dilate( const std::vector<carp::record_t>& pool, const std::vector<int
                 }
                 {
                     pen_result = cv::Mat(cpu_gray.size(), CV_8U);
+
+                    if (first_execution_pencil)
+                    {
+                        pencil_dilate( cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr(), pen_result.step1(), pen_result.ptr(), structuring_element.rows, structuring_element.cols, structuring_element.step1(), structuring_element.ptr(), anchor.x, anchor.y);
+                        first_execution_pencil = false;
+                    }
 
                     prl_timings_start();
                     pencil_dilate( cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr()

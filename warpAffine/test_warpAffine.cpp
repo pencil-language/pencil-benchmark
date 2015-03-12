@@ -29,6 +29,8 @@ namespace
 
 void time_affine( const std::vector<carp::record_t>& pool, int iteration )
 {
+    bool first_execution_opencv = true, first_execution_pencil = true;
+
     carp::Timing timing("affine transform");
 
     for ( int q=0; q<iteration; q++ ) {
@@ -52,6 +54,15 @@ void time_affine( const std::vector<carp::record_t>& pool, int iteration )
                 elapsed_time_cpu = cpu_end - cpu_start;
             }
             {
+                // Execute the kernel at least once before starting to take time measurements so that the OpenCV kernel gets compiled. The following run is not included in time measurements.
+                if (first_execution_opencv)
+                {
+                    cv::ocl::oclMat gpu_gray(cpu_gray);
+                    cv::ocl::oclMat gpu_affine;
+                    cv::ocl::warpAffine( gpu_gray, gpu_affine, transform, gpu_gray.size() );
+                    first_execution_opencv = false;
+                }
+
                 const auto gpu_start_copy = std::chrono::high_resolution_clock::now();
                 cv::ocl::oclMat gpu_gray(cpu_gray);
                 cv::ocl::oclMat gpu_affine;
@@ -67,6 +78,12 @@ void time_affine( const std::vector<carp::record_t>& pool, int iteration )
                 // verifying the pencil code
                 pen_result.create( cpu_gray.size(), CV_32F );
                 convert_coeffs(reinterpret_cast<float*>(transform.data));
+
+                if (first_execution_pencil)
+                {
+                    pencil_affine_linear( cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<float>(), pen_result.rows, pen_result.cols, pen_result.step1(), pen_result.ptr<float>(), transform.at<float>(0,0), transform.at<float>(0,1), transform.at<float>(1,0), transform.at<float>(1,1), transform.at<float>(1,2), transform.at<float>(0,2) );
+                    first_execution_pencil = false;
+                }
 
                 prl_timings_start();
                 pencil_affine_linear( cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<float>()

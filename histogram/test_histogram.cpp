@@ -9,6 +9,8 @@
 
 void time_histogram( const std::vector<carp::record_t>& pool, size_t iterations)
 {
+    bool first_execution_opencv = true, first_execution_pencil = true;
+
     carp::Timing timing("histogram");
     for ( auto & item : pool ) {
         for(size_t i = 0; i < iterations; ++i) {
@@ -33,6 +35,15 @@ void time_histogram( const std::vector<carp::record_t>& pool, size_t iterations)
                 elapsed_time_cpu = end - start;
             }
             {
+                // Execute the kernel at least once before starting to take time measurements so that the OpenCV kernel gets compiled. The following run is not included in time measurements.
+                if (first_execution_opencv)
+                {
+                    cv::ocl::oclMat gpuimg(cpuimg);
+                    cv::ocl::oclMat result;
+                    cv::ocl::calcHist(gpuimg, result);
+                    first_execution_opencv = false;
+                }
+
                 const auto start_copy = std::chrono::high_resolution_clock::now();
                 cv::ocl::oclMat gpuimg(cpuimg);
                 cv::ocl::oclMat result;
@@ -47,6 +58,12 @@ void time_histogram( const std::vector<carp::record_t>& pool, size_t iterations)
             }
             {
                 pen_result.create( cpu_result.rows, cpu_result.cols, CV_32S );
+
+                if (first_execution_pencil)
+                {
+                    pencil_calcHist( cpuimg.rows, cpuimg.cols, cpuimg.step1(), cpuimg.ptr<uint8_t>(), pen_result.ptr<int>());
+                    first_execution_pencil = false;
+                }
 
                 prl_timings_start();
                 pencil_calcHist( cpuimg.rows, cpuimg.cols, cpuimg.step1(), cpuimg.ptr<uint8_t>()
