@@ -146,7 +146,7 @@ run()
 
   for ((i=0; i < $NB_RUNS; i++)); do
 	  echo -n "$i/$NB_RUNS "
-	  ./ppcg_test_${KERNEL} $TEST_IMAGE 1>>$TEMP_OUTPUT_FILE 2>>$LOG_FILE
+	  PRL_BLOCKING=1 ./ppcg_test_${KERNEL} $TEST_IMAGE 1>>$TEMP_OUTPUT_FILE 2>>$LOG_FILE
 	  exit_status=$?
   done
   echo
