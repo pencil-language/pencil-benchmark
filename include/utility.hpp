@@ -42,10 +42,10 @@ public:
     }
 
     ~Timing() {
-        std::cout << "    Total CPU time           : " << std::accumulate(cpu_timings       .begin(),cpu_timings       .end(),0.0) << "\n";
-        std::cout << "    Total GPU time (inc copy): " << std::accumulate(gpu_p_copy_timings.begin(),gpu_p_copy_timings.end(),0.0) << "\n";
-        std::cout << "    Total GPU time (w/o copy): " << std::accumulate(gpu_nocopy_timings.begin(),gpu_nocopy_timings.end(),0.0) << "\n";
-        std::cout << "    Total Pen time           : " << std::accumulate(pen_timings       .begin(),pen_timings       .end(),0.0) << "\n";
+        std::cout << "  [RealEyes] Total CPU time           : " << std::accumulate(cpu_timings       .begin(),cpu_timings       .end(),0.0) << "\n";
+        std::cout << "  [RealEyes] Total GPU time (inc copy): " << std::accumulate(gpu_p_copy_timings.begin(),gpu_p_copy_timings.end(),0.0) << "\n";
+        std::cout << "  [RealEyes] Total GPU time (w/o copy): " << std::accumulate(gpu_nocopy_timings.begin(),gpu_nocopy_timings.end(),0.0) << "\n";
+        std::cout << "  [RealEyes] Total Pen time           : " << std::accumulate(pen_timings       .begin(),pen_timings       .end(),0.0) << "\n";
     }
 };
 
