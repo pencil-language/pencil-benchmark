@@ -1,0 +1,7 @@
+best_optimization_options[0]="--isl-schedule-fuse=min  --no-private-memory --sizes={kernel[i]->tile[64,64];kernel[i]->grid[717,26];kernel[i]->block[4,64]}"
+best_optimization_options[1]="--isl-schedule-fuse=min  --no-private-memory --no-shared-memory --sizes={kernel[i]->tile[32,32];kernel[i]->grid[180,101];kernel[i]->block[16,16]}"
+best_optimization_options[2]="--isl-schedule-fuse=min  --no-private-memory --no-shared-memory --sizes={kernel[i]->tile[64,64];kernel[i]->grid[180,101];kernel[i]->block[16,16]}"
+best_optimization_options[3]="--isl-schedule-fuse=min  --no-private-memory --sizes={kernel[i]->tile[64,64];kernel[i]->grid[180,101];kernel[i]->block[16,16]}"
+best_optimization_options[4]="--isl-schedule-fuse=min  --no-private-memory --no-shared-memory --sizes={kernel[i]->tile[32,32];kernel[i]->grid[717,26];kernel[i]->block[4,64]}"
+best_optimization_options[5]="--isl-schedule-fuse=min  --no-private-memory --sizes={kernel[i]->tile[32,32];kernel[i]->grid[717,26];kernel[i]->block[4,64]}"
+best_optimization_options[6]="--isl-schedule-fuse=min  --no-private-memory --no-shared-memory"
