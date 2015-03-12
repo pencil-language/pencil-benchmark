@@ -160,7 +160,7 @@ run()
 	  echo -n "$CSV_DELIMITER" >> $OUTPUT_FILE
 
       # Total execution time (computed from host) without compilation time
-      cat $TEMP_OUTPUT_FILE | grep -F "w/o compilation:" | awk '{print $3;}' 1> $TEMP_TIME_FILE_2
+      cat $TEMP_OUTPUT_FILE | grep -F "Duration:" | awk '{print $2;}' 1> $TEMP_TIME_FILE_2
 	  echo -n `get_median $TEMP_TIME_FILE_2` >> $OUTPUT_FILE
 	  echo -n "$CSV_DELIMITER" >> $OUTPUT_FILE
 	  current_execution_time=`get_median $TEMP_TIME_FILE_2`
