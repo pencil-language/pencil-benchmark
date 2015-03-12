@@ -97,10 +97,12 @@ int main(int argc, char* argv[])
     std::cout << "This executable is iterating over all the files passed to it as an argument. " << std::endl;
 
     auto pool = carp::get_pool(argc, argv);
-    size_t num_iterations = 80;
+    size_t num_iterations;
 
 #ifdef RUN_ONLY_ONE_EXPERIMENT
     num_iterations = 1;
+#else
+    num_iterations = 80;
 #endif
 
     time_histogram( pool, num_iterations );
