@@ -20,30 +20,26 @@ class Timing
 {
     std::vector<double> cpu_timings;
     std::vector<double> gpu_p_copy_timings;
-    std::vector<double> gpu_nocopy_timings;
 public:
     Timing(const std::string & name) {
         std::cout << "Measuring performance of " << name << std::endl;
     }
 
-    void print( const std::chrono::duration<double,std::milli> &cpu, const std::chrono::duration<double,std::milli> &gpu_p_copy, const std::chrono::duration<double,std::milli> &gpu_nocopy ) {
+    void print( const std::chrono::duration<double,std::milli> &cpu, const std::chrono::duration<double,std::milli> &gpu_p_copy ) {
         std::cout << std::fixed << std::setprecision(6);
         std::cout << std::endl << "OpenCV time measurements for an individual experiment:" << std::endl;
-        std::cout << "CPU Time    - GPU+copy    - GPU Time" << std::endl;
+        std::cout << "CPU Time    - GPU+copy" << std::endl;
         std::cout << std::setw(8) << cpu       .count() << " ms - ";
-        std::cout << std::setw(8) << gpu_p_copy.count() << " ms - ";
-        std::cout << std::setw(8) << gpu_nocopy.count() << " ms" << std::endl;
+        std::cout << std::setw(8) << gpu_p_copy.count() << " ms" << std::endl;
 
         cpu_timings       .push_back(cpu       .count());
         gpu_p_copy_timings.push_back(gpu_p_copy.count());
-        gpu_nocopy_timings.push_back(gpu_nocopy.count());
     }
 
     ~Timing() {
         std::cout << std::endl << "OpenCV accumulated time measurements for all the experiments (in ms):" << std::endl;
         std::cout<<"[RealEyes] Accumulate CPU time           : "<< std::accumulate(cpu_timings       .begin(),cpu_timings       .end(),0.0) << "\n";
         std::cout<<"[RealEyes] Accumulate GPU time (inc copy): "<< std::accumulate(gpu_p_copy_timings.begin(),gpu_p_copy_timings.end(),0.0) << "\n";
-        std::cout<<"[RealEyes] Accumulate GPU time (w/o copy): "<< std::accumulate(gpu_nocopy_timings.begin(),gpu_nocopy_timings.end(),0.0) << "\n";
     }
 };
 

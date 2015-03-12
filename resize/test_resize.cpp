@@ -21,7 +21,7 @@ void time_resize( const std::vector<carp::record_t>& pool, const std::vector<cv:
                 cv::cvtColor( item.cpuimg(), cpu_gray, CV_RGB2GRAY );
 
                 cv::Mat cpu_result, gpu_result, pen_result;
-                std::chrono::duration<double> elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy;
+                std::chrono::duration<double> elapsed_time_cpu, elapsed_time_gpu_p_copy;
 
                 {
                     const auto cpu_start = std::chrono::high_resolution_clock::now();
@@ -42,13 +42,10 @@ void time_resize( const std::vector<carp::record_t>& pool, const std::vector<cv:
                     const auto gpu_start_copy = std::chrono::high_resolution_clock::now();
                     cv::ocl::oclMat gpu_gray(cpu_gray);
                     cv::ocl::oclMat gpu_resize;
-                    const auto gpu_start = std::chrono::high_resolution_clock::now();
                     cv::ocl::resize( gpu_gray, gpu_resize, size, 0, 0, cv::INTER_LINEAR );
-                    const auto gpu_end = std::chrono::high_resolution_clock::now();
                     gpu_result = gpu_resize;
                     const auto gpu_end_copy = std::chrono::high_resolution_clock::now();
                     elapsed_time_gpu_p_copy = gpu_end_copy - gpu_start_copy;
-                    elapsed_time_gpu_nocopy = gpu_end      - gpu_start;
                 }
                 {
                     // pencil verification
@@ -82,7 +79,7 @@ void time_resize( const std::vector<carp::record_t>& pool, const std::vector<cv:
                     throw std::runtime_error("The GPU results are not equivalent with the CPU or Pencil results.");
                 }
                 // Dump execution times for OpenCV calls.
-                timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy );
+                timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy );
             } // for pool
         }
     }

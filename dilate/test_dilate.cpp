@@ -26,7 +26,7 @@ void time_dilate( const std::vector<carp::record_t>& pool, const std::vector<int
                 cv::Mat structuring_element = cv::getStructuringElement( cv::MORPH_ELLIPSE, ksize, anchor );
 
                 cv::Mat cpu_result, gpu_result, pen_result;
-                std::chrono::duration<double> elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy;
+                std::chrono::duration<double> elapsed_time_cpu, elapsed_time_gpu_p_copy;
 
                 {
                     const auto cpu_start = std::chrono::high_resolution_clock::now();
@@ -47,13 +47,10 @@ void time_dilate( const std::vector<carp::record_t>& pool, const std::vector<int
                     const auto gpu_start_copy = std::chrono::high_resolution_clock::now();
                     cv::ocl::oclMat gpu_gray(cpu_gray);
                     cv::ocl::oclMat result;
-                    const auto gpu_start = std::chrono::high_resolution_clock::now();
                     cv::ocl::dilate( gpu_gray, result, structuring_element, anchor, 1, cv::BORDER_CONSTANT );
-                    const auto gpu_end = std::chrono::high_resolution_clock::now();
                     gpu_result = result;
                     const auto gpu_end_copy = std::chrono::high_resolution_clock::now();
                     elapsed_time_gpu_p_copy = gpu_end_copy - gpu_start_copy;
-                    elapsed_time_gpu_nocopy = gpu_end      - gpu_start;
                 }
                 {
                     pen_result = cv::Mat(cpu_gray.size(), CV_8U);
@@ -92,7 +89,7 @@ void time_dilate( const std::vector<carp::record_t>& pool, const std::vector<int
                     throw std::runtime_error("The OpenCL or PENCIL results are not equivalent with the C++ results.");
                 }
                 // Dump execution times for OpenCV calls.
-                timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy );
+                timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy );
             }
         }
     }

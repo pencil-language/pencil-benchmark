@@ -20,7 +20,7 @@ void time_histogram( const std::vector<carp::record_t>& pool, size_t iterations)
 
             cv::Mat cpu_result, gpu_result, pen_result;
 
-            std::chrono::duration<double> elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy;
+            std::chrono::duration<double> elapsed_time_cpu, elapsed_time_gpu_p_copy;
             {
                 cv::Mat tmp;
                 const auto start = std::chrono::high_resolution_clock::now();
@@ -48,13 +48,10 @@ void time_histogram( const std::vector<carp::record_t>& pool, size_t iterations)
                 cv::ocl::oclMat gpuimg(cpuimg);
                 cv::ocl::oclMat result;
 
-                const auto start = std::chrono::high_resolution_clock::now();
                 cv::ocl::calcHist(gpuimg, result);
-                const auto end = std::chrono::high_resolution_clock::now();
                 gpu_result = result;
                 const auto end_copy = std::chrono::high_resolution_clock::now();
                 elapsed_time_gpu_p_copy = end_copy - start_copy;
-                elapsed_time_gpu_nocopy = end      - start;
             }
             {
                 pen_result.create( cpu_result.rows, cpu_result.cols, CV_32S );
@@ -85,7 +82,7 @@ void time_histogram( const std::vector<carp::record_t>& pool, size_t iterations)
                 throw std::runtime_error("The GPU results are not equivalent with the CPU results.");
             }
             // Dump execution times for OpenCV calls.
-            timing.print(elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy);
+            timing.print(elapsed_time_cpu, elapsed_time_gpu_p_copy);
         }
     }
 }

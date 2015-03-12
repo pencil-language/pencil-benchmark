@@ -27,7 +27,7 @@ void time_filter2D( const std::vector<carp::record_t>& pool, int iteration )
             cv::Mat kernel(3, 3, CV_32F, kernel_data);
 
             cv::Mat cpu_result, gpu_result, pen_result;
-            std::chrono::duration<double> elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy;
+            std::chrono::duration<double> elapsed_time_cpu, elapsed_time_gpu_p_copy;
 
             {
                 const auto cpu_start = std::chrono::high_resolution_clock::now();
@@ -48,13 +48,10 @@ void time_filter2D( const std::vector<carp::record_t>& pool, int iteration )
                 const auto gpu_start_copy = std::chrono::high_resolution_clock::now();
                 cv::ocl::oclMat gpu_gray(cpu_gray);
                 cv::ocl::oclMat gpu_convolve;
-                const auto gpu_start = std::chrono::high_resolution_clock::now();
                 cv::ocl::filter2D( gpu_gray, gpu_convolve, -1, kernel, cv::Point(-1, -1), 0.0, cv::BORDER_REPLICATE );
-                const auto gpu_end = std::chrono::high_resolution_clock::now();
                 gpu_result = gpu_convolve;
                 const auto gpu_end_copy = std::chrono::high_resolution_clock::now();
                 elapsed_time_gpu_p_copy = gpu_end_copy - gpu_start_copy;
-                elapsed_time_gpu_nocopy = gpu_end      - gpu_start;
             }
             {
                 // pencil test:
@@ -94,7 +91,7 @@ void time_filter2D( const std::vector<carp::record_t>& pool, int iteration )
                 throw std::runtime_error("The GPU results are not equivalent with the CPU results.");
             }
             // Dump execution times for OpenCV calls.
-            timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy );
+            timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy );
         }
     }
 }

@@ -27,7 +27,7 @@ void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<i
             cpu_gray.convertTo( cpu_gray, CV_32F, 1.0/255. );
 
             cv::Mat cpu_result, gpu_result, pen_result;
-            std::chrono::duration<double> elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy;
+            std::chrono::duration<double> elapsed_time_cpu, elapsed_time_gpu_p_copy;
 
             {
                 const auto cpu_start = std::chrono::high_resolution_clock::now();
@@ -49,13 +49,10 @@ void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<i
                 const auto gpu_copy_start = std::chrono::high_resolution_clock::now();
                 cv::ocl::oclMat src(cpu_gray);
                 cv::ocl::oclMat dst;
-                const auto gpu_start = std::chrono::high_resolution_clock::now();
                 cv::ocl::GaussianBlur( src, dst, ksize, gaussX, gaussY, cv::BORDER_REPLICATE );
-                const auto gpu_end = std::chrono::high_resolution_clock::now();
                 gpu_result = dst;
                 const auto gpu_copy_end = std::chrono::high_resolution_clock::now();
                 elapsed_time_gpu_p_copy = gpu_copy_end - gpu_copy_start;
-                elapsed_time_gpu_nocopy = gpu_end      - gpu_start;
                 //Free up resources
             }
             {
@@ -100,7 +97,7 @@ void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<i
             }
 
             // Dump execution times for OpenCV calls.
-            timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy );
+            timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy );
         }
     }
 }
