@@ -89,7 +89,8 @@ void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<i
 
 int main(int argc, char* argv[])
 {
-    prl_init(PRL_TARGET_DEVICE_DYNAMIC);
+    prl_init((prl_init_flags)(PRL_TARGET_DEVICE_DYNAMIC | PRL_PROFILING_ENABLED));
+
     try {
         std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
 

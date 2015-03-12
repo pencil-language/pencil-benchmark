@@ -74,7 +74,7 @@ void time_histogram( const std::vector<carp::record_t>& pool, size_t iterations)
 
 int main(int argc, char* argv[])
 {
-    prl_init(PRL_TARGET_DEVICE_DYNAMIC);
+    prl_init((prl_init_flags)(PRL_TARGET_DEVICE_DYNAMIC | PRL_PROFILING_ENABLED));
 
     std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
 
