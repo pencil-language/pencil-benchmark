@@ -1,6 +1,15 @@
 #include "histogram.pencil.h"
 #include <pencil.h>
 
+void atomic_inc(int *v);
+
+#ifndef __PENCIL__
+void atomic_inc(int *v)
+{
+    (*v)++;
+}
+#endif
+
 static void calcHist( const int rows
                     , const int cols
                     , const int step
@@ -19,16 +28,18 @@ static void calcHist( const int rows
     for(int b = 0; b < HISTOGRAM_BINS; ++b)
         hist[b] = 0;
 
-    #pragma pencil independent reduction(+:hist)
+    #pragma pencil independent
     for(int r = 0; r < rows; ++r)
     {
-        #pragma pencil independent reduction(+:hist)
+        #pragma pencil independent
         for(int c = 0; c < cols; ++c)
         {
             unsigned char pixel = image[r][c];
-            ++hist[pixel];
+            atomic_inc(&hist[pixel]);
         }
     }
+
+    __pencil_kill(image);
 #pragma endscop
 }
 
