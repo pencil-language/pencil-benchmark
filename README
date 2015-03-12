@@ -89,7 +89,6 @@ Please, share the parameters to your device here
 ## Running ##
 
 - Change to the build directory.
-- Create a pool directory. Copy images to run the tests on here. There is an example set of images in build/pool/
-- Run test_*
+- Run test_* (you need to provide an image as an argument): ./test_KERNEL_NAME ../images/M104_ngc4594_sombrero_galaxy_hi-res.jpg
     Each executable runs a different operator with all three (C++, OpenCL, PENCIL) implementations.
     Results are cross-checked, and if there is no difference (within a small allowed precision error), total times are reported at the end.

@@ -103,9 +103,9 @@ int main(int argc, char* argv[])
     prl_init((prl_init_flags)(PRL_TARGET_DEVICE_DYNAMIC | PRL_PROFILING_ENABLED));
 
     try {
-        std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
+	std::cout << "This executable is iterating over all the files passed to it as an argument. " << std::endl;
 
-        auto pool = carp::get_pool("pool");
+	auto pool = carp::get_pool(argc, argv);
 
 #ifdef RUN_ONLY_ONE_EXPERIMENT
         time_dilate( pool, { 5 }, 1 );

@@ -8,11 +8,11 @@
 #include <string>
 #include <iomanip>
 #include <iostream>
+#include <fstream>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
-
-#include <boost/filesystem.hpp>
+#include <stdexcept>
 
 namespace carp {
 
@@ -47,40 +47,55 @@ public:
 
 class record_t {
 private:
-    boost::filesystem::path m_path;
+    char *m_path;
 
 public:
     cv::Mat cpuimg() const {
-        return cv::imread(m_path.string());
+        return cv::imread(m_path);
     }
 
-    record_t( const boost::filesystem::path & path )
-    : m_path(path)  { }
+    record_t( char *path )
+    {
+	m_path = path;
+    }
 
 };
 
 
-template <class T0>
+bool file_exists (char *name) {
+
+    std::ifstream f(name);
+
+    if (f.good()) {
+        f.close();
+        return true;
+    } else {
+        f.close();
+        return false;
+    }
+}
+
+
 std::vector<record_t>
-get_pool( T0 pathname )
+get_pool( int argc, char *argv[] )
 {
-    boost::filesystem::path path(pathname);
-
-    if ( (!boost::filesystem::exists(path)) or (!boost::filesystem::is_directory(path)) )
-        throw std::runtime_error( std::string("Directory `") + pathname + "' does not exists. The directory should contain the testing images.");
-
+    int i;
     std::vector<record_t> pool;
 
-    boost::filesystem::directory_iterator end_iter;
-    for ( boost::filesystem::directory_iterator iter(path); iter!= end_iter; ++iter )
+    if (argc <= 1)
     {
-        if (boost::filesystem::is_regular_file(iter->status()))
-        {
-            std::string extension = iter->path().extension().string();
-            if ( (extension ==".jpg") or (extension==".jpeg") ) {
-                pool.push_back(record_t(iter->path()));
-            }
-        }
+	throw std::runtime_error("Please provide an image as an argument to the program: ./program <image>");
+    }
+    else
+    {
+	    for ( i = 1; i < argc; i++ )
+	    {
+		if (file_exists(argv[i]))
+		        pool.push_back(record_t(argv[i]));
+		else
+			std::cerr << "File " << argv[i]
+				  << " does not exist." << std::endl;
+	    }
     }
 
     return pool;
