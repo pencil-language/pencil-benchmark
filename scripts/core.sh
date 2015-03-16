@@ -174,7 +174,7 @@ run()
 	  echo `get_median $TEMP_TIME_FILE_3` >>  $OUTPUT_FILE
   else
 	  echo " ERROR in ./ppcg_test_${KERNEL}" >> $LOG_FILE
-	  echo -n "9999 $CSV_DELIMITER 9999 $CSV_DELIMITER" >> $OUTPUT_FILE
+	  echo "9999 $CSV_DELIMITER 9999 $CSV_DELIMITER 9999" >> $OUTPUT_FILE
   fi
 
   echo "--------------------------------------------------" >> $LOG_FILE
@@ -297,20 +297,30 @@ AUTO_TUNE()
 echo
 echo "Timings will be generated in build/${OUTPUT_TIME_FILE}.csv"
 
-# Load best PPCG optimizations (if the file provided already exists)
-if [ -f $BEST_OPTIMIZATIONS_LOG ]; then
-	source $BEST_OPTIMIZATIONS_LOG
-fi
-
 cd $BENCHMARK_ROOT_DIRECTORY/build
 rm -rf $LOG_FILE
 
+# ENABLE_TUNING == 0 if a file is provided as an input to the script.
 if [ $ENABLE_TUNING = 1 ]; then
 	rm -rf $BEST_OPTIMIZATIONS_LOG
 	for ker in ${LIST_OF_KERNELS}; do
 		PREPARE_KERNEL_SPECIFIC_OUTPUT_FILE $ker;
 		AUTO_TUNE $ker
 	done
+	echo "Autotuning DONE" >> $LOG_FILE
+	echo "****************" >> $LOG_FILE
+fi
+
+# Load best PPCG optimizations (if the file provided already exists)
+# If ENABLE_TUNING == 0 then $BEST_OPTIMIZATIONS_LOG will contain the option
+# file that was passed by the user.
+# If ENABLE_TUNING == 1 then $BEST_OPTIMIZATIONS_LOG will contain the option
+# found by autotuning.
+# But in both cases the $BEST_OPTIMIZATIONS_LOG needs to be executed.
+if [ -f $BEST_OPTIMIZATIONS_LOG ]; then
+	source $BEST_OPTIMIZATIONS_LOG
+else
+	echo "BEST optimizations file: $BEST_OPTIMIZATIONS_LOG not found" >> $LOG_FILE
 fi
 
 PREPARE_GENERAL_OUTPUT_FILE;
@@ -323,5 +333,8 @@ for ker in ${LIST_OF_KERNELS}; do
 	run $ker "$options" ${OUTPUT_TIME_FILE}.csv
 	id=`expr $id + 1`
 done
+
+echo "DONE" >> $LOG_FILE
+echo "****************" >> $LOG_FILE
 
 cd $BENCHMARK_ROOT_DIRECTORY
