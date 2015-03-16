@@ -82,7 +82,8 @@ get_pool( int argc, char *argv[] )
 
     if (argc <= 1)
     {
-	throw std::runtime_error("Please provide an image as an argument to the program: ./program <image>");
+       std::cerr << "Please provide an image as an argument to the program: ./program <image>" << std::endl;
+       exit(1);
     }
     else
     {
