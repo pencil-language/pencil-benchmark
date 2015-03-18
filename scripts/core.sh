@@ -297,10 +297,21 @@ AUTO_TUNE()
 echo
 echo "Timings will be generated in build/${OUTPUT_TIME_FILE}.csv"
 
+if [ ! -d $BENCHMARK_ROOT_DIRECTORY/build ]; then
+       mkdir $BENCHMARK_ROOT_DIRECTORY/build
+fi
+
+# Load best PPCG optimizations passed by the user.
+if  [ $ENABLE_TUNING = 0 ]; then
+	if [ -f $BEST_OPTIMIZATIONS_LOG ]; then
+		source $BEST_OPTIMIZATIONS_LOG
+	fi
+fi
+
 cd $BENCHMARK_ROOT_DIRECTORY/build
 rm -rf $LOG_FILE
 
-# ENABLE_TUNING == 0 if a file is provided as an input to the script.
+# Do autotuning if ENABLE_TUNING == 1.
 if [ $ENABLE_TUNING = 1 ]; then
 	rm -rf $BEST_OPTIMIZATIONS_LOG
 	for ker in ${LIST_OF_KERNELS}; do
@@ -309,18 +320,8 @@ if [ $ENABLE_TUNING = 1 ]; then
 	done
 	echo "Autotuning DONE" >> $LOG_FILE
 	echo "****************" >> $LOG_FILE
-fi
-
-# Load best PPCG optimizations (if the file provided already exists)
-# If ENABLE_TUNING == 0 then $BEST_OPTIMIZATIONS_LOG will contain the option
-# file that was passed by the user.
-# If ENABLE_TUNING == 1 then $BEST_OPTIMIZATIONS_LOG will contain the option
-# found by autotuning.
-# But in both cases the $BEST_OPTIMIZATIONS_LOG needs to be executed.
-if [ -f $BEST_OPTIMIZATIONS_LOG ]; then
+	# Load the best PPCG options found by autotuning
 	source $BEST_OPTIMIZATIONS_LOG
-else
-	echo "BEST optimizations file: $BEST_OPTIMIZATIONS_LOG not found" >> $LOG_FILE
 fi
 
 PREPARE_GENERAL_OUTPUT_FILE;
