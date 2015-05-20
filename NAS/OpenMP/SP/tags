@@ -1,0 +1,173 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+BENCHMARK	Makefile	/^BENCHMARK=sp$/;"	m
+BENCHMARKU	Makefile	/^BENCHMARKU=SP$/;"	m
+IMAX	header.h	69;"	d
+IMAXP	header.h	72;"	d
+JMAX	header.h	70;"	d
+JMAXP	header.h	73;"	d
+KMAX	header.h	71;"	d
+OBJS	Makefile	/^OBJS = sp.o initialize.o exact_solution.o exact_rhs.o \\$/;"	m
+SHELL	Makefile	/^SHELL=\/bin\/sh$/;"	m
+add	add.c	/^void add()$/;"	f
+adi	adi.c	/^void adi()$/;"	f
+bt	sp.c	/^       c3, c4, c5, c4dssp, c5dssp, dtdssp, dttx1, bt,$/;"	v
+buf	sp.c	/^double buf[PROBLEM_SIZE][5];$/;"	v
+c1	sp.c	/^       dnzm1, c1c2, c1c5, c3c4, c1345, conz1, c1, c2, $/;"	v
+c1345	sp.c	/^       dnzm1, c1c2, c1c5, c3c4, c1345, conz1, c1, c2, $/;"	v
+c1c2	sp.c	/^       dnzm1, c1c2, c1c5, c3c4, c1345, conz1, c1, c2, $/;"	v
+c1c5	sp.c	/^       dnzm1, c1c2, c1c5, c3c4, c1345, conz1, c1, c2, $/;"	v
+c2	sp.c	/^       dnzm1, c1c2, c1c5, c3c4, c1345, conz1, c1, c2, $/;"	v
+c2dttx1	sp.c	/^       dttx2, dtty1, dtty2, dttz1, dttz2, c2dttx1, $/;"	v
+c2dtty1	sp.c	/^       c2dtty1, c2dttz1, comz1, comz4, comz5, comz6, $/;"	v
+c2dttz1	sp.c	/^       c2dtty1, c2dttz1, comz1, comz4, comz5, comz6, $/;"	v
+c2iv	sp.c	/^       c3c4tx3, c3c4ty3, c3c4tz3, c2iv, con43, con16;$/;"	v
+c3	sp.c	/^       c3, c4, c5, c4dssp, c5dssp, dtdssp, dttx1, bt,$/;"	v
+c3c4	sp.c	/^       dnzm1, c1c2, c1c5, c3c4, c1345, conz1, c1, c2, $/;"	v
+c3c4tx3	sp.c	/^       c3c4tx3, c3c4ty3, c3c4tz3, c2iv, con43, con16;$/;"	v
+c3c4ty3	sp.c	/^       c3c4tx3, c3c4ty3, c3c4tz3, c2iv, con43, con16;$/;"	v
+c3c4tz3	sp.c	/^       c3c4tx3, c3c4ty3, c3c4tz3, c2iv, con43, con16;$/;"	v
+c4	sp.c	/^       c3, c4, c5, c4dssp, c5dssp, dtdssp, dttx1, bt,$/;"	v
+c4dssp	sp.c	/^       c3, c4, c5, c4dssp, c5dssp, dtdssp, dttx1, bt,$/;"	v
+c5	sp.c	/^       c3, c4, c5, c4dssp, c5dssp, dtdssp, dttx1, bt,$/;"	v
+c5dssp	sp.c	/^       c3, c4, c5, c4dssp, c5dssp, dtdssp, dttx1, bt,$/;"	v
+ce	sp.c	/^       ce[5][13], dxmax, dymax, dzmax, xxcon1, xxcon2, $/;"	v
+compute_rhs	rhs.c	/^void compute_rhs()$/;"	f
+comz1	sp.c	/^       c2dtty1, c2dttz1, comz1, comz4, comz5, comz6, $/;"	v
+comz4	sp.c	/^       c2dtty1, c2dttz1, comz1, comz4, comz5, comz6, $/;"	v
+comz5	sp.c	/^       c2dtty1, c2dttz1, comz1, comz4, comz5, comz6, $/;"	v
+comz6	sp.c	/^       c2dtty1, c2dttz1, comz1, comz4, comz5, comz6, $/;"	v
+con16	sp.c	/^       c3c4tx3, c3c4ty3, c3c4tz3, c2iv, con43, con16;$/;"	v
+con43	sp.c	/^       c3c4tx3, c3c4ty3, c3c4tz3, c2iv, con43, con16;$/;"	v
+conz1	sp.c	/^       dnzm1, c1c2, c1c5, c3c4, c1345, conz1, c1, c2, $/;"	v
+cuf	sp.c	/^double cuf [PROBLEM_SIZE];$/;"	v
+cv	sp.c	/^double cv  [PROBLEM_SIZE];$/;"	v
+dnxm1	sp.c	/^       dz2tz1, dz3tz1, dz4tz1, dz5tz1, dnxm1, dnym1, $/;"	v
+dnym1	sp.c	/^       dz2tz1, dz3tz1, dz4tz1, dz5tz1, dnxm1, dnym1, $/;"	v
+dnzm1	sp.c	/^       dnzm1, c1c2, c1c5, c3c4, c1345, conz1, c1, c2, $/;"	v
+dssp	sp.c	/^       dy5, dz1, dz2, dz3, dz4, dz5, dssp, dt, $/;"	v
+dt	sp.c	/^       dy5, dz1, dz2, dz3, dz4, dz5, dssp, dt, $/;"	v
+dtdssp	sp.c	/^       c3, c4, c5, c4dssp, c5dssp, dtdssp, dttx1, bt,$/;"	v
+dttx1	sp.c	/^       c3, c4, c5, c4dssp, c5dssp, dtdssp, dttx1, bt,$/;"	v
+dttx2	sp.c	/^       dttx2, dtty1, dtty2, dttz1, dttz2, c2dttx1, $/;"	v
+dtty1	sp.c	/^       dttx2, dtty1, dtty2, dttz1, dttz2, c2dttx1, $/;"	v
+dtty2	sp.c	/^       dttx2, dtty1, dtty2, dttz1, dttz2, c2dttx1, $/;"	v
+dttz1	sp.c	/^       dttx2, dtty1, dtty2, dttz1, dttz2, c2dttx1, $/;"	v
+dttz2	sp.c	/^       dttx2, dtty1, dtty2, dttz1, dttz2, c2dttx1, $/;"	v
+dx1	sp.c	/^       dx1, dx2, dx3, dx4, dx5, dy1, dy2, dy3, dy4, $/;"	v
+dx1tx1	sp.c	/^       xxcon3, xxcon4, xxcon5, dx1tx1, dx2tx1, dx3tx1,$/;"	v
+dx2	sp.c	/^       dx1, dx2, dx3, dx4, dx5, dy1, dy2, dy3, dy4, $/;"	v
+dx2tx1	sp.c	/^       xxcon3, xxcon4, xxcon5, dx1tx1, dx2tx1, dx3tx1,$/;"	v
+dx3	sp.c	/^       dx1, dx2, dx3, dx4, dx5, dy1, dy2, dy3, dy4, $/;"	v
+dx3tx1	sp.c	/^       xxcon3, xxcon4, xxcon5, dx1tx1, dx2tx1, dx3tx1,$/;"	v
+dx4	sp.c	/^       dx1, dx2, dx3, dx4, dx5, dy1, dy2, dy3, dy4, $/;"	v
+dx4tx1	sp.c	/^       dx4tx1, dx5tx1, yycon1, yycon2, yycon3, yycon4,$/;"	v
+dx5	sp.c	/^       dx1, dx2, dx3, dx4, dx5, dy1, dy2, dy3, dy4, $/;"	v
+dx5tx1	sp.c	/^       dx4tx1, dx5tx1, yycon1, yycon2, yycon3, yycon4,$/;"	v
+dxmax	sp.c	/^       ce[5][13], dxmax, dymax, dzmax, xxcon1, xxcon2, $/;"	v
+dy1	sp.c	/^       dx1, dx2, dx3, dx4, dx5, dy1, dy2, dy3, dy4, $/;"	v
+dy1ty1	sp.c	/^       yycon5, dy1ty1, dy2ty1, dy3ty1, dy4ty1, dy5ty1,$/;"	v
+dy2	sp.c	/^       dx1, dx2, dx3, dx4, dx5, dy1, dy2, dy3, dy4, $/;"	v
+dy2ty1	sp.c	/^       yycon5, dy1ty1, dy2ty1, dy3ty1, dy4ty1, dy5ty1,$/;"	v
+dy3	sp.c	/^       dx1, dx2, dx3, dx4, dx5, dy1, dy2, dy3, dy4, $/;"	v
+dy3ty1	sp.c	/^       yycon5, dy1ty1, dy2ty1, dy3ty1, dy4ty1, dy5ty1,$/;"	v
+dy4	sp.c	/^       dx1, dx2, dx3, dx4, dx5, dy1, dy2, dy3, dy4, $/;"	v
+dy4ty1	sp.c	/^       yycon5, dy1ty1, dy2ty1, dy3ty1, dy4ty1, dy5ty1,$/;"	v
+dy5	sp.c	/^       dy5, dz1, dz2, dz3, dz4, dz5, dssp, dt, $/;"	v
+dy5ty1	sp.c	/^       yycon5, dy1ty1, dy2ty1, dy3ty1, dy4ty1, dy5ty1,$/;"	v
+dymax	sp.c	/^       ce[5][13], dxmax, dymax, dzmax, xxcon1, xxcon2, $/;"	v
+dz1	sp.c	/^       dy5, dz1, dz2, dz3, dz4, dz5, dssp, dt, $/;"	v
+dz1tz1	sp.c	/^       zzcon1, zzcon2, zzcon3, zzcon4, zzcon5, dz1tz1, $/;"	v
+dz2	sp.c	/^       dy5, dz1, dz2, dz3, dz4, dz5, dssp, dt, $/;"	v
+dz2tz1	sp.c	/^       dz2tz1, dz3tz1, dz4tz1, dz5tz1, dnxm1, dnym1, $/;"	v
+dz3	sp.c	/^       dy5, dz1, dz2, dz3, dz4, dz5, dssp, dt, $/;"	v
+dz3tz1	sp.c	/^       dz2tz1, dz3tz1, dz4tz1, dz5tz1, dnxm1, dnym1, $/;"	v
+dz4	sp.c	/^       dy5, dz1, dz2, dz3, dz4, dz5, dssp, dt, $/;"	v
+dz4tz1	sp.c	/^       dz2tz1, dz3tz1, dz4tz1, dz5tz1, dnxm1, dnym1, $/;"	v
+dz5	sp.c	/^       dy5, dz1, dz2, dz3, dz4, dz5, dssp, dt, $/;"	v
+dz5tz1	sp.c	/^       dz2tz1, dz3tz1, dz4tz1, dz5tz1, dnxm1, dnym1, $/;"	v
+dzmax	sp.c	/^       ce[5][13], dxmax, dymax, dzmax, xxcon1, xxcon2, $/;"	v
+error_norm	error.c	/^void error_norm(double rms[5])$/;"	f
+exact_rhs	exact_rhs.c	/^void exact_rhs()$/;"	f
+exact_solution	exact_solution.c	/^void exact_solution(double xi, double eta, double zeta, double dtemp[5])$/;"	f
+forcing	sp.c	/^double forcing[KMAX][JMAXP+1][IMAXP+1][5];$/;"	v
+grid_points	sp.c	/^int grid_points[3], nx2, ny2, nz2;$/;"	v
+initialize	initialize.c	/^void initialize()$/;"	f
+lhs	sp.c	/^double lhs [IMAXP+1][IMAXP+1][5];$/;"	v
+lhsinit	initialize.c	/^void lhsinit(int ni, int nj)$/;"	f
+lhsinitj	initialize.c	/^void lhsinitj(int nj, int ni)$/;"	f
+lhsm	sp.c	/^double lhsm[IMAXP+1][IMAXP+1][5];$/;"	v
+lhsp	sp.c	/^double lhsp[IMAXP+1][IMAXP+1][5];$/;"	v
+main	sp.c	/^int main(int argc, char *argv[])$/;"	f
+ninvr	ninvr.c	/^void ninvr()$/;"	f
+nx2	sp.c	/^int grid_points[3], nx2, ny2, nz2;$/;"	v
+ny2	sp.c	/^int grid_points[3], nx2, ny2, nz2;$/;"	v
+nz2	sp.c	/^int grid_points[3], nx2, ny2, nz2;$/;"	v
+pinvr	pinvr.c	/^void pinvr()$/;"	f
+q	sp.c	/^double q   [PROBLEM_SIZE];$/;"	v
+qs	sp.c	/^double qs     [KMAX][JMAXP+1][IMAXP+1];$/;"	v
+rho_i	sp.c	/^double rho_i  [KMAX][JMAXP+1][IMAXP+1];$/;"	v
+rhon	sp.c	/^double rhon[PROBLEM_SIZE];$/;"	v
+rhoq	sp.c	/^double rhoq[PROBLEM_SIZE];$/;"	v
+rhos	sp.c	/^double rhos[PROBLEM_SIZE];$/;"	v
+rhs	sp.c	/^double rhs    [KMAX][JMAXP+1][IMAXP+1][5];$/;"	v
+rhs_norm	error.c	/^void rhs_norm(double rms[5])$/;"	f
+set_constants	set_constants.c	/^void set_constants()$/;"	f
+speed	sp.c	/^double speed  [KMAX][JMAXP+1][IMAXP+1];$/;"	v
+square	sp.c	/^double square [KMAX][JMAXP+1][IMAXP+1];$/;"	v
+t_add	header.h	125;"	d
+t_last	header.h	126;"	d
+t_ninvr	header.h	123;"	d
+t_pinvr	header.h	122;"	d
+t_rdis1	header.h	119;"	d
+t_rdis2	header.h	120;"	d
+t_rhs	header.h	115;"	d
+t_rhsx	header.h	112;"	d
+t_rhsy	header.h	113;"	d
+t_rhsz	header.h	114;"	d
+t_total	header.h	111;"	d
+t_txinvr	header.h	121;"	d
+t_tzetar	header.h	124;"	d
+t_xsolve	header.h	116;"	d
+t_ysolve	header.h	117;"	d
+t_zsolve	header.h	118;"	d
+timeron	sp.c	/^logical timeron;$/;"	v
+tx1	sp.c	/^double tx1, tx2, tx3, ty1, ty2, ty3, tz1, tz2, tz3, $/;"	v
+tx2	sp.c	/^double tx1, tx2, tx3, ty1, ty2, ty3, tz1, tz2, tz3, $/;"	v
+tx3	sp.c	/^double tx1, tx2, tx3, ty1, ty2, ty3, tz1, tz2, tz3, $/;"	v
+txinvr	txinvr.c	/^void txinvr()$/;"	f
+ty1	sp.c	/^double tx1, tx2, tx3, ty1, ty2, ty3, tz1, tz2, tz3, $/;"	v
+ty2	sp.c	/^double tx1, tx2, tx3, ty1, ty2, ty3, tz1, tz2, tz3, $/;"	v
+ty3	sp.c	/^double tx1, tx2, tx3, ty1, ty2, ty3, tz1, tz2, tz3, $/;"	v
+tz1	sp.c	/^double tx1, tx2, tx3, ty1, ty2, ty3, tz1, tz2, tz3, $/;"	v
+tz2	sp.c	/^double tx1, tx2, tx3, ty1, ty2, ty3, tz1, tz2, tz3, $/;"	v
+tz3	sp.c	/^double tx1, tx2, tx3, ty1, ty2, ty3, tz1, tz2, tz3, $/;"	v
+tzetar	tzetar.c	/^void tzetar()$/;"	f
+u	sp.c	/^double u      [KMAX][JMAXP+1][IMAXP+1][5];$/;"	v
+ue	sp.c	/^double ue [PROBLEM_SIZE][5];$/;"	v
+us	sp.c	/^double us     [KMAX][JMAXP+1][IMAXP+1];$/;"	v
+verify	verify.c	/^void verify(int no_time_steps, char *Class, logical *verified)$/;"	f
+vs	sp.c	/^double vs     [KMAX][JMAXP+1][IMAXP+1];$/;"	v
+ws	sp.c	/^double ws     [KMAX][JMAXP+1][IMAXP+1];$/;"	v
+x_solve	x_solve.c	/^void x_solve()$/;"	f
+xxcon1	sp.c	/^       ce[5][13], dxmax, dymax, dzmax, xxcon1, xxcon2, $/;"	v
+xxcon2	sp.c	/^       ce[5][13], dxmax, dymax, dzmax, xxcon1, xxcon2, $/;"	v
+xxcon3	sp.c	/^       xxcon3, xxcon4, xxcon5, dx1tx1, dx2tx1, dx3tx1,$/;"	v
+xxcon4	sp.c	/^       xxcon3, xxcon4, xxcon5, dx1tx1, dx2tx1, dx3tx1,$/;"	v
+xxcon5	sp.c	/^       xxcon3, xxcon4, xxcon5, dx1tx1, dx2tx1, dx3tx1,$/;"	v
+y_solve	y_solve.c	/^void y_solve()$/;"	f
+yycon1	sp.c	/^       dx4tx1, dx5tx1, yycon1, yycon2, yycon3, yycon4,$/;"	v
+yycon2	sp.c	/^       dx4tx1, dx5tx1, yycon1, yycon2, yycon3, yycon4,$/;"	v
+yycon3	sp.c	/^       dx4tx1, dx5tx1, yycon1, yycon2, yycon3, yycon4,$/;"	v
+yycon4	sp.c	/^       dx4tx1, dx5tx1, yycon1, yycon2, yycon3, yycon4,$/;"	v
+yycon5	sp.c	/^       yycon5, dy1ty1, dy2ty1, dy3ty1, dy4ty1, dy5ty1,$/;"	v
+z_solve	z_solve.c	/^void z_solve()$/;"	f
+zzcon1	sp.c	/^       zzcon1, zzcon2, zzcon3, zzcon4, zzcon5, dz1tz1, $/;"	v
+zzcon2	sp.c	/^       zzcon1, zzcon2, zzcon3, zzcon4, zzcon5, dz1tz1, $/;"	v
+zzcon3	sp.c	/^       zzcon1, zzcon2, zzcon3, zzcon4, zzcon5, dz1tz1, $/;"	v
+zzcon4	sp.c	/^       zzcon1, zzcon2, zzcon3, zzcon4, zzcon5, dz1tz1, $/;"	v
+zzcon5	sp.c	/^       zzcon1, zzcon2, zzcon3, zzcon4, zzcon5, dz1tz1, $/;"	v
