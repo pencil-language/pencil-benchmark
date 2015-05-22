@@ -94,12 +94,15 @@ static void hog_multi( const int NUMBER_OF_CELLS
                 float bin_weight1 = magnitude * (relative_orientation - bin0);
                 bin0 = (bin0 + NUMBER_OF_BINS) % NUMBER_OF_BINS;
                 bin1 = (bin1 + NUMBER_OF_BINS) % NUMBER_OF_BINS;
+		
+		int cellxi;
+		int cellyi;
 
                 if (spinterp) {
                     float relative_posx = (pointx - minx) * NUMBER_OF_CELLS / blck_sizex - 0.5f;
                     float relative_posy = (pointy - miny) * NUMBER_OF_CELLS / blck_sizey - 0.5f;
-                    int cellxi = (int)floorf(relative_posx);
-                    int cellyi = (int)floorf(relative_posy);
+                    cellxi = (int)floorf(relative_posx);
+                    cellyi = (int)floorf(relative_posy);
 
                     float xscale1 = relative_posx - (float)(cellxi);
                     float yscale1 = relative_posy - (float)(cellyi);
@@ -130,8 +133,8 @@ static void hog_multi( const int NUMBER_OF_CELLS
                     hist[i][0][0][bin0] += bin_weight0;
                     hist[i][0][0][bin1] += bin_weight1;
                 } else {
-                    int cellxi = (int)floorf((pointx - minx) * NUMBER_OF_CELLS / blck_sizex);
-                    int cellyi = (int)floorf((pointy - miny) * NUMBER_OF_CELLS / blck_sizey);
+                    cellxi = (int)floorf((pointx - minx) * NUMBER_OF_CELLS / blck_sizex);
+                    cellyi = (int)floorf((pointy - miny) * NUMBER_OF_CELLS / blck_sizey);
 
         //            __pencil_assume(cellxi < NUMBER_OF_CELLS);
           //          __pencil_assume(cellyi < NUMBER_OF_CELLS);
