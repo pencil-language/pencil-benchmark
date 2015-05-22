@@ -5,7 +5,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/ocl/ocl.hpp>
 
-#include <pencil_runtime.h>
+#include <prl.h>
 #include <chrono>
 #include <random>
 #include <array>
@@ -19,6 +19,7 @@
 void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>& sizes, int num_positions, int repeat )
 {
     carp::Timing timing("HOG");
+    bool first_execution_hog_opencl = true, first_execution_pencil = true;
 
     for (;repeat>0; --repeat) {
         for ( auto & size : sizes ) {
@@ -69,6 +70,13 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
                                                            , SPARTIAL_WEIGHTS
                                                            , SIGNED_HOG
                                                            );
+
+	            if (first_execution_hog_opencl)
+		    {
+			 cpu_result = descriptor.compute(cpu_gray, locations, blocksizes);
+			 first_execution_hog_opencl = false;
+		    }
+
                     const auto gpu_start = std::chrono::high_resolution_clock::now();
                     gpu_result = descriptor.compute(cpu_gray, locations, blocksizes, max_blocksize_x, max_blocksize_y, elapsed_time_gpu_nocopy);
                     const auto gpu_end = std::chrono::high_resolution_clock::now();
@@ -78,7 +86,22 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
                 }
                 {
                     pen_result.create(num_positions, HISTOGRAM_BINS);
-                    const auto pencil_start = std::chrono::high_resolution_clock::now();
+
+		    if (first_execution_pencil)
+                    {
+		         pencil_hog( NUMBER_OF_CELLS, NUMBER_OF_BINS, GAUSSIAN_WEIGHTS, SPARTIAL_WEIGHTS, SIGNED_HOG
+                              , cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<uint8_t>()
+                              , num_positions
+                              , reinterpret_cast<const float (*)[2]>(locations.data)
+                              , reinterpret_cast<const float (*)[2]>(blocksizes.data)
+                              , reinterpret_cast<      float  *    >(pen_result.data)
+                              );
+			 first_execution_pencil = false;
+		    }
+
+		    prl_timings_reset();
+		    prl_timings_start();
+
                     pencil_hog( NUMBER_OF_CELLS, NUMBER_OF_BINS, GAUSSIAN_WEIGHTS, SPARTIAL_WEIGHTS, SIGNED_HOG
                               , cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<uint8_t>()
                               , num_positions
@@ -86,19 +109,10 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
                               , reinterpret_cast<const float (*)[2]>(blocksizes.data)
                               , reinterpret_cast<      float  *    >(pen_result.data)
                               );
-//                    for (int n = 0; n < num_positions; ++n) {
-//                        float scale = static_cast<float>(cv::norm(pen_result.row(n), cv::NORM_L2));
-//                        if (scale < std::numeric_limits<float>::epsilon())
-//                            pen_result.row(n)= 0.0f;
-//                        else {
-//                            auto scaled = pen_result.row(n)/scale;
-//                            scaled = cv::min(scaled, 0.3f);
-//                            cv::normalize(scaled, pen_result.row(n));
-//                        }
-//                    }
-                    const auto pencil_end = std::chrono::high_resolution_clock::now();
-                    elapsed_time_pencil = pencil_end - pencil_start;
-                    //Free up resources
+
+		    prl_timings_stop();
+                    // Dump execution times for PENCIL code.
+                    prl_timings_dump();
                 }
                 // Verifying the results
                 if ( cv::norm( cpu_result, gpu_result, cv::NORM_INF) > cv::norm( gpu_result, cv::NORM_INF)*1e-5
@@ -120,7 +134,7 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
                     
                     throw std::runtime_error("The OpenCL or PENCIL results are not equivalent with the C++ results.");
                 }
-                timing.print( elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil );
+                timing.print(elapsed_time_cpu, elapsed_time_gpu_p_copy);
             }
         }
     }
@@ -129,22 +143,24 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
 int main(int argc, char* argv[])
 {
     try {
-        pencil_init(PENCIL_TARGET_DEVICE_DYNAMIC);
-        std::cout << "This executable is iterating over all the files which are present in the directory `./pool'. " << std::endl;
+        prl_init((prl_init_flags)(PRL_TARGET_DEVICE_DYNAMIC | PRL_PROFILING_ENABLED));
 
-        auto pool = carp::get_pool("pool");
+	std::cout << "This executable is iterating over all the files passed to it as an argument. " << std::endl;
+
+	auto pool = carp::get_pool(argc, argv);
+
 #ifdef RUN_ONLY_ONE_EXPERIMENT
         time_hog( pool, {64}, 50, 1 );
 #else
         time_hog( pool, {16, 32, 64, 128, 192}, 50, 6 );
 #endif
 
-        pencil_shutdown();
+        prl_shutdown();
         return EXIT_SUCCESS;
     }catch(const std::exception& e) {
         std::cout << e.what() << std::endl;
 
-        pencil_shutdown();
+        prl_shutdown();
         return EXIT_FAILURE;
     }
 } // main
