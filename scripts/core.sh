@@ -326,6 +326,9 @@ fi
 
 PREPARE_GENERAL_OUTPUT_FILE;
 
+# Copy the hog.pencil.cl file into the build directory
+cp $BENCHMARK_ROOT_DIRECTORY/hog/hog.opencl.cl $BENCHMARK_ROOT_DIRECTORY/build
+
 id=0
 for ker in ${LIST_OF_KERNELS}; do
 	echo -n "$ker $CSV_DELIMITER" >> ${OUTPUT_TIME_FILE}.csv
