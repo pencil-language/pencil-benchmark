@@ -8,6 +8,7 @@ PENCIL Image Processing Benchmark
 - The following packages:
 	* build-essential
 	* cmake
+	* TBB (Threading Building Blocks)
 - A PENCIL compiler (PPCG for example).
 - The PRL runtime library (included in PPCG).
 - The PENCIL header files (included in PPCG).

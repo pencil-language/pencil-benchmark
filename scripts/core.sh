@@ -54,7 +54,7 @@ fi
 
 HEADER_FLAGS="-I$PENCIL_INCLUDE_DIR/ -I$OPENCL_INCLUDE_DIR/ -I$OPENCV_INCLUDE_DIR/ -I$BENCHMARK_ROOT_DIRECTORY/include/"
 LINKER_FLAGS="-L$PRL_LIB_DIR/ -L$OPENCL_LIB_DIR/ -L$BENCHMARK_ROOT_DIRECTORY/build/ -L$OPENCV_LIB_DIR/"
-LIBRARY_FLAGS="-lprl -lopencv_core -lopencv_imgproc -lopencv_ocl -lopencv_highgui $OPENCL_LIBRARY"
+LIBRARY_FLAGS="-lprl -lopencv_core -lopencv_imgproc -lopencv_ocl -lopencv_highgui $OPENCL_LIBRARY -ltbb -ltbbmalloc"
 
 PENCIL_COMPILER_EXTRA_OPTIONS="--target=opencl -D__PENCIL__ --opencl-include-file=${PENCIL_INCLUDE_DIR}/pencil_opencl.h"
 
