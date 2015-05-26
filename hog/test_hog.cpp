@@ -1,11 +1,17 @@
 #include "utility.hpp"
-#include "hog.pencil.h"
 #include "HogDescriptor.h"
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/ocl/ocl.hpp>
 
+#ifdef __PENCIL__
 #include <prl.h>
+#include "hog.pencil.h"
+#else
+#define prl_init(x)
+#define prl_shutdown(x)
+#endif
+
 #include <chrono>
 #include <random>
 #include <array>
@@ -20,12 +26,35 @@
 #include <tbb/blocked_range.h>
 #endif
 
+#ifndef BLOCK_SIZE
+#define BLOCK_SIZE 64
+#endif
 
+#ifndef NUMBER_OF_LOCATIONS
+#define NUMBER_OF_LOCATIONS 50
+#endif
+
+#ifndef NUMBER_OF_CELLS
 #define NUMBER_OF_CELLS 1
+#endif
+
+#ifndef NUMBER_OF_BINS
 #define NUMBER_OF_BINS 8
+#endif
+
+#ifndef GAUSSIAN_WEIGHTS
 #define GAUSSIAN_WEIGHTS 1
+#endif
+
+#ifndef SPARTIAL_WEIGHTS
 #define SPARTIAL_WEIGHTS 0
+#endif
+
+#ifndef SIGNED_HOG
 #define SIGNED_HOG 1
+#endif
+
+#define HOG_OPENCL_CL "hog/hog.opencl.cl"
 
 namespace {
     template<typename T>
@@ -86,7 +115,7 @@ cv::Mat_<float> nel::HOGDescriptorCPP::compute( const cv::Mat_<uint8_t>  &image
     tbb::parallel_for(tbb::blocked_range<size_t>(0, locations.rows, 5), [&](const tbb::blocked_range<size_t> range) {
     for (size_t n = range.begin(); n != range.end(); ++n) {
 #else
-    for (size_t n = 0; n < locations.rows; ++n) {
+    for (size_t n = 0; n < (size_t)locations.rows; ++n) {
 #endif
 
         const float &blocksizeX = blocksizes(n,0);
@@ -236,11 +265,9 @@ nel::HOGDescriptorOCL::HOGDescriptorOCL(int numberOfCells_, int numberOfBins_, b
     context = cl::Context(device);
 
     has_local_memory       = (CL_LOCAL == device.getInfo<CL_DEVICE_LOCAL_MEM_TYPE>());
-    is_unified_host_memory = (CL_TRUE  == device.getInfo<CL_DEVICE_HOST_UNIFIED_MEMORY>());
 
     //Load source
-    std::string source_file_name{ "hog.opencl.cl" };
-    std::ifstream source_file{ source_file_name };
+    std::ifstream source_file{ HOG_OPENCL_CL };
     std::string source{ std::istreambuf_iterator<char>{source_file}, std::istreambuf_iterator<char>{} };
 
     //Create program
@@ -294,7 +321,6 @@ cv::Mat_<float> nel::HOGDescriptorOCL::compute( const cv::Mat_<uint8_t> &image
                                               , const cv::Mat_<float>   &blocksizes
                                               , const size_t             max_blocksize_x
                                               , const size_t             max_blocksize_y
-                                              , std::chrono::duration<double> &elapsed_time_gpu_nocopy
                                               ) const
 {
     assert(2 == locations.cols);
@@ -311,29 +337,21 @@ cv::Mat_<float> nel::HOGDescriptorOCL::compute( const cv::Mat_<uint8_t> &image
     cl::Event start, end;
 
     //OPENCL START
-    //Prepare OpenCL buffers
+    //Allocate OpenCL buffers
     size_t      image_bytes = image.elemSize()*image.rows*image.step1();
     size_t  locations_bytes = sizeof(cl_float2)*num_locations;
     size_t blocksizes_bytes = sizeof(cl_float2)*blocksizes.rows;
     size_t descriptor_bytes = sizeof(cl_float)*getNumberOfBins()*num_locations;
-    cl::Buffer      image_cl;
-    cl::Buffer  locations_cl;
-    cl::Buffer blocksizes_cl;
-    cl::Buffer descriptor_cl;
-    if (is_unified_host_memory) {
-             image_cl = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,      image_bytes,       image.data);
-         locations_cl = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,  locations_bytes,   locations.data);
-        blocksizes_cl = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, blocksizes_bytes,  blocksizes.data);
-        descriptor_cl = cl::Buffer(context, CL_MEM_READ_WRITE| CL_MEM_USE_HOST_PTR, descriptor_bytes, descriptors.data);
-    } else {
-             image_cl = cl::Buffer(context, CL_MEM_READ_ONLY ,      image_bytes);
-         locations_cl = cl::Buffer(context, CL_MEM_READ_ONLY ,  locations_bytes);
-        blocksizes_cl = cl::Buffer(context, CL_MEM_READ_ONLY , blocksizes_bytes);
-        descriptor_cl = cl::Buffer(context, CL_MEM_READ_WRITE, descriptor_bytes);
-        queue.enqueueWriteBuffer(     image_cl, CL_FALSE, 0,      image_bytes,      image.data);
-        queue.enqueueWriteBuffer( locations_cl, CL_FALSE, 0,  locations_bytes,  locations.data);
-        queue.enqueueWriteBuffer(blocksizes_cl, CL_FALSE, 0, blocksizes_bytes, blocksizes.data);
-    }
+    cl::Buffer      image_cl = cl::Buffer(context, CL_MEM_READ_ONLY,       image_bytes);
+    cl::Buffer  locations_cl = cl::Buffer(context, CL_MEM_READ_ONLY,   locations_bytes);
+    cl::Buffer blocksizes_cl = cl::Buffer(context, CL_MEM_READ_ONLY,  blocksizes_bytes);
+    cl::Buffer descriptor_cl = cl::Buffer(context, CL_MEM_READ_WRITE, descriptor_bytes);
+
+    //Write input buffers to device
+    queue.enqueueWriteBuffer(     image_cl, CL_FALSE, 0,      image_bytes,      image.data);
+    queue.enqueueWriteBuffer( locations_cl, CL_FALSE, 0,  locations_bytes,  locations.data);
+    queue.enqueueWriteBuffer(blocksizes_cl, CL_FALSE, 0, blocksizes_bytes, blocksizes.data);
+
 #ifdef CL_VERSION_1_2
     queue.enqueueFillBuffer(descriptor_cl, 0.0f, 0, descriptor_bytes, nullptr, &start);
 #else
@@ -349,17 +367,28 @@ cv::Mat_<float> nel::HOGDescriptorOCL::compute( const cv::Mat_<uint8_t> &image
     }
 #endif
 
+#ifndef LWS_X
+#define LWS_X calc_hog_preferred_multiple
+#endif
+
+#ifndef LWS_Y
+#define LWS_Y std::max(calc_hog_group_size / num_locations / lws_x, (size_t)1u)
+#endif
+
+#ifndef LWS_Z
+#define LWS_Z std::max(calc_hog_group_size / lws_y / lws_x, (size_t)1u)
+#endif
     {
         //Figure out the work group sizes
-        const size_t work_size_x = calc_hog_preferred_multiple;
-        const size_t work_size_y = std::max(calc_hog_group_size / num_locations / work_size_x, (size_t)1u);    //Integer division!
-        const size_t work_size_z = std::max(calc_hog_group_size / work_size_y / work_size_x   , (size_t)1u);    //Integer division!
-        cl::NDRange local_work_size(work_size_x, work_size_y, work_size_z);
+        const size_t lws_x = LWS_X;
+        const size_t lws_y = LWS_Y;
+        const size_t lws_z = LWS_Z;
+        cl::NDRange local_work_size(lws_x, lws_y, lws_z);
 
-        size_t max_x = round_to_multiple(max_blocksize_x, work_size_x);
-        size_t max_y = round_to_multiple(max_blocksize_y, work_size_y);
-        size_t max_z = round_to_multiple(num_locations, work_size_z);
-        cl::NDRange global_work_size(max_x, max_y, max_z);
+        const size_t gws_x = round_to_multiple(max_blocksize_x, lws_x);
+        const size_t gws_y = round_to_multiple(max_blocksize_y, lws_y);
+        const size_t gws_z = round_to_multiple(num_locations,   lws_z);
+        cl::NDRange global_work_size(gws_x, gws_y, gws_z);
 
         //Execute the kernel
         {
@@ -373,23 +402,18 @@ cv::Mat_<float> nel::HOGDescriptorOCL::compute( const cv::Mat_<uint8_t> &image
             calc_hog.setArg(6, blocksizes_cl());
             calc_hog.setArg(7, descriptor_cl());
             if (has_local_memory)
-                calc_hog.setArg(8, (size_t)(sizeof(cl_float) * getNumberOfBins() * work_size_z), nullptr);
+                calc_hog.setArg(8, (size_t)(sizeof(cl_float) * getNumberOfBins() * lws_z), nullptr);
             queue.enqueueNDRangeKernel(calc_hog, cl::NullRange, global_work_size, local_work_size, nullptr, &end );
         }
     }
     
-    //Read result
-    if (is_unified_host_memory) {
-        auto mappedPtr = queue.enqueueMapBuffer(descriptor_cl, CL_TRUE, CL_MAP_READ, 0, descriptor_bytes);
-        assert(mappedPtr == descriptors.data);
-        queue.enqueueUnmapMemObject(descriptor_cl, mappedPtr);    //Buffer was created with CL_MEM_USE_HOST_PTR -> can unmap immediately
-    } else {
-        queue.enqueueReadBuffer(descriptor_cl, CL_TRUE, 0, descriptor_bytes, descriptors.data);
-    }
-    
-    //Figure out execution time
-    auto time_nanoseconds = end.getProfilingInfo<CL_PROFILING_COMMAND_END>() - start.getProfilingInfo<CL_PROFILING_COMMAND_START>();
-    elapsed_time_gpu_nocopy = std::chrono::nanoseconds(time_nanoseconds);
+    //Read result buffer from device
+    queue.enqueueReadBuffer(descriptor_cl, CL_TRUE, 0, descriptor_bytes, descriptors.data);
+
+    //Calculate kernel-only execution time
+    double kernel_ns = end.getProfilingInfo<CL_PROFILING_COMMAND_END>() - start.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+    double kernel_ms = kernel_ns * 1e-6;
+    std::cout << "calc_hog execution time: " << std::fixed << std::setprecision(6) << std::setw(8) << kernel_ms << " ms\n";
 
     //Normalize result
 //    for (int n = 0; n < num_locations; ++n) {
@@ -408,7 +432,10 @@ cv::Mat_<float> nel::HOGDescriptorOCL::compute( const cv::Mat_<uint8_t> &image
 void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>& sizes, int num_positions, int repeat )
 {
     carp::Timing timing("HOG");
-    bool first_execution_hog_opencl = true, first_execution_pencil = true;
+    bool first_execution_opencl = true;
+#ifdef __PENCIL__
+    bool first_execution_pencil = true;
+#endif
 
     for (;repeat>0; --repeat) {
         for ( auto & size : sizes ) {
@@ -417,6 +444,9 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
 
                 cv::Mat cpu_gray;
                 cv::cvtColor( item.cpuimg(), cpu_gray, CV_RGB2GRAY );
+                std::cout << "image path: " << item.path()   << std::endl;
+                std::cout << "image rows: " << cpu_gray.rows << std::endl;
+                std::cout << "image cols: " << cpu_gray.cols << std::endl;
 
                 cv::Mat_<float> locations(num_positions, 2);
                 cv::Mat_<float> blocksizes(num_positions, 2);
@@ -432,12 +462,11 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
                     blocksizes(i, 1) = size;
                 }
 
-                const int HISTOGRAM_BINS = NUMBER_OF_CELLS * NUMBER_OF_CELLS * NUMBER_OF_BINS;
                 cv::Mat_<float> cpu_result, gpu_result, pen_result;
-                std::chrono::duration<double> elapsed_time_cpu, elapsed_time_gpu_p_copy, elapsed_time_gpu_nocopy, elapsed_time_pencil;
+                std::chrono::duration<double> elapsed_time_cpu, elapsed_time_gpu;
 
                 {
-                    //CPU implement
+                    //CPU implementation
                     static nel::HOGDescriptorCPP descriptor( NUMBER_OF_CELLS
                                                            , NUMBER_OF_BINS
                                                            , GAUSSIAN_WEIGHTS
@@ -452,7 +481,7 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
                     //Free up resources
                 }
                 {
-                    //GPU implement
+                    //OpenCL implementation
                     static nel::HOGDescriptorOCL descriptor( NUMBER_OF_CELLS
                                                            , NUMBER_OF_BINS
                                                            , GAUSSIAN_WEIGHTS
@@ -460,20 +489,23 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
                                                            , SIGNED_HOG
                                                            );
 
-	            if (first_execution_hog_opencl)
+		    //First execution includes buffer allocation
+	            if (first_execution_opencl)
 		    {
-	                 gpu_result = descriptor.compute(cpu_gray, locations, blocksizes, max_blocksize_x, max_blocksize_y, elapsed_time_gpu_nocopy);
-			 first_execution_hog_opencl = false;
+	                 gpu_result = descriptor.compute(cpu_gray, locations, blocksizes, max_blocksize_x, max_blocksize_y);
+		         first_execution_opencl = false;
 		    }
 
                     const auto gpu_start = std::chrono::high_resolution_clock::now();
-                    gpu_result = descriptor.compute(cpu_gray, locations, blocksizes, max_blocksize_x, max_blocksize_y, elapsed_time_gpu_nocopy);
+                    gpu_result = descriptor.compute(cpu_gray, locations, blocksizes, max_blocksize_x, max_blocksize_y);
                     const auto gpu_end = std::chrono::high_resolution_clock::now();
 
-                    elapsed_time_gpu_p_copy = gpu_end - gpu_start;
+                    elapsed_time_gpu = gpu_end - gpu_start;
                     //Free up resources
                 }
+#ifdef __PENCIL__
                 {
+		    //PENCIL implementation
                     pen_result.create(num_positions, HISTOGRAM_BINS);
 
 		    if (first_execution_pencil)
@@ -503,27 +535,33 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
                     // Dump execution times for PENCIL code.
                     prl_timings_dump();
                 }
+#endif
                 // Verifying the results
-                if ( cv::norm( cpu_result, gpu_result, cv::NORM_INF) > cv::norm( gpu_result, cv::NORM_INF)*1e-5
-                  || cv::norm( cpu_result, pen_result, cv::NORM_INF) > cv::norm( cpu_result, cv::NORM_INF)*1e-5
-                   )
+                if ( cv::norm( cpu_result, gpu_result, cv::NORM_INF) > cv::norm( gpu_result, cv::NORM_INF)*1e-5 )
                 {
                     std::cerr << "ERROR: Results don't match. Writing calculated images." << std::endl;
                     std::cerr << "CPU norm:" << cv::norm(cpu_result, cv::NORM_INF) << std::endl;
                     std::cerr << "GPU norm:" << cv::norm(gpu_result, cv::NORM_INF) << std::endl;
-                    std::cerr << "PEN norm:" << cv::norm(pen_result, cv::NORM_INF) << std::endl;
                     std::cerr << "GPU-CPU norm:" << cv::norm(gpu_result, cpu_result, cv::NORM_INF) << std::endl;
-                    std::cerr << "PEN-CPU norm:" << cv::norm(pen_result, cpu_result, cv::NORM_INF) << std::endl;
-
                     cv::imwrite( "hog_cpu.png", cpu_result );
                     cv::imwrite( "hog_gpu.png", gpu_result );
-                    cv::imwrite( "hog_pen.png", pen_result );
                     cv::imwrite( "hog_diff_cpu_gpu.png", cv::abs(cpu_result-gpu_result) );
-                    cv::imwrite( "hog_diff_cpu_pen.png", cv::abs(cpu_result-pen_result) );
-                    
-                    throw std::runtime_error("The OpenCL or PENCIL results are not equivalent with the C++ results.");
+                    throw std::runtime_error("The OpenCL results are not equivalent with the C++ results.");
                 }
-                timing.print(elapsed_time_cpu, elapsed_time_gpu_p_copy);
+#ifdef __PENCIL__
+                if ( cv::norm( cpu_result, pen_result, cv::NORM_INF) > cv::norm( cpu_result, cv::NORM_INF)*1e-5 )
+                {
+                    std::cerr << "ERROR: Results don't match. Writing calculated images." << std::endl;
+                    std::cerr << "CPU norm:" << cv::norm(cpu_result, cv::NORM_INF) << std::endl;
+                    std::cerr << "PEN norm:" << cv::norm(pen_result, cv::NORM_INF) << std::endl;
+                    std::cerr << "PEN-CPU norm:" << cv::norm(pen_result, cpu_result, cv::NORM_INF) << std::endl;
+                    cv::imwrite( "hog_cpu.png", cpu_result );
+                    cv::imwrite( "hog_pen.png", pen_result );
+                    cv::imwrite( "hog_diff_cpu_pen.png", cv::abs(cpu_result-pen_result) );
+                    throw std::runtime_error("The PENCIL results are not equivalent with the C++ results.");
+		}
+#endif
+                timing.print(elapsed_time_cpu, elapsed_time_gpu);
             }
         }
     }
@@ -539,14 +577,14 @@ int main(int argc, char* argv[])
 	auto pool = carp::get_pool(argc, argv);
 
 #ifdef RUN_ONLY_ONE_EXPERIMENT
-        time_hog( pool, {64}, 50, 1 );
+        time_hog( pool, {BLOCK_SIZE}, NUMBER_OF_LOCATIONS, 1 );
 #else
-        time_hog( pool, {16, 32, 64, 128, 192}, 50, 6 );
+        time_hog( pool, {16, 32, 64, 128, 192}, NUMBER_OF_LOCATIONS, 6 );
 #endif
 
         prl_shutdown();
         return EXIT_SUCCESS;
-    }catch(const std::exception& e) {
+    } catch(const std::exception& e) {
         std::cout << e.what() << std::endl;
 
         prl_shutdown();

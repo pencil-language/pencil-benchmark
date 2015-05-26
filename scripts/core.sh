@@ -327,7 +327,8 @@ fi
 PREPARE_GENERAL_OUTPUT_FILE;
 
 # Copy the hog.pencil.cl file into the build directory
-cp $BENCHMARK_ROOT_DIRECTORY/hog/hog.opencl.cl $BENCHMARK_ROOT_DIRECTORY/build
+mkdir $BENCHMARK_ROOT_DIRECTORY/build/hog
+cp $BENCHMARK_ROOT_DIRECTORY/hog/hog.opencl.cl $BENCHMARK_ROOT_DIRECTORY/build/hog
 
 id=0
 for ker in ${LIST_OF_KERNELS}; do

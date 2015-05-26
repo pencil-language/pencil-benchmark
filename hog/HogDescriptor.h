@@ -54,7 +54,6 @@ namespace nel {
                                , const cv::Mat_<float>         &blocksizes
                                , const size_t                   max_blocksize_x
                                , const size_t                   max_blocksize_y
-                               , std::chrono::duration<double> &elapsed_time_gpu_nocopy
                                ) const;
 
         int getNumberOfBins() const;
@@ -77,7 +76,6 @@ namespace nel {
         size_t fill_zeros_preferred_multiple;
         size_t fill_zeros_group_size;
 #endif
-        bool is_unified_host_memory;
         bool has_local_memory;
     };
 }
