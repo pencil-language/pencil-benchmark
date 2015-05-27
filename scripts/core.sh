@@ -46,7 +46,7 @@ TEMP_TIME_FILE_3=temp_time_file_3
 LOG_FILE=benchmark_building_log.txt
 CSV_DELIMITER="/"
 
-if [ $MALI_ARCHITECTURE = 0 ]; then
+if [ $USE_ARM_MALI_OPENCL_LIBRARIES = 0 ]; then
    OPENCL_LIBRARY="-lOpenCL"
 else
   OPENCL_LIBRARY="-lmali"
