@@ -294,6 +294,10 @@ AUTO_TUNE()
 	echo "--------------------------------------------------"
 }
 
+# Setup LD_LIBRARY_PATH
+LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH
+
 echo
 echo "Timings will be generated in build/${OUTPUT_TIME_FILE}.csv"
 
