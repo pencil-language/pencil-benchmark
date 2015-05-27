@@ -62,6 +62,7 @@ which is not possible with the Cmake method.
   PENCIL_COMPILER_BINARY: the full path of the PENCIL compiler binary
   PENCIL_INCLUDE_DIR: path of the directory containing "pencil.h"
   PRL_LIB_DIR: path of the directory containing the PRL library (libprl.so)
+  PRL_INCLUDE_DIR: path of the directory containing "prl.h"
   OPENCL_LIB_DIR: path of the directory containing the OpenCL library
   OPENCL_INCLUDE_DIR: path of the OpenCL header files
   OPENCV_INCLUDE_DIR: path of the OpenCV header files
