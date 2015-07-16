@@ -1,0 +1,7 @@
+best_optimization_options[0]="--sizes={kernel[i]->block[16,16]}"
+best_optimization_options[1]="--sizes={kernel[i]->block[16,16]}"
+best_optimization_options[2]="--sizes={kernel[i]->block[16,16]}"
+best_optimization_options[3]="--sizes={kernel[i]->block[16,16]}"
+best_optimization_options[4]="--sizes={kernel[i]->block[16,16]}"
+best_optimization_options[5]="--sizes={kernel[i]->block[16,16]}"
+best_optimization_options[6]="--sizes={kernel[i]->block[16,16]}"

@@ -1,0 +1,59 @@
+From 791ce9a3c541b350e8d24a2554ceb17b1e97538d Mon Sep 17 00:00:00 2001
+Message-Id: <791ce9a3c541b350e8d24a2554ceb17b1e97538d.1418864258.git.robert.david@realeyesit.com>
+From: Robert David <robert.david@realeyesit.com>
+Date: Thu, 18 Dec 2014 01:57:29 +0100
+Subject: [PATCH] Make image filtering - erode/dilate work with ARM Mali GPUs
+
+---
+ modules/ocl/src/filtering.cpp                | 12 ++----------
+ modules/ocl/src/opencl/filtering_filter2D.cl |  4 ++--
+ 2 files changed, 4 insertions(+), 12 deletions(-)
+
+diff --git a/modules/ocl/src/filtering.cpp b/modules/ocl/src/filtering.cpp
+index 77052ff..f954f02 100644
+--- a/modules/ocl/src/filtering.cpp
++++ b/modules/ocl/src/filtering.cpp
+@@ -184,11 +184,7 @@ static void GPUErode(const oclMat &src, oclMat &dst, oclMat &mat_kernel,
+     int srcOffset_y = srcOffset / srcStep;
+     Context *clCxt = src.clCxt;
+     string kernelName;
+-#ifdef ANDROID
+-    size_t localThreads[3] = {16, 8, 1};
+-#else
+-    size_t localThreads[3] = {16, 16, 1};
+-#endif
++    size_t localThreads[3] = {4, 16, 1};
+     size_t globalThreads[3] = {(src.cols + localThreads[0] - 1) / localThreads[0] *localThreads[0], (src.rows + localThreads[1] - 1) / localThreads[1] *localThreads[1], 1};
+ 
+     if (src.type() == CV_8UC1)
+@@ -268,11 +264,7 @@ static void GPUDilate(const oclMat &src, oclMat &dst, oclMat &mat_kernel,
+     int srcOffset_y = srcOffset / srcStep;
+     Context *clCxt = src.clCxt;
+     string kernelName;
+-#ifdef ANDROID
+-    size_t localThreads[3] = {16, 10, 1};
+-#else
+-    size_t localThreads[3] = {16, 16, 1};
+-#endif
++    size_t localThreads[3] = {4, 16, 1};
+     size_t globalThreads[3] = {(src.cols + localThreads[0] - 1) / localThreads[0] *localThreads[0],
+                                (src.rows + localThreads[1] - 1) / localThreads[1] *localThreads[1], 1};
+ 
+diff --git a/modules/ocl/src/opencl/filtering_filter2D.cl b/modules/ocl/src/opencl/filtering_filter2D.cl
+index 684be0c..eac9143 100644
+--- a/modules/ocl/src/opencl/filtering_filter2D.cl
++++ b/modules/ocl/src/opencl/filtering_filter2D.cl
+@@ -217,8 +217,8 @@ struct RectCoords
+ #define DEBUG_ONLY(x) x
+ #define ASSERT(condition) do { if (!(condition)) { printf("BUG in boxFilter kernel (global=%d,%d): " #condition "\n", get_global_id(0), get_global_id(1)); } } while (0)
+ #else
+-#define DEBUG_ONLY(x) (void)0
+-#define ASSERT(condition) (void)0
++#define DEBUG_ONLY(x) (void*)0
++#define ASSERT(condition) (void*)0
+ #endif
+ 
+ 
+-- 
+1.9.1
+
