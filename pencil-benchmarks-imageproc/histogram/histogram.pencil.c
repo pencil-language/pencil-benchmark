@@ -1,20 +1,11 @@
 #include "histogram.pencil.h"
 #include <pencil.h>
 
-void atomic_inc(int *v);
-
-#ifndef __PENCIL__
-void atomic_inc(int *v)
-{
-    (*v)++;
-}
-#endif
-
 static void calcHist( const int rows
                     , const int cols
                     , const int step
                     , const unsigned char image[static const restrict rows][step]
-                    , int hist[static const restrict HISTOGRAM_BINS]    //out
+                    , atomic_int hist[static const restrict HISTOGRAM_BINS]    //out
                     )
 {
 #pragma scop
@@ -26,7 +17,7 @@ static void calcHist( const int rows
 
     #pragma pencil independent
     for(int b = 0; b < HISTOGRAM_BINS; ++b)
-        hist[b] = 0;
+        atomic_init(&hist[b], 0);
 
     #pragma pencil independent
     for(int r = 0; r < rows; ++r)
@@ -35,7 +26,7 @@ static void calcHist( const int rows
         for(int c = 0; c < cols; ++c)
         {
             unsigned char pixel = image[r][c];
-            atomic_inc(&hist[pixel]);
+            atomic_fetch_add(&hist[pixel], 1);
         }
     }
 
@@ -45,5 +36,6 @@ static void calcHist( const int rows
 
 void pencil_calcHist( const int rows, const int cols, const int step, const unsigned char image[], int hist[HISTOGRAM_BINS])
 {
-    calcHist( rows, cols, step, (const unsigned char(*)[step])image, hist);
+    calcHist( rows, cols, step, (const unsigned char(*)[step])image,
+		    (atomic_int *) hist);
 }
