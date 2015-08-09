@@ -1,0 +1,15 @@
+main.o
+spmv.c
+spmv-dp
+spmv_host.c
+spmv_host.o
+spmv_kernel.cl
+spmv_kernel.h
+spmv-pencil.c
+spmv-pencil_host.c
+spmv-pencil_kernel.cl
+spmv-pencil_kernel.h
+spmv-ref.c
+spmv-ref.o
+spmv-sp
+util.o

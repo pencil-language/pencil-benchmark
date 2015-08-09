@@ -1,0 +1,6 @@
+/data/Graphgen/graph*.txt
+/data/Graphgen/graphgen
+/bfs
+/gen
+/bfs-orig
+/run.sh
