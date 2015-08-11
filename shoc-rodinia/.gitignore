@@ -1,7 +1,0 @@
-*~
-*.o
-*_kernel.cl
-*_kernel.h
-*_host.c
-ocl_utilities.c
-/config

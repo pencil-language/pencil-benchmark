@@ -1,6 +1,0 @@
-/gen_tests
-/n[0-9]*
-/radix
-/run.sh
-pencil.c
-pencil.unopt.c
