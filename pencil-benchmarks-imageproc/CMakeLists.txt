@@ -120,4 +120,4 @@ target_link_libraries( test_hog        ${COMMON_LINK_LIBRARIES} ${TBB_LIBRARIES}
 target_link_libraries( test_resize     ${COMMON_LINK_LIBRARIES} )
 target_link_libraries( test_warpAffine ${COMMON_LINK_LIBRARIES} )
 
-add_custom_command( TARGET test_hog PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/hog/hog.opencl.cl ${CMAKE_CURRENT_BINARY_DIR}/hog.opencl.cl)
+add_custom_command( TARGET test_hog PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/hog/HogDescriptor.cl ${CMAKE_CURRENT_BINARY_DIR}/HogDescriptor.cl)
