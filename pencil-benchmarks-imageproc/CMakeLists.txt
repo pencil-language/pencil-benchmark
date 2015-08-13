@@ -71,10 +71,10 @@ set(cvt_color_SOURCES  cvt_color/test_cvt_color.cpp   cvt_color/cvt_color.pencil
 set(dilate_SOURCES     dilate/test_dilate.cpp         dilate/dilate.pencil.h         )
 set(filter2D_SOURCES   filter2D/test_filter2D.cpp     filter2D/filter2D.pencil.h     )
 set(gaussian_SOURCES   gaussian/test_gaussian.cpp     gaussian/gaussian.pencil.h     )
-set(hog_SOURCES hog/HogDescriptor.cpp
-                hog/test_hog.cpp
+set(hog_SOURCES hog/test_hog.cpp
                 hog/hog.pencil.h
                 hog/HogDescriptor.h
+                hog/HogDescriptor.hpp
                 )
 set(histogram_SOURCES  histogram/test_histogram.cpp   histogram/histogram.pencil.h   )
 set(resize_SOURCES     resize/test_resize.cpp         resize/resize.pencil.h         )

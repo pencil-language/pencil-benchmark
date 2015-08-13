@@ -61,8 +61,6 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
 
                 cv::Mat_<float> locations(num_positions, 2);
                 cv::Mat_<float> blocksizes(num_positions, 2);
-                size_t max_blocksize_x = std::ceil(size);
-                size_t max_blocksize_y = std::ceil(size);
                 //fill locations and blocksizes
                 std::uniform_real_distribution<float> genx(size/2+1, cpu_gray.rows-1-size/2-1);
                 std::uniform_real_distribution<float> geny(size/2+1, cpu_gray.cols-1-size/2-1);
@@ -78,12 +76,7 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
 
                 {
                     //CPU implementation
-                    static nel::HOGDescriptorCPP descriptor( NUMBER_OF_CELLS
-                                                           , NUMBER_OF_BINS
-                                                           , GAUSSIAN_WEIGHTS
-                                                           , SPARTIAL_WEIGHTS
-                                                           , SIGNED_HOG
-                                                           );
+                    static nel::HOGDescriptorCPP<NUMBER_OF_CELLS, NUMBER_OF_BINS, GAUSSIAN_WEIGHTS, SPARTIAL_WEIGHTS, SIGNED_HOG, false> descriptor;
                     const auto cpu_start = std::chrono::high_resolution_clock::now();
                     cpu_result = descriptor.compute(cpu_gray, locations, blocksizes);
                     const auto cpu_end = std::chrono::high_resolution_clock::now();
@@ -93,22 +86,17 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
                 }
                 {
                     //OpenCL implementation
-                    static nel::HOGDescriptorOCL descriptor( NUMBER_OF_CELLS
-                                                           , NUMBER_OF_BINS
-                                                           , GAUSSIAN_WEIGHTS
-                                                           , SPARTIAL_WEIGHTS
-                                                           , SIGNED_HOG
-                                                           );
+                    static nel::HOGDescriptorOCL<NUMBER_OF_CELLS, NUMBER_OF_BINS, GAUSSIAN_WEIGHTS, SPARTIAL_WEIGHTS, SIGNED_HOG, false> descriptor;
 
                     //First execution includes buffer allocation
                     if (first_execution_opencl)
                     {
-                        gpu_result = descriptor.compute(cpu_gray, locations, blocksizes, max_blocksize_x, max_blocksize_y);
+                        gpu_result = descriptor.compute(cpu_gray, locations, blocksizes);
                         first_execution_opencl = false;
                     }
 
                     const auto gpu_start = std::chrono::high_resolution_clock::now();
-                    gpu_result = descriptor.compute(cpu_gray, locations, blocksizes, max_blocksize_x, max_blocksize_y);
+                    gpu_result = descriptor.compute(cpu_gray, locations, blocksizes);
                     const auto gpu_end = std::chrono::high_resolution_clock::now();
 
                     elapsed_time_gpu = gpu_end - gpu_start;
