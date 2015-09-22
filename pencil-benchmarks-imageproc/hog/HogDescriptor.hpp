@@ -1,15 +1,3 @@
-/* ---------------------------------------------------------------------
-* Copyright Realeyes OU 2012-2015
-*
-* All rights reserved. Realeyes OU PROPRIETARY/CONFIDENTIAL.
-* No part of this computer programs(s) may be used, reproduced,
-* stored in any retrieval system, or transmitted, in any form or
-* by any means, electronic, mechanical, photocopying,
-* recording, or otherwise without prior written permission of
-* Realeyes OU. Use is subject to license terms.
-* ---------------------------------------------------------------------
-*/
-
 #ifndef HOGDESCRIPTOR_H
 #error This is a private implementation file for HogDescriptor.h, do not include directly
 #endif
