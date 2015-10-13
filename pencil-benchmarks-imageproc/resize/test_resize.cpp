@@ -57,12 +57,12 @@ void time_resize( const std::vector<carp::record_t>& pool, const std::vector<cv:
                         first_execution_pencil = false;
                     }
 
-                    prl_timings_reset();
-                    prl_timings_start();
+                    prl_prof_reset();
+                    prl_prof_start();
                     pencil_resize_LN(cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr(), pen_result.rows, pen_result.cols, pen_result.step1(), pen_result.ptr() );
-                    prl_timings_stop();
+                    prl_prof_stop();
                     // Dump execution times for PENCIL code.
-                    prl_timings_dump();
+                    prl_prof_dump();
                 }
                 // Verifying the results - TODO - Something fishy is happening at borders
 #define REMOVE_BORDER(img) img(cv::Range(1, size.height-1), cv::Range(1, size.width-1))
@@ -87,7 +87,7 @@ void time_resize( const std::vector<carp::record_t>& pool, const std::vector<cv:
 
 int main(int argc, char* argv[])
 {
-    prl_init((prl_init_flags)(PRL_TARGET_DEVICE_DYNAMIC | PRL_PROFILING_ENABLED));
+    prl_init();
 
     std::cout << "This executable is iterating over all the files passed to it as an argument. " << std::endl;
 
@@ -103,6 +103,6 @@ int main(int argc, char* argv[])
 
     time_resize( pool, sizes, iteration );
 
-    prl_shutdown();
+    prl_release();
     return EXIT_SUCCESS;
 }
