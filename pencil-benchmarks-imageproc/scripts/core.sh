@@ -164,7 +164,7 @@ run()
 	  echo -n "$CSV_DELIMITER" >> $OUTPUT_FILE
 
       # Total execution time (computed from host) without compilation time
-      cat $TEMP_OUTPUT_FILE | grep -F "Duration" | awk 'match($0, /[0-9\.]+/) { print substr($0, RSTART, RLENGTH); }' 1> $TEMP_TIME_FILE_2
+      cat $TEMP_OUTPUT_FILE | grep -F "Duration" | awk 'match($0, /[0-9]+\.[0-9]+/) { print substr($0, RSTART, RLENGTH); }' 1> $TEMP_TIME_FILE_2
 	  echo -n `get_median $TEMP_TIME_FILE_2` >> $OUTPUT_FILE
 	  echo -n "$CSV_DELIMITER" >> $OUTPUT_FILE
 	  current_execution_time=`get_median $TEMP_TIME_FILE_2`
@@ -174,7 +174,7 @@ run()
 	  fi
 
       # Kernel only execution time computed using OpenCL profiling
-      cat $TEMP_OUTPUT_FILE | grep -F "compute" | awk 'match($0, /[0-9\.]+/) { print substr($0, RSTART, RLENGTH); }' 1> $TEMP_TIME_FILE_3
+      cat $TEMP_OUTPUT_FILE | grep -F "compute" | awk 'match($0, /[0-9]+\.[0-9]+/) { print substr($0, RSTART, RLENGTH); }' 1> $TEMP_TIME_FILE_3
 	  echo `get_median $TEMP_TIME_FILE_3` >>  $OUTPUT_FILE
   else
 	  echo " ERROR in ./ppcg_test_${KERNEL}" >> $LOG_FILE
