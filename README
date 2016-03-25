@@ -1,1 +1,10 @@
 PENCIL Benchmark
+
+This is a collection of benchmark suites for evaluating PENCIL compilers.
+
+There are three benchmark suites:
+- The image processing benchmark suite,
+- The VOBLA DSL benchmark suite,
+- The NAS PENCIL benchmark suite,
+
+Details about how each benchmark can be installed and used are available in the README file of each benchmark suite.
