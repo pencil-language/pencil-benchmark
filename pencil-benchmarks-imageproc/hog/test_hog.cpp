@@ -3,10 +3,9 @@
 
 #include <opencv2/imgproc/imgproc.hpp>
 
-
 #ifndef EXCLUDE_PENCIL_TEST
 #include <prl.h>
-#include "hog.pencil.h"
+#include "hog.h"
 #else
 #define prl_init(x)
 #define prl_shutdown(x)
@@ -154,20 +153,30 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
                         first_execution_pencil = false;
                     }
 
-                    prl_timings_reset();
-                    prl_timings_start();
+                    prl_perf_reset();
+                    prl_perf_start();
 
-                    pencil_hog( NUMBER_OF_CELLS, NUMBER_OF_BINS, GAUSSIAN_WEIGHTS, SPARTIAL_WEIGHTS, SIGNED_HOG
+#if STATIC_HOG
+                    pencil_hog_static (
+#else
+                    pencil_hog_dynamic(
+#endif
+                                NUMBER_OF_CELLS, NUMBER_OF_BINS, GAUSSIAN_WEIGHTS, SPARTIAL_WEIGHTS, SIGNED_HOG
                               , cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<uint8_t>()
                               , num_positions
                               , reinterpret_cast<const float (*)[2]>(locations.data)
+#if STATIC_HOG
+                              , blocksizes
+#else
                               , reinterpret_cast<const float (*)[2]>(blocksizes.data)
+#endif
                               , reinterpret_cast<      float  *    >(pen_result.data)
                               );
 
-                    prl_timings_stop();
+                    prl_perf_stop();
+
                     // Dump execution times for PENCIL code.
-                    prl_timings_dump();
+                    prl_perf_dump();
                 }
 #endif
                 // Verifying the results
@@ -203,28 +212,17 @@ void time_hog( const std::vector<carp::record_t>& pool, const std::vector<float>
 
 int main(int argc, char* argv[])
 {
-    try
-    {
-        prl_init((prl_init_flags)(PRL_TARGET_DEVICE_DYNAMIC | PRL_PROFILING_ENABLED));
+    prl_init();
 
-        std::cout << "This executable is iterating over all the files passed to it as an argument. " << std::endl;
-        auto pool = carp::get_pool(argc, argv);
+    std::cout << "This executable is iterating over all the files passed to it as an argument. " << std::endl;
+    auto pool = carp::get_pool(argc, argv);
 
 #ifdef RUN_ONLY_ONE_EXPERIMENT
-        time_hog( pool, {BLOCK_SIZE}, NUMBER_OF_LOCATIONS, 1 );
+    time_hog( pool, {BLOCK_SIZE}, NUMBER_OF_LOCATIONS, 1 );
 #else
-        time_hog( pool, {16, 32, 64, 128}, NUMBER_OF_LOCATIONS, 27 );
+    time_hog( pool, {16, 32, 64, 128}, NUMBER_OF_LOCATIONS, 27 );
 #endif
 
-        prl_shutdown();
-
-        return EXIT_SUCCESS;
-    }
-    catch(const std::exception& e)
-    {
-        std::cout << e.what() << std::endl;
-
-        prl_shutdown();
-        return EXIT_FAILURE;
-    }
+    prl_release();
+    return EXIT_SUCCESS;
 } // main

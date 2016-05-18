@@ -1,4 +1,4 @@
-#include "cvt_color.pencil.h"
+#include "cvt_color.h"
 #include <pencil.h>
 
 #define CV_DESCALE(x,n) (((x) + (1 << ((n)-1))) >> (n))

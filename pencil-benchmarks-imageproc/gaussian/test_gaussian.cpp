@@ -1,5 +1,5 @@
 #include "utility.hpp"
-#include "gaussian.pencil.h"
+#include "gaussian.h"
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/ocl/ocl.hpp>
@@ -67,16 +67,16 @@ void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<i
                     first_execution_pencil = false;
                 }
 
-                prl_timings_reset();
-                prl_timings_start();
+                prl_perf_reset();
+                prl_perf_start();
                 pencil_gaussian( cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<float>()
                                , kernel_x.rows, kernel_x.ptr<float>()
                                , kernel_y.rows, kernel_y.ptr<float>()
                                , pen_result.ptr<float>()
                                );
-                prl_timings_stop();
+                prl_perf_stop();
                 // Dump execution times for PENCIL code.
-                prl_timings_dump();
+                prl_perf_dump();
                 //Free up resources
             }
             // Verifying the results
@@ -104,23 +104,17 @@ void time_gaussian( const std::vector<carp::record_t>& pool, const std::vector<i
 
 int main(int argc, char* argv[])
 {
-    prl_init((prl_init_flags)(PRL_TARGET_DEVICE_DYNAMIC | PRL_PROFILING_ENABLED));
+    prl_init();
 
-    try {
-        std::cout << "This executable is iterating over all the files passed to it as an argument. " << std::endl;
+    std::cout << "This executable is iterating over all the files passed to it as an argument. " << std::endl;
 
-        auto pool = carp::get_pool(argc, argv);
+    auto pool = carp::get_pool(argc, argv);
 #ifdef RUN_ONLY_ONE_EXPERIMENT
-        time_gaussian( pool, {25} );
+    time_gaussian( pool, {25} );
 #else
-        time_gaussian( pool, {5, 15, 25, 35, 45} );
+    time_gaussian( pool, {5, 15, 25, 35, 45} );
 #endif
-        prl_shutdown();
-        return EXIT_SUCCESS;
-    } catch(const std::exception& e) {
-        std::cout << e.what() << std::endl;
 
-        prl_shutdown();
-        return EXIT_FAILURE;
-    }
+    prl_release();
+    return EXIT_SUCCESS;
 }

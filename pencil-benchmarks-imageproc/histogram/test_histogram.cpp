@@ -1,5 +1,5 @@
 #include "utility.hpp"
-#include "histogram.pencil.h"
+#include "histogram.h"
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/ocl/ocl.hpp>
@@ -62,14 +62,14 @@ void time_histogram( const std::vector<carp::record_t>& pool, size_t iterations)
                     first_execution_pencil = false;
                 }
 
-                prl_timings_reset();
-                prl_timings_start();
+                prl_perf_reset();
+                prl_perf_start();
                 pencil_calcHist( cpuimg.rows, cpuimg.cols, cpuimg.step1(), cpuimg.ptr<uint8_t>()
                                , pen_result.ptr<int>()
                                );
-                prl_timings_stop();
+                prl_perf_stop();
                 // Dump execution times for PENCIL code.
-                prl_timings_dump();
+                prl_perf_dump();
             }
             // Verifying the results
             float gpu_err = cv::norm(gpu_result - cpu_result);
@@ -89,7 +89,7 @@ void time_histogram( const std::vector<carp::record_t>& pool, size_t iterations)
 
 int main(int argc, char* argv[])
 {
-    prl_init((prl_init_flags)(PRL_TARGET_DEVICE_DYNAMIC | PRL_PROFILING_ENABLED));
+    prl_init();
 
     std::cout << "This executable is iterating over all the files passed to it as an argument. " << std::endl;
 
@@ -104,6 +104,6 @@ int main(int argc, char* argv[])
 
     time_histogram( pool, num_iterations );
 
-    prl_shutdown();
+    prl_release();
     return EXIT_SUCCESS;
 }

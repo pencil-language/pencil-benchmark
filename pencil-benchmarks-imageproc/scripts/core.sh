@@ -47,15 +47,9 @@ TEMP_TIME_FILE_3=temp_time_file_3
 LOG_FILE=benchmark_building_log.txt
 CSV_DELIMITER="/"
 
-if [ $USE_ARM_MALI_OPENCL_LIBRARIES = 0 ]; then
-	OPENCL_LIBRARY="-lOpenCL"
-else
-	OPENCL_LIBRARY="-lmali"
-fi
-
-HEADER_FLAGS="-I$PENCIL_INCLUDE_DIR/ -I$PRL_INCLUDE_DIR/ -I$OPENCL_INCLUDE_DIR/ -I$OPENCV_INCLUDE_DIR/ -I$BENCHMARK_ROOT_DIRECTORY/include/"
-LINKER_FLAGS="-L$PRL_LIB_DIR/ -L$OPENCL_LIB_DIR/ -L$BENCHMARK_ROOT_DIRECTORY/build/ -L$OPENCV_LIB_DIR/"
-LIBRARY_FLAGS="-lprl_opencl -lopencv_core -lopencv_imgproc -lopencv_ocl -lopencv_highgui $OPENCL_LIBRARY -ltbb -ltbbmalloc"
+HEADER_FLAGS="-I$OPENCV_INCLUDE_DIR/ -I$BENCHMARK_ROOT_DIRECTORY/include/"
+LINKER_FLAGS="-L$BENCHMARK_ROOT_DIRECTORY/build/ -L$OPENCV_LIB_DIR/"
+LIBRARY_FLAGS="-lopencv_core -lopencv_imgproc -lopencv_ocl -lopencv_highgui -ltbb -ltbbmalloc"
 
 PENCIL_COMPILER_EXTRA_OPTIONS="--target=prl -D__PENCIL__ --opencl-include-file=${PENCIL_INCLUDE_DIR}/pencil_opencl.h"
 
@@ -106,31 +100,15 @@ get_median()
 compile()
 {
   KERNEL=$1
-  ppcg_tuning_options=$2
+  ppcg_tuning_options="$2"
   echo
   echo "[$KERNEL]"
   echo "[$KERNEL]" >> $LOG_FILE
 
-  echo "    .ppcg $ppcg_tuning_options"
-  echo "    .ppcg $PENCIL_COMPILER_EXTRA_OPTIONS $ppcg_tuning_options $HEADER_FLAGS -I$BENCHMARK_ROOT_DIRECTORY/$KERNEL $BENCHMARK_ROOT_DIRECTORY/$KERNEL/$KERNEL.pencil.c" >> $LOG_FILE
-  $PENCIL_COMPILER_BINARY $PENCIL_COMPILER_EXTRA_OPTIONS $ppcg_tuning_options $HEADER_FLAGS -I$BENCHMARK_ROOT_DIRECTORY/$KERNEL $BENCHMARK_ROOT_DIRECTORY/$KERNEL/$KERNEL.pencil.c >> $LOG_FILE
+  echo "    .pencilcc $ppcg_tuning_options"
+  echo "$PENCILCC_COMPILER_BINARY --target=prl ${ppcg_tuning_options} $HEADER_FLAGS -I$BENCHMARK_ROOT_DIRECTORY/$KERNEL $BENCHMARK_ROOT_DIRECTORY/$KERNEL/*.c -std=gnu++11  $BENCHMARK_ROOT_DIRECTORY/$KERNEL/test_${KERNEL}.cpp $LINKER_FLAGS $LIBRARY_FLAGS -o ppcg_test_${KERNEL} -O3 --cc-ld-prog=c++ --autorpath"
+  "$PENCILCC_COMPILER_BINARY" --target=prl ${ppcg_tuning_options} $HEADER_FLAGS "-I$BENCHMARK_ROOT_DIRECTORY/$KERNEL" $BENCHMARK_ROOT_DIRECTORY/$KERNEL/*.c -std=gnu++11  "$BENCHMARK_ROOT_DIRECTORY/$KERNEL/test_${KERNEL}.cpp" $LINKER_FLAGS $LIBRARY_FLAGS -o "ppcg_test_${KERNEL}" -O3 --cc-ld-prog=c++ --autorpath 2>&1 >> "$LOG_FILE"
   test_success $?
-
-  echo "    .compiling ${KERNEL}.pencil_host.c and test_${KERNEL}.cpp (g++)"
-  echo "    .g++ -x c -c -O3 -DNDEBUG -fomit-frame-pointer -fPIC -std=c99 $HEADER_FLAGS -I$BENCHMARK_ROOT_DIRECTORY/$KERNEL ${KERNEL}.pencil_host.c -o $KERNEL.pencil_host.o" >> $LOG_FILE
-  g++ -x c -c -O3 -DNDEBUG -fomit-frame-pointer -fPIC -std=c99 $HEADER_FLAGS -I$BENCHMARK_ROOT_DIRECTORY/$KERNEL ${KERNEL}.pencil_host.c -o $KERNEL.pencil_host.o >> $LOG_FILE
-  EXIT_STATUS_COMPILATION_1=$?
-
-  echo "    .g++ -shared -O3 -o lib${KERNEL}_ppcg.so $KERNEL.pencil_host.o $LINKER_FLAGS $LIBRARY_FLAGS" >> $LOG_FILE
-  g++ -shared -O3 -o lib${KERNEL}_ppcg.so $KERNEL.pencil_host.o $LINKER_FLAGS $LIBRARY_FLAGS >> $LOG_FILE
-  EXIT_STATUS_COMPILATION_2=$?
-
-  echo "    .g++ -O3 $DEFINED_VARIABLES -fomit-frame-pointer -fPIC -std=c++0x $HEADER_FLAGS -Wl,-rpath=RIGIN:$PRL_LIB_DIR $BENCHMARK_ROOT_DIRECTORY/$KERNEL/test_${KERNEL}.cpp -o ppcg_test_${KERNEL} $LIBRARY_FLAGS $LINKER_FLAGS -l${KERNEL}_ppcg" >> $LOG_FILE
-  g++ -O3 $DEFINED_VARIABLES -fomit-frame-pointer -fPIC -std=c++0x $HEADER_FLAGS -Wl,-rpath=RIGIN:$PRL_LIB_DIR $BENCHMARK_ROOT_DIRECTORY/$KERNEL/test_${KERNEL}.cpp -o ppcg_test_${KERNEL} $LIBRARY_FLAGS $LINKER_FLAGS -l${KERNEL}_ppcg >> $LOG_FILE
-  EXIT_STATUS_COMPILATION_3=$?
-
-  EXIT_STATUS_COMPILATION=`expr $EXIT_STATUS_COMPILATION_1 + $EXIT_STATUS_COMPILATION_2 + $EXIT_STATUS_COMPILATION_3`
-  test_success $EXIT_STATUS_COMPILATION
 }
 
 # Global variables used to keep track of the best optimization time
@@ -333,12 +311,6 @@ if [ $ENABLE_TUNING = 1 ]; then
 fi
 
 PREPARE_GENERAL_OUTPUT_FILE;
-
-# Copy the hog.pencil.cl file into the build directory
-if [ ! -d "$BENCHMARK_ROOT_DIRECTORY/build/hog" ]; then
-	mkdir $BENCHMARK_ROOT_DIRECTORY/build/hog
-fi
-cp $BENCHMARK_ROOT_DIRECTORY/hog/HogDescriptor.cl $BENCHMARK_ROOT_DIRECTORY/build/hog
 
 id=0
 for ker in ${LIST_OF_KERNELS}; do

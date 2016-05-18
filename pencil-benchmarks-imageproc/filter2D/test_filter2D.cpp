@@ -1,5 +1,5 @@
 #include "utility.hpp"
-#include "filter2D.pencil.h"
+#include "filter2D.h"
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/ocl/ocl.hpp>
@@ -63,14 +63,14 @@ void time_filter2D( const std::vector<carp::record_t>& pool, int iteration )
                     first_execution_pencil = false;
                 }
 
-                prl_timings_reset();
-                prl_timings_start();
+                prl_perf_reset();
+                prl_perf_start();
                 pencil_filter2D( cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<float>(),
                                  kernel.rows, kernel.cols, kernel.step1(), kernel.ptr<float>(),
                                  pen_result.ptr<float>() );
-                prl_timings_stop();
+                prl_perf_stop();
                 // Dump execution times for PENCIL code.
-                prl_timings_dump();
+                prl_perf_dump();
             }
             // Verifying the results
             if ( (cv::norm(cpu_result - gpu_result) > 0.01) ||
@@ -98,7 +98,7 @@ void time_filter2D( const std::vector<carp::record_t>& pool, int iteration )
 
 int main(int argc, char* argv[])
 {
-    prl_init((prl_init_flags)(PRL_TARGET_DEVICE_DYNAMIC | PRL_PROFILING_ENABLED));
+    prl_init();
 
     std::cout << "This executable is iterating over all the files passed to it as an argument. " << std::endl;
 
@@ -110,6 +110,6 @@ int main(int argc, char* argv[])
     time_filter2D( pool, 22 );
 #endif
 
-    prl_shutdown();
+    prl_release();
     return EXIT_SUCCESS;
 } // main

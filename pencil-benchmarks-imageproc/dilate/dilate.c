@@ -1,4 +1,4 @@
-#include "dilate.pencil.h"
+#include "dilate.h"
 
 #include <pencil.h>
 
@@ -46,10 +46,10 @@ static void dilate( const int rows
                 #pragma pencil independent reduction(max: sup)
                 for ( int r = 0; r < se_cols; r++ )
                 {
-                    int candidate_row = iclampi(q - anchor_row + e, 0, rows - 1);
-                    int candidate_col = iclampi(w - anchor_col + r, 0, cols - 1);
+                    int candidate_row = clamp(q - anchor_row + e, 0, rows - 1);
+                    int candidate_col = clamp(w - anchor_col + r, 0, cols - 1);
 
-                    sup = (se[e][r]!=0) ? ubmax(sup, cpu_gray[candidate_row][candidate_col]) : sup;
+                    sup = (se[e][r]!=0) ? max(sup, cpu_gray[candidate_row][candidate_col]) : sup;
                 }
             }
             dilate[q][w] = sup;

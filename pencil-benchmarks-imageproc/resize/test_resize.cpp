@@ -1,5 +1,5 @@
 #include "utility.hpp"
-#include "resize.pencil.h"
+#include "resize.h"
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/ocl/ocl.hpp>
@@ -57,12 +57,12 @@ void time_resize( const std::vector<carp::record_t>& pool, const std::vector<cv:
                         first_execution_pencil = false;
                     }
 
-                    prl_prof_reset();
-                    prl_prof_start();
+                    prl_perf_reset();
+                    prl_perf_start();
                     pencil_resize_LN(cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr(), pen_result.rows, pen_result.cols, pen_result.step1(), pen_result.ptr() );
-                    prl_prof_stop();
+                    prl_perf_stop();
                     // Dump execution times for PENCIL code.
-                    prl_prof_dump();
+                    prl_perf_dump();
                 }
                 // Verifying the results - TODO - Something fishy is happening at borders
 #define REMOVE_BORDER(img) img(cv::Range(1, size.height-1), cv::Range(1, size.width-1))

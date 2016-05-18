@@ -1,5 +1,5 @@
 #include "utility.hpp"
-#include "warpAffine.pencil.h"
+#include "warpAffine.h"
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/ocl/ocl.hpp>
@@ -82,15 +82,15 @@ void time_affine( const std::vector<carp::record_t>& pool, int iteration )
                     first_execution_pencil = false;
                 }
 
-                prl_timings_reset();
-                prl_timings_start();
+                prl_perf_reset();
+                prl_perf_start();
                 pencil_affine_linear( cpu_gray.rows, cpu_gray.cols, cpu_gray.step1(), cpu_gray.ptr<float>()
                                     , pen_result.rows, pen_result.cols, pen_result.step1(), pen_result.ptr<float>(),
                         transform.at<float>(0,0), transform.at<float>(0,1), transform.at<float>(1,0), transform.at<float>(1,1),
                         transform.at<float>(1,2), transform.at<float>(0,2) );
-                prl_timings_stop();
+                prl_perf_stop();
                 // Dump execution times for PENCIL code.
-                prl_timings_dump();
+                prl_perf_dump();
             }
             // Verifying the results
             if ( (cv::norm(cv::abs(cpu_result - gpu_result), cv::NORM_INF ) > 1 ) || (cv::norm(cv::abs(cpu_result - pen_result), cv::NORM_INF ) > 1 ) )
@@ -117,7 +117,7 @@ void time_affine( const std::vector<carp::record_t>& pool, int iteration )
 
 int main(int argc, char* argv[])
 {
-    prl_init((prl_init_flags)(PRL_TARGET_DEVICE_DYNAMIC | PRL_PROFILING_ENABLED));
+    prl_init();
 
     std::cout << "This executable is iterating over all the files passed to it as an argument. " << std::endl;
 
@@ -129,6 +129,6 @@ int main(int argc, char* argv[])
     time_affine( pool, 20 );
 #endif
 
-    prl_shutdown();
+    prl_release();
     return EXIT_SUCCESS;
 }

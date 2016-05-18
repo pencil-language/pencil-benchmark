@@ -216,7 +216,7 @@ nel::HOGDescriptorOCL<numberOfCells, numberOfBins, gauss, spinterp, _signed, _st
 
     //Get the used device
     std::vector<cl::Device> devices;
-    cl::Platform::getDefault().getDevices(CL_DEVICE_TYPE_GPU, &devices);
+    cl::Platform::getDefault().getDevices(CL_DEVICE_TYPE_DEFAULT, &devices);
     m_device = devices.at(0);
 
     //Create context

@@ -1,4 +1,4 @@
-#include "gaussian.pencil.h"
+#include "gaussian.h"
 #include <pencil.h>
 #include <assert.h>
 
@@ -44,7 +44,7 @@ static void gaussian( const int rows
                 for ( int r = 0; r < kernelX_length; r++ )
                 {
                     int row1 = q;
-                    int col1 = iclampi(w + r - kernelX_length / 2, 0, cols-1);
+                    int col1 = clamp(w + r - kernelX_length / 2, 0, cols-1);
                     prod1 += src[row1][col1] * kernelX[r];
                 }
                 temp[q][w] = prod1;
@@ -60,7 +60,7 @@ static void gaussian( const int rows
                 #pragma pencil independent reduction (+: prod2);
                 for ( int e = 0; e < kernelY_length; e++ )
                 {
-                    int row2 = iclampi(q + e - kernelY_length / 2, 0, rows-1);
+                    int row2 = clamp(q + e - kernelY_length / 2, 0, rows-1);
                     int col2 = w;
                     prod2 += temp[row2][col2] * kernelY[e];
                 }

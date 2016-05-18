@@ -1,5 +1,5 @@
 #include "utility.hpp"
-#include "cvt_color.pencil.h"
+#include "cvt_color.h"
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/ocl/ocl.hpp>
@@ -51,14 +51,14 @@ void time_cvtColor( const std::vector<carp::record_t>& pool, size_t iterations)
                     first_execution_pencil = false;
                 }
 
-                prl_timings_reset();
-                prl_timings_start();
+                prl_perf_reset();
+                prl_perf_start();
                 pencil_RGB2Gray( cpuimg.rows, cpuimg.cols, cpuimg.step1()/cpuimg.channels(), pen_result.step1()
                                , cpuimg.data, pen_result.data
                                );
-                prl_timings_stop();
+                prl_perf_stop();
                 // Dump execution times for PENCIL code.
-                prl_timings_dump();
+                prl_perf_dump();
             }
 
             // Verifying the results
@@ -78,7 +78,7 @@ void time_cvtColor( const std::vector<carp::record_t>& pool, size_t iterations)
 
 int main(int argc, char* argv[])
 {
-    prl_init((prl_init_flags)(PRL_TARGET_DEVICE_DYNAMIC | PRL_PROFILING_ENABLED));
+    prl_init();
 
     std::cout << "This executable is iterating over all the files passed to it as an argument. " << std::endl;
 
@@ -93,6 +93,6 @@ int main(int argc, char* argv[])
 
     time_cvtColor( pool, num_iterations );
 
-    prl_shutdown();
+    prl_release();
     return EXIT_SUCCESS;
 }

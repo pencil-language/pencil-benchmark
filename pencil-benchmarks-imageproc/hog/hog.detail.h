@@ -58,10 +58,10 @@ static void hog_dynamic( const int NUMBER_OF_CELLS
         float maxx = locationx + blck_sizex / 2.0f;
         float maxy = locationy + blck_sizey / 2.0f;
 
-        int minxi = imax((int)ceilf(minx), 1);
-        int minyi = imax((int)ceilf(miny), 1);
-        int maxxi = imin((int)floorf(maxx), cols - 2);
-        int maxyi = imin((int)floorf(maxy), rows - 2);
+        int minxi = max((int)ceilf(minx), 1);
+        int minyi = max((int)ceilf(miny), 1);
+        int maxxi = min((int)floorf(maxx), cols - 2);
+        int maxyi = min((int)floorf(maxy), rows - 2);
 
         #pragma pencil independent reduction(+:hist[i])
         for (int pointy = minyi; pointy <= maxyi; ++pointy) {

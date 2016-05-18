@@ -1,13 +1,13 @@
 #ifndef HOG_PENCIL_H
 #define HOG_PENCIL_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <pencil.h>
 #include <stdint.h>
 #include <stdbool.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void pencil_hog_static( int NUMBER_OF_CELLS
                       , int NUMBER_OF_BINS

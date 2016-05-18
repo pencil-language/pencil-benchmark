@@ -1,4 +1,4 @@
-#include "resize.pencil.h"
+#include "resize.h"
 #include <pencil.h>
 
 
